@@ -26,7 +26,6 @@
             <div class="header-actions">
                 <button id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स">शॉर्टकट्स</button>
                 <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="डार्क/लाइट थीम बदलें">थीम बदलें</button>
-                <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank" class="btn btn-outline btn-sm" title="विकिपीडिया सदस्य पृष्ठ">सदस्य:विक्रम प्रताप</a>
                 <a href="https://github.com/vikrampratap-wiki/wikilink-tool" target="_blank" class="btn btn-outline btn-sm" title="गिटहब रिपॉजिटरी">GitHub</a>
             </div>
         </div>
@@ -455,15 +454,15 @@
                     </button>
                 </div>
 
-                <!-- टूल 2: शब्द बहिष्कार प्रबंधक -->
+                <!-- टूल 2: तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार प्रबंधक -->
                 <div class="aux-tool-item">
                     <div class="aux-tool-meta">
-                        <h4>2. शब्द बहिष्कार प्रबंधक (Custom Blacklist)</h4>
-                        <p class="tool-desc-text"><strong>कार्य:</strong> उन शब्दों को नियंत्रित करता है जिन्हें आप कभी भी कड़ी नहीं बनाना चाहते।</p>
-                        <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> नीचे बटन दबाकर नए शब्द जोड़ें अथवा परिणाम तालिका में किसी भी शब्द के आगे 'अनदेखा' दबाएँ।</p>
+                        <h4>2. तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार (Link Verifier & Blacklist)</h4>
+                        <p class="tool-desc-text"><strong>कार्य:</strong> उन शब्दों को नियंत्रित करता है जिन्हें आप कभी भी कड़ी नहीं बनाना चाहते, तथा किसी भी शब्द की तार्किक आंतरिक कड़ी योग्यता की तत्काल 7-नियम नीति जाँच करता है।</p>
+                        <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> नीचे बटन दबाएँ। यहाँ आप किसी भी शब्द की विकिपीडिया नीति (WP:NOTLINKED, WP:CIRCULAR, WP:DATELINK आदि) अनुसार जाँच कर सकते हैं और कस्टम बहिष्कार सूची प्रबंधित कर सकते हैं।</p>
                     </div>
                     <button type="button" id="btn-open-blacklist-mgr" class="btn btn-secondary btn-sm">
-                        बहिष्कार सूची प्रबंधित करें
+                        तार्किक कड़ी परीक्षक एवं बहिष्कार सूची
                     </button>
                 </div>
 
@@ -759,28 +758,87 @@
         </div>
     </div>
 
-    <!-- 3. कस्टम बहिष्कार शब्द प्रबंधक मोडल (Custom Blacklist Modal) -->
+    <!-- 3. तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार प्रबंधक मोडल (Link Verifier & Blacklist Modal) -->
     <div id="blacklist-modal" class="modal-backdrop" style="display: none;">
-        <div class="modal-card">
+        <div class="modal-card modal-lg">
             <div class="modal-header">
-                <h3>कस्टम बहिष्कार शब्द प्रबंधक (Custom Blacklist)</h3>
+                <h3>तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार (Link Verifier & Blacklist)</h3>
                 <button type="button" class="modal-close-btn" data-modal="blacklist-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <p>वे शब्द जिन्हें आप कभी भी कड़ी के रूप में नहीं जोड़ना चाहते:</p>
-                <div class="form-group">
-                    <div class="input-with-button">
-                        <input type="text" id="blacklist-new-input" class="form-control" placeholder="नया शब्द दर्ज करें...">
-                        <button type="button" id="blacklist-add-btn" class="btn btn-primary btn-sm">जोड़ें</button>
+                <!-- टैब्स नेविगेशन -->
+                <div class="tabs-nav" style="margin-bottom: 14px;">
+                    <button type="button" class="tab-btn active" id="btn-tab-bl-tester" data-bl-tab="bl-tab-tester">तार्किक शब्द परीक्षक (Verifier)</button>
+                    <button type="button" class="tab-btn" id="btn-tab-bl-custom" data-bl-tab="bl-tab-custom">कस्टम बहिष्कार सूची (Blacklist)</button>
+                    <button type="button" class="tab-btn" id="btn-tab-bl-policy" data-bl-tab="bl-tab-policy">नीतिगत सामान्य शब्द (WP:NOTLINKED)</button>
+                </div>
+
+                <!-- टैब 1: तार्किक शब्द योग्यता परीक्षक -->
+                <div id="bl-tab-tester" class="bl-tab-content">
+                    <p class="form-hint" style="margin-bottom: 10px;">
+                        यहाँ किसी भी शब्द या पद की विकिपीडिया तार्किक कड़ीकरण नीतियों (WP:NOTLINKED, WP:CIRCULAR, WP:DATELINK) अनुसार तत्काल 7-नियम जाँच करें:
+                    </p>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <div class="input-with-button">
+                            <input type="text" id="word-tester-input" class="form-control" placeholder="जाँच हेतु कोई शब्द लिखें (उदा: पानी, दिन, चन्द्रयान-३, 1947, किमी, या अपना कोई शब्द)...">
+                            <button type="button" id="word-tester-btn" class="btn btn-primary">तार्किक नियम जाँचें</button>
+                        </div>
+                    </div>
+
+                    <!-- जाँच परिणाम क्षेत्र -->
+                    <div id="word-tester-result-wrap" style="display: none;">
+                        <div id="word-tester-verdict-card" class="verdict-card">
+                            <!-- परिणाम सारांश -->
+                        </div>
+                        <h4 style="margin-top: 14px; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-primary);">
+                            7-नियम तार्किक नीति ऑडिट (Policy Rules Audit):
+                        </h4>
+                        <div id="word-tester-rules-grid" class="rules-audit-list">
+                            <!-- 7 नियमों का विवरण -->
+                        </div>
                     </div>
                 </div>
-                <div class="blacklist-tags-wrap" id="blacklist-tags-container">
-                    <!-- चिप्स यहाँ आएँगे -->
+
+                <!-- टैब 2: मेरी कस्टम बहिष्कार सूची -->
+                <div id="bl-tab-custom" class="bl-tab-content" style="display: none;">
+                    <p class="form-hint" style="margin-bottom: 10px;">
+                        वे विशिष्ट शब्द जिन्हें आप इस उपकरण द्वारा कभी भी आंतरिक कड़ी नहीं बनने देना चाहते:
+                    </p>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <div class="input-with-button">
+                            <input type="text" id="blacklist-new-input" class="form-control" placeholder="बहिष्कार हेतु नया शब्द दर्ज करें...">
+                            <button type="button" id="blacklist-add-btn" class="btn btn-primary btn-sm">जोड़ें</button>
+                        </div>
+                    </div>
+                    <div class="blacklist-tags-wrap" id="blacklist-tags-container">
+                        <!-- चिप्स यहाँ आएँगे -->
+                    </div>
+                    <div style="margin-top: 14px; text-align: right;">
+                        <button type="button" class="btn btn-outline text-danger btn-sm" id="blacklist-clear-btn">पूरी कस्टम सूची साफ़ करें</button>
+                    </div>
+                </div>
+
+                <!-- टैब 3: नीतिगत सामान्य शब्द (WP:NOTLINKED Directory) -->
+                <div id="bl-tab-policy" class="bl-tab-content" style="display: none;">
+                    <div class="policy-notice-box" style="margin-bottom: 10px;">
+                        <p style="margin: 0; font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                            <strong>विकिपीडिया नियमावली (WP:NOTLINKED / WP:LINK):</strong> आम दैनिक बोलचाल की संज्ञाएँ, सामान्य विशेषण एवं सर्वविदित अवधारणाएँ पाठक के लिए स्पष्ट होती हैं, अतः इनकी आंतरिक कड़ी नहीं बनाई जाती। उपकरण इन्हें स्वतः कड़ियों से बाहर रखता है।
+                        </p>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <input type="text" id="policy-words-search" class="form-control form-control-sm" placeholder="सामान्य दैनिक शब्दों में खोजें (उदा: पानी, दिन, घर, लोग)...">
+                    </div>
+                    <div class="policy-words-stats" style="margin-bottom: 8px; font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                        <span id="policy-words-count">कुल सामान्य शब्द सुरक्षित</span>
+                        <span style="font-size: 0.78rem;">स्वतः सुरक्षित (Auto-suppressed)</span>
+                    </div>
+                    <div class="policy-chips-container" id="policy-chips-container">
+                        <!-- नीतिगत शब्दों के चिप्स -->
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary modal-close-btn" data-modal="blacklist-modal">बंद करें</button>
-                <button type="button" class="btn btn-outline text-danger" id="blacklist-clear-btn">पूरी सूची साफ़ करें</button>
             </div>
         </div>
     </div>

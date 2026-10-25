@@ -1991,6 +1991,121 @@ del.diffchange, del.diffchange-inline {
     color: var(--accent-red);
 }
 
+/* तार्किक शब्द परीक्षक एवं नीति ऑडिट शैलियाँ */
+.verdict-card {
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-top: 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-alt);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.verdict-card.verdict-approved {
+    border-color: rgba(34, 197, 94, 0.4);
+    background-color: rgba(34, 197, 94, 0.08);
+}
+
+.verdict-card.verdict-rejected {
+    border-color: rgba(239, 68, 68, 0.4);
+    background-color: rgba(239, 68, 68, 0.08);
+}
+
+.verdict-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.verdict-term {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.verdict-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.verdict-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rules-audit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.rule-audit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 10px;
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    gap: 8px;
+}
+
+.rule-audit-meta {
+    flex: 1;
+}
+
+.rule-audit-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.rule-audit-desc {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.policy-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.policy-chip {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 0.78rem;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-secondary);
+}
+
+.policy-notice-box {
+    padding: 8px 12px;
+    background-color: rgba(37, 99, 235, 0.06);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+}
+
 /* फ्लोटिंग सारांश कार्ड */
 .wiki-summary-card {
     position: fixed;

@@ -188,7 +188,9 @@
         const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
         if (langSet.has(clean)) return true;
 
-        const parts = clean.split(' ').filter(p => !STOPWORDS.hi.has(p) && !STOPWORDS.en.has(p));
+        const hiStop = STOPWORDS.hi || new Set();
+        const enStop = STOPWORDS.en || new Set();
+        const parts = clean.split(' ').filter(p => !hiStop.has(p) && !enStop.has(p));
         if (parts.length > 0 && parts.every(p => langSet.has(p))) return true;
 
         return false;
@@ -374,6 +376,16 @@
         DOM.blacklistAddBtn = $('blacklist-add-btn');
         DOM.blacklistTagsContainer = $('blacklist-tags-container');
         DOM.blacklistClearBtn = $('blacklist-clear-btn');
+
+        // तार्किक शब्द परीक्षक एवं नीति निर्देशिका
+        DOM.wordTesterInput = $('word-tester-input');
+        DOM.wordTesterBtn = $('word-tester-btn');
+        DOM.wordTesterResultWrap = $('word-tester-result-wrap');
+        DOM.wordTesterVerdictCard = $('word-tester-verdict-card');
+        DOM.wordTesterRulesGrid = $('word-tester-rules-grid');
+        DOM.policyWordsSearch = $('policy-words-search');
+        DOM.policyChipsContainer = $('policy-chips-container');
+        DOM.policyWordsCount = $('policy-words-count');
 
         DOM.shortcutsModal = $('shortcuts-modal');
 
@@ -658,6 +670,38 @@
             if (e.key === 'Enter') addBlacklistWord();
         });
         safeAddListener(DOM.blacklistClearBtn, 'click', clearBlacklist);
+
+        // तार्किक शब्द परीक्षक
+        safeAddListener(DOM.wordTesterBtn, 'click', handleTestWordLinkability);
+        safeAddListener(DOM.wordTesterInput, 'keypress', (e) => {
+            if (e.key === 'Enter') handleTestWordLinkability();
+        });
+
+        // नीतिगत सामान्य शब्द खोज
+        safeAddListener(DOM.policyWordsSearch, 'input', (e) => {
+            renderPolicyWords(e.target.value);
+        });
+
+        // मोडल टैब्स स्विचिंग (Blacklist & Verifier Modal Tabs)
+        document.querySelectorAll('[data-bl-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.blTab;
+                document.querySelectorAll('[data-bl-tab]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.querySelectorAll('.bl-tab-content').forEach(c => c.style.display = 'none');
+                const targetContent = $(targetTab);
+                if (targetContent) targetContent.style.display = 'block';
+
+                if (DOM.blacklistClearBtn) {
+                    DOM.blacklistClearBtn.style.display = (targetTab === 'bl-tab-custom') ? 'inline-block' : 'none';
+                }
+
+                if (targetTab === 'bl-tab-policy') {
+                    renderPolicyWords();
+                }
+            });
+        });
 
         // बॉटम बार
         safeAddListener(DOM.copyWikitextBtn, 'click', copyModifiedWikitext);
@@ -1965,6 +2009,7 @@
                 <td>
                     <div style="display: flex; gap: 4px;">
                         <button type="button" class="btn btn-outline btn-sm edit-target-btn" data-id="${s.id}">संशोधन</button>
+                        <button type="button" class="btn btn-outline btn-sm test-term-btn" data-term="${escapeHtml(s.term)}" title="तार्किक नीति 7-नियम जाँचें">जाँचें</button>
                         <button type="button" class="btn btn-outline btn-sm blacklist-term-btn text-danger" data-term="${escapeHtml(s.term)}" title="इस शब्द को ब्लैकलिस्ट करें">अनदेखा</button>
                     </div>
                 </td>
@@ -1981,6 +2026,17 @@
 
             const editBtn = tr.querySelector('.edit-target-btn');
             if (editBtn) editBtn.addEventListener('click', () => openEditModal(s.id));
+
+            const testBtn = tr.querySelector('.test-term-btn');
+            if (testBtn) {
+                testBtn.addEventListener('click', () => {
+                    openBlacklistModal();
+                    const tabBtn = $('btn-tab-bl-tester');
+                    if (tabBtn) tabBtn.click();
+                    safeSetValue(DOM.wordTesterInput, s.term);
+                    handleTestWordLinkability();
+                });
+            }
 
             const blBtn = tr.querySelector('.blacklist-term-btn');
             if (blBtn) {
@@ -2355,9 +2411,11 @@
         handleAnalyze();
     }
 
-    // ================== कस्टम ब्लैकलिस्ट ==================
+    // ================== तार्किक शब्द परीक्षक एवं कस्टम ब्लैकलिस्ट ==================
     function openBlacklistModal() {
         renderBlacklistTags();
+        const tabTester = $('btn-tab-bl-tester');
+        if (tabTester) tabTester.click();
         openModal('blacklist-modal');
     }
 
@@ -2365,7 +2423,7 @@
         if (!DOM.blacklistTagsContainer) return;
         DOM.blacklistTagsContainer.innerHTML = '';
         if (state.customBlacklist.size === 0) {
-            DOM.blacklistTagsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">कोई शब्द बहिष्कृत नहीं है।</span>';
+            DOM.blacklistTagsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">कोई कस्टम शब्द बहिष्कृत नहीं है।</span>';
             return;
         }
 
@@ -2377,6 +2435,7 @@
                 state.customBlacklist.delete(word);
                 saveBlacklist();
                 renderBlacklistTags();
+                showToast(`'${word}' बहिष्कार सूची से हटाया गया`);
             });
             DOM.blacklistTagsContainer.appendChild(chip);
         });
@@ -2405,6 +2464,282 @@
             renderBlacklistTags();
             showToast('बहिष्कार सूची साफ़ की गई');
         }
+    }
+
+    // ================== तार्किक शब्द योग्यता एवं नीति ऑडिट इंजन ==================
+    async function auditWordLinkability(rawWord, lang = state.lang, pageTitle = state.pageTitle) {
+        const word = (rawWord || '').trim();
+        if (!word) return null;
+
+        const lower = word.toLowerCase();
+        const rules = [];
+        let isProhibited = false;
+        let primaryReason = '';
+
+        // नियम 1: कस्टम बहिष्कार सूची (Custom Blacklist)
+        const isBlacklisted = state.customBlacklist && state.customBlacklist.has(lower);
+        rules.push({
+            ruleId: 'custom-blacklist',
+            name: '1. कस्टम बहिष्कार सूची (User Blacklist)',
+            passed: !isBlacklisted,
+            desc: isBlacklisted ? `'${word}' आपकी व्यक्तिगत बहिष्कार सूची में मौजूद है।` : 'यह शब्द आपकी कस्टम बहिष्कार सूची में नहीं है।'
+        });
+        if (isBlacklisted) {
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `यह शब्द आपकी कस्टम बहिष्कार सूची में शामिल है।`;
+        }
+
+        // नियम 2: सामान्य दैनिक शब्द (WP:NOTLINKED / WP:COMMONWORDS)
+        const isCommon = isNonLinkableWord(word, lang);
+        rules.push({
+            ruleId: 'common-word',
+            name: '2. सामान्य दैनिक शब्द (WP:NOTLINKED)',
+            passed: !isCommon,
+            desc: isCommon ? `'${word}' आम बोलचाल का शब्द है। विकिपीडिया (WP:LINK) अनुसार सामान्य दैनिक शब्दों की आंतरिक कड़ी नहीं बनाई जाती।` : 'यह कोई सामान्य दैनिक सर्वविदित शब्द नहीं है।'
+        });
+        if (isCommon) {
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `WP:NOTLINKED: विकिपीडिया नीति अनुसार सामान्य बोलचाल के शब्दों (जैसे पानी, दिन, घर, लोग आदि) को लिंक नहीं किया जाता।`;
+        }
+
+        // नियम 3: स्व-कड़ीकरण दोष (WP:CIRCULAR / WP:SELFREF)
+        const isCircular = pageTitle ? isSelfLink(word, pageTitle) : false;
+        rules.push({
+            ruleId: 'circular-link',
+            name: '3. स्व-कड़ीकरण दोष (WP:CIRCULAR)',
+            passed: !isCircular,
+            desc: isCircular ? `यह शब्द वर्तमान लेख शीर्षक ('${pageTitle}') से मेल खाता है। लेख अपने ही शीर्षक को लिंक नहीं कर सकता।` : 'यह वर्तमान लेख के शीर्षक से भिन्न है।'
+        });
+        if (isCircular) {
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `WP:CIRCULAR: लेख अपने स्वयं के शीर्षक को आंतरिक कड़ी नहीं बना सकता।`;
+        }
+
+        // नियम 4: वर्ष व दिनांक छन्नी (WP:DATELINK)
+        const isDateWord = DATE_WORDS.has(lower) || /^\d{4}$/.test(word) || /^[०-९]{4}$/.test(word);
+        rules.push({
+            ruleId: 'date-link',
+            name: '4. वर्ष व दिनांक छन्नी (WP:DATELINK)',
+            passed: !isDateWord,
+            desc: isDateWord ? `'${word}' अकेला वर्ष अथवा सामान्य तिथि है। विकिपीडिया नीति अनुसार अकेले वर्षों को लिंक नहीं किया जाता।` : 'यह कोई अकेला वर्ष अथवा साधारण तिथि नहीं है।'
+        });
+        if (isDateWord) {
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `WP:DATELINK: विकिपीडिया नियमानुसार अकेले 4-अंकीय वर्षों या साधारण तिथियों को लिंक नहीं किया जाता।`;
+        }
+
+        // नियम 5: माप व मात्रक इकाइयाँ (Units of Measure)
+        const isUnit = UNITS_OF_MEASURE.has(lower);
+        rules.push({
+            ruleId: 'unit-measure',
+            name: '5. माप व मात्रक इकाइयाँ (Units)',
+            passed: !isUnit,
+            desc: isUnit ? `'${word}' एक वैज्ञानिक अथवा दैनिक मापन इकाई है। मात्रकों को आंतरिक कड़ी नहीं बनाया जाता।` : 'यह कोई मापन इकाई नहीं है।'
+        });
+        if (isUnit) {
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `माप व मात्रक इकाइयाँ (किमी, किग्रा आदि) विकिपीडिया नीति अनुसार लिंक नहीं की जातीं।`;
+        }
+
+        // नियम 6: व्याकरणिक पद व स्टॉपवर्ड्स (Stopwords)
+        const stopSet = STOPWORDS[lang] || STOPWORDS.hi;
+        const isStop = stopSet.has(lower);
+        rules.push({
+            ruleId: 'stopword',
+            name: '6. व्याकरणिक पद व स्टॉपवर्ड्स',
+            passed: !isStop,
+            desc: isStop ? `'${word}' सामान्य सहायक क्रिया, सर्वनाम अथवा व्याकरणिक संयोजक पद है।` : 'यह कोई स्टॉपवर्ड नहीं है।'
+        });
+        if (isStop) {
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `व्याकरणिक पद (सर्वनाम, सहायक क्रियाएँ) आंतरिक कड़ी के योग्य नहीं होते।`;
+        }
+
+        // नियम 7: विकिपीडिया सर्वर स्थिति (Action API)
+        let liveWikiStatus = { exists: false, isRedirect: false, isDisambig: false, target: word };
+        try {
+            const endpoint = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(word)}&prop=pageprops&ppprop=disambiguation&redirects=1&format=json&origin=*`;
+            const res = await fetch(endpoint, {
+                headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const pages = data.query?.pages || {};
+                const pageList = Object.values(pages);
+                if (pageList.length > 0 && !pageList[0].missing) {
+                    const p = pageList[0];
+                    const isDis = !!(p.pageprops && 'disambiguation' in p.pageprops) || p.title.includes('(बहुविकल्पी)');
+                    const redirects = data.query?.redirects || [];
+                    const isRedir = redirects.length > 0;
+                    liveWikiStatus = {
+                        exists: true,
+                        isRedirect: isRedir,
+                        isDisambig: isDis,
+                        target: p.title
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn('Live API check failed:', e);
+        }
+
+        let wikiRulePassed = liveWikiStatus.exists && !liveWikiStatus.isDisambig;
+        let wikiDesc = '';
+        if (!liveWikiStatus.exists) {
+            wikiDesc = `विकिपीडिया पर '${word}' नाम का कोई प्रमाणित पृष्ठ नहीं मिला (लाल कड़ी)।`;
+        } else if (liveWikiStatus.isDisambig) {
+            wikiDesc = `विकिपीडिया पर '${liveWikiStatus.target}' एक बहुविकल्पी पृष्ठ (WP:DISAMBIG) है। सीधी कड़ी निषेध है।`;
+            isProhibited = true;
+            if (!primaryReason) primaryReason = `WP:DISAMBIG: बहुविकल्पी पृष्ठों की सीधी कड़ी नहीं बनाई जाती, विशिष्ट लक्ष्य चुना जाना चाहिए।`;
+        } else if (liveWikiStatus.isRedirect) {
+            wikiDesc = `विकिपीडिया पर यह प्रमाणित पुनर्निर्देशन (Redirect) है जो मूल पृष्ठ '${liveWikiStatus.target}' पर ले जाता है।`;
+        } else {
+            wikiDesc = `विकिपीडिया पर '${liveWikiStatus.target}' शीर्षक से प्रमाणित पृष्ठ मौजूद है (नीली कड़ी)।`;
+        }
+
+        rules.push({
+            ruleId: 'wiki-live',
+            name: '7. विकिपीडिया सर्वर स्थिति (Live Action API)',
+            passed: wikiRulePassed,
+            desc: wikiDesc
+        });
+
+        const isLinkable = !isProhibited && liveWikiStatus.exists && !liveWikiStatus.isDisambig;
+
+        return {
+            term: word,
+            isLinkable: isLinkable,
+            isBlacklisted: isBlacklisted,
+            primaryReason: primaryReason || (isLinkable ? 'यह पद विकिपीडिया के सभी 7 तार्किक कड़ीकरण मानकों पर खरा उतरता है।' : 'यह पद विकिपीडिया पर मौजूद नहीं है।'),
+            rules: rules,
+            liveWikiStatus: liveWikiStatus
+        };
+    }
+
+    async function handleTestWordLinkability() {
+        const inputVal = safeGetValue(DOM.wordTesterInput).trim();
+        if (!inputVal) {
+            alert('कृपया जाँच हेतु कोई शब्द या पद लिखें।');
+            return;
+        }
+
+        if (DOM.wordTesterBtn) {
+            DOM.wordTesterBtn.disabled = true;
+            DOM.wordTesterBtn.textContent = 'जाँच हो रही है...';
+        }
+
+        try {
+            const data = await auditWordLinkability(inputVal, state.lang, state.pageTitle);
+            if (!data) return;
+
+            safeSetDisplay(DOM.wordTesterResultWrap, 'block');
+
+            // 1. निर्णय कार्ड रेंडरिंग
+            const cardClass = data.isLinkable ? 'verdict-approved' : 'verdict-rejected';
+            const badgeClass = data.isLinkable ? 'badge-success' : 'badge-danger';
+            const badgeText = data.isLinkable ? '✓ तार्किक आंतरिक कड़ी (स्वीकृत)' : 'कड़ीकरण निषेध (अस्वीकृत)';
+
+            if (DOM.wordTesterVerdictCard) {
+                DOM.wordTesterVerdictCard.className = `verdict-card ${cardClass}`;
+                DOM.wordTesterVerdictCard.innerHTML = `
+                    <div class="verdict-header">
+                        <span class="verdict-term">[[${escapeHtml(data.term)}]]</span>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="verdict-desc">${escapeHtml(data.primaryReason)}</div>
+                    <div class="verdict-actions">
+                        <button type="button" class="btn btn-sm ${data.isBlacklisted ? 'btn-outline text-danger' : 'btn-secondary'}" id="btn-toggle-word-blacklist">
+                            ${data.isBlacklisted ? 'बहिष्कार सूची से निकालें' : 'कस्टम बहिष्कार सूची में जोड़ें'}
+                        </button>
+                        ${data.liveWikiStatus.exists ? `
+                            <a href="https://${state.lang}.wikipedia.org/wiki/${encodeURIComponent(data.liveWikiStatus.target)}" target="_blank" class="btn btn-outline btn-sm">
+                                विकिपीडिया पर लेख देखें
+                            </a>
+                        ` : ''}
+                    </div>
+                `;
+
+                const toggleBlBtn = $('btn-toggle-word-blacklist');
+                if (toggleBlBtn) {
+                    toggleBlBtn.addEventListener('click', () => {
+                        const termLower = data.term.toLowerCase();
+                        if (state.customBlacklist.has(termLower)) {
+                            state.customBlacklist.delete(termLower);
+                            saveBlacklist();
+                            renderBlacklistTags();
+                            showToast(`'${data.term}' बहिष्कार सूची से हटाया गया`);
+                        } else {
+                            state.customBlacklist.add(termLower);
+                            saveBlacklist();
+                            renderBlacklistTags();
+                            if (state.suggestions && state.suggestions.length > 0) {
+                                state.suggestions = state.suggestions.filter(item => item.term.toLowerCase() !== termLower);
+                                renderSuggestionsTable();
+                                recalculateModifiedWikitext();
+                            }
+                            showToast(`'${data.term}' बहिष्कार सूची में जोड़ा गया`);
+                        }
+                        handleTestWordLinkability();
+                    });
+                }
+            }
+
+            // 2. 7-नियम ऑडिट सूची रेंडरिंग
+            if (DOM.wordTesterRulesGrid) {
+                DOM.wordTesterRulesGrid.innerHTML = data.rules.map(r => `
+                    <div class="rule-audit-item">
+                        <div class="rule-audit-meta">
+                            <div class="rule-audit-title">${escapeHtml(r.name)}</div>
+                            <div class="rule-audit-desc">${escapeHtml(r.desc)}</div>
+                        </div>
+                        <span class="badge ${r.passed ? 'badge-success' : 'badge-danger'}" style="font-size: 0.76rem;">
+                            ${r.passed ? '✓ मान्य' : 'अस्वीकृत'}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            console.error('Word test error:', err);
+            alert(`जाँच में त्रुटि: ${err.message}`);
+        } finally {
+            if (DOM.wordTesterBtn) {
+                DOM.wordTesterBtn.disabled = false;
+                DOM.wordTesterBtn.textContent = 'तार्किक नियम जाँचें';
+            }
+        }
+    }
+
+    function renderPolicyWords(filterQuery = '') {
+        if (!DOM.policyChipsContainer) return;
+
+        const langSet = NEVER_LINK_WORDS[state.lang] || NEVER_LINK_WORDS.hi;
+        const wordsArray = Array.from(langSet);
+        const q = (filterQuery || '').trim().toLowerCase();
+
+        const filtered = q ? wordsArray.filter(w => w.toLowerCase().includes(q)) : wordsArray;
+
+        safeSetText(DOM.policyWordsCount, `कुल ${filtered.length} सामान्य शब्द सुरक्षित`);
+
+        if (filtered.length === 0) {
+            DOM.policyChipsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.82rem; padding: 10px;">कोई मिलान नहीं मिला।</span>';
+            return;
+        }
+
+        DOM.policyChipsContainer.innerHTML = filtered.map(w => `
+            <span class="policy-chip" title="क्लिक कर नियम जाँचें" style="cursor: pointer;" data-word="${escapeHtml(w)}">
+                ${escapeHtml(w)}
+            </span>
+        `).join('');
+
+        DOM.policyChipsContainer.querySelectorAll('.policy-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const w = chip.dataset.word;
+                const tabTester = $('btn-tab-bl-tester');
+                if (tabTester) tabTester.click();
+                safeSetValue(DOM.wordTesterInput, w);
+                handleTestWordLinkability();
+            });
+        });
     }
 
     // ================== ऑफ़लाइन ऑल-इन-वन HTML ==================
