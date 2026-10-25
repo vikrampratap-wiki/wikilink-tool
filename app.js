@@ -130,6 +130,7 @@
             'पुस्तक', 'किताब', 'पत्र', 'अखबार', 'कागज', 'कलम',
             'भाषा', 'शब्द', 'अर्थ', 'वाक्य', 'बातचीत', 'विचार', 'सोच', 'ज्ञान', 'शिक्षा',
             'रूप', 'रंग', 'आकार', 'प्रकार', 'तरह', 'विधि', 'तरीका', 'नियम', 'कारण', 'प्रभाव', 'उद्देश्य', 'लक्ष्य',
+            'सभा', 'दल', 'समूह', 'मंडल', 'संस्था', 'विभाग', 'आयोग', 'समिति', 'बैठक', 'सम्मेलन',
             
             // सामान्य पदवी / भूमिका (Generic Roles/Occupations)
             'राजा', 'रानी', 'मंत्री', 'शिक्षक', 'गुरु', 'छात्र', 'विद्यार्थी', 'लेखक', 'कवि', 'वैज्ञानिक', 'खिलाड़ी', 'नेता', 'अभिनेता', 'डॉक्टर', 'वैद्य', 'सिपाही', 'सैनिक', 'पुलिस', 'व्यापारी', 'किसान', 'मजदूर',
@@ -1795,9 +1796,9 @@
 
         const candidates = new Set();
 
-        // N-grams (1, 2, 3 शब्द)
+        // N-grams (1, 2, 3, 4 शब्द - संयुक्त पदों की पूर्ण पहचान)
         for (let i = 0; i < words.length; i++) {
-            for (let n = 3; n >= 1; n--) {
+            for (let n = 4; n >= 1; n--) {
                 if (i + n <= words.length) {
                     const phrase = words.slice(i, i + n).join(' ').trim();
                     if (isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet, lang, filterCommonWords, preventSelfLink)) {
@@ -1839,7 +1840,11 @@
         if (filterStopwords) {
             if (stopwordSet.has(lower)) return false;
             const parts = lower.split(' ');
-            if (parts.length > 1 && parts.every(p => stopwordSet.has(p))) return false;
+            if (parts.length > 1) {
+                if (parts.every(p => stopwordSet.has(p))) return false;
+                // बहु-शब्द पद का पहला या अंतिम शब्द कभी भी परसर्ग / स्टॉपवर्ड (का, के, की, में, से, ने आदि) नहीं होना चाहिए
+                if (stopwordSet.has(parts[0]) || stopwordSet.has(parts[parts.length - 1])) return false;
+            }
         }
 
         return true;
@@ -1857,8 +1862,16 @@
         const filterCommonWords = DOM.optFilterCommonWords ? DOM.optFilterCommonWords.checked : true;
         const preventSelfLink = DOM.optPreventSelfLink ? DOM.optPreventSelfLink.checked : true;
 
+        // 1. लंबाई के अनुसार अवरोही क्रम (दीर्घतम संयुक्त पद पहले - Longest compound terms first)
         const candidateArray = Array.from(candidateMap.keys());
         candidateArray.sort((a, b) => b.length - a.length);
+
+        // अधिग्रहित अंतरालों की सूची (Claimed non-overlapping character spans)
+        const claimedIntervals = [];
+
+        function isSpanOverlapping(start, end) {
+            return claimedIntervals.some(span => Math.max(start, span.start) < Math.min(end, span.end));
+        }
 
         for (const term of candidateArray) {
             const info = candidateMap.get(term);
@@ -1892,13 +1905,30 @@
             if (status === 'red' && skipRed) continue;
             if (status === 'disambig' && skipDisambig) continue;
 
-            const regex = createTermRegex(term);
-            const match = regex.exec(cleanText);
+            // पाठ में इस पद की सभी आवृत्तियाँ खोजें और पहली अनाच्छादित (Non-overlapping) आवृत्ति चुनें
+            const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\x01\x02]|$)`, 'gu');
+            let match;
+            let standaloneMatch = null;
 
-            if (match && !seenTerms.has(term.toLowerCase())) {
+            while ((match = regex.exec(cleanText)) !== null) {
+                const prefix = match[1] || '';
+                const termStart = match.index + prefix.length;
+                const termEnd = termStart + term.length;
+
+                // यदि यह आवृत्ति किसी पहले से स्वीकृत दीर्घतर संयुक्त पद (जैसे 'भारतीय संविधान सभा') के अंदर नहीं आती
+                if (!isSpanOverlapping(termStart, termEnd)) {
+                    standaloneMatch = { start: termStart, end: termEnd, matchIndex: match.index };
+                    break;
+                }
+            }
+
+            // केवल तभी सुझाव में जोड़ें जब इसकी कोई स्वतंत्र अनाच्छादित आवृत्ति उपलब्ध हो
+            if (standaloneMatch && !seenTerms.has(term.toLowerCase())) {
                 seenTerms.add(term.toLowerCase());
+                claimedIntervals.push({ start: standaloneMatch.start, end: standaloneMatch.end, term: term });
 
-                const index = match.index;
+                const index = standaloneMatch.matchIndex;
                 const start = Math.max(0, index - 35);
                 const end = Math.min(cleanText.length, index + term.length + 35);
                 let context = cleanText.substring(start, end).replace(/[\x01\x02]?PROTECTED_\d+[\x01\x02]?/g, '...');
@@ -2153,6 +2183,8 @@
     function applyReplacements(text, activeSuggestions, firstOnly, cleanPipes) {
         let result = text;
         const sorted = [...activeSuggestions].sort((a, b) => b.term.length - a.term.length);
+        const linkTokens = [];
+        let tokenIndex = 0;
 
         sorted.forEach(s => {
             const escaped = s.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -2171,8 +2203,15 @@
             result = result.replace(pattern, (match, prefix, termMatch, suffix) => {
                 if (firstOnly && replaced) return match;
                 replaced = true;
-                return `${prefix}${wikilink}${suffix}`;
+                const placeholder = `\x01NEWLINK_${tokenIndex++}\x02`;
+                linkTokens.push({ placeholder, wikilink });
+                return `${prefix}${placeholder}${suffix}`;
             });
+        });
+
+        // सभी नई कड़ियों को सुरक्षित रूप से पुनर्स्थापित करें ताकि कोई भी आंतरिक उप-शब्द न टूटे
+        linkTokens.forEach(t => {
+            result = result.split(t.placeholder).join(t.wikilink);
         });
 
         return result;
