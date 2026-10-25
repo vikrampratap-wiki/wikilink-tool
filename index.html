@@ -212,6 +212,8 @@
                     </div>
                     <div class="filter-chips-grid">
                         <button type="button" class="filter-chip-toggle active" data-target="opt-first-only" title="WP:OVERLINKING नियम">✓ प्रथम उल्लेख (WP:OVERLINK)</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-filter-common-words" title="सामान्य व दैनिक शब्द जिनकी कड़ी नहीं बनाई जाती (WP:NOTLINKED)">✓ सामान्य शब्द छोड़ें (WP:NOTLINKED)</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-prevent-self-link" title="वर्तमान लेख शीर्षक की चक्रीय कड़ी रोकें (WP:CIRCULAR)">✓ स्व-कड़ीकरण रोकें</button>
                         <button type="button" class="filter-chip-toggle active" data-target="opt-skip-disambig" title="WP:DISAMBIG नियम">✓ बहुविकल्पी निवारण</button>
                         <button type="button" class="filter-chip-toggle active" data-target="opt-skip-dates" title="WP:DATELINK नियम">✓ वर्ष व दिनांक छन्नी</button>
                         <button type="button" class="filter-chip-toggle active" data-target="opt-skip-units" title="मात्रक व इकाइयाँ छोड़ें">✓ मात्रक व इकाइयाँ छन्नी</button>
@@ -293,6 +295,22 @@
                                 <div class="setting-desc">
                                     <strong>सामान्य शब्द व व्याकरणिक पद छोड़ें</strong>
                                     <p>आम सर्वनाम, सहायक क्रियाएँ (है, था, और, का, के, में आदि) बाहर रहेंगे।</p>
+                                </div>
+                            </label>
+
+                            <label class="setting-item">
+                                <input type="checkbox" id="opt-filter-common-words" checked>
+                                <div class="setting-desc">
+                                    <strong>सामान्य दैनिक शब्द छोड़ें (WP:NOTLINKED / WP:COMMONWORDS)</strong>
+                                    <p>आम दैनिक शब्द (उदा: पानी, दिन, घर, लोग, बड़ा, काम) जिनकी विकिपीडिया नियमानुसार कड़ी नहीं बनाई जाती, उन्हें कड़ियों से बाहर रखें।</p>
+                                </div>
+                            </label>
+
+                            <label class="setting-item">
+                                <input type="checkbox" id="opt-prevent-self-link" checked>
+                                <div class="setting-desc">
+                                    <strong>स्व-कड़ीकरण रोकें (WP:CIRCULAR / WP:SELFREF)</strong>
+                                    <p>वर्तमान लेख के स्वयं के शीर्षक अथवा उसके समानार्थी रूपों की चक्रीय आंतरिक कड़ी न बनाएं।</p>
                                 </div>
                             </label>
 

@@ -112,6 +112,95 @@
         'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'
     ]);
 
+    // ================== शब्द जिनकी आंतरिक कड़ी नहीं बनाई जाती (WP:NOTLINKED / WP:COMMONWORDS) ==================
+    const NEVER_LINK_WORDS = {
+        hi: new Set([
+            // सामान्य दैनिक संज्ञाएँ (Everyday Common Nouns)
+            'दिन', 'रात', 'सुबह', 'शाम', 'दोपहर', 'समय', 'काल', 'घंटा', 'घंटे', 'मिनट', 'सेकंड', 'वर्ष', 'साल', 'महीना', 'माह',
+            'आज', 'कल', 'परसों', 'अब', 'तब', 'कब', 'कभी', 'हमेशा', 'सदा',
+            'मनुष्य', 'मानव', 'व्यक्ति', 'लोग', 'आदमी', 'औरत', 'स्त्री', 'पुरुष', 'बच्चा', 'बच्चे', 'बालक', 'लड़का', 'लड़की',
+            'परिवार', 'माता', 'पिता', 'माँ', 'बाप', 'भाई', 'बहन', 'बेटा', 'बेटी', 'दोस्त', 'मित्र', 'शत्रु',
+            'घर', 'मकान', 'कमरा', 'दरवाजा', 'खिड़की', 'दीवार', 'छत', 'जमीन', 'भूमि', 'रास्ता', 'सड़क', 'गली',
+            'पानी', 'जल', 'हवा', 'वायु', 'आग', 'अग्नि', 'रोशनी', 'प्रकाश', 'अंधेरा', 'छाया', 'धूप',
+            'भोजन', 'खाना', 'रोटी', 'चावल', 'दूध', 'फल', 'सब्जी', 'अनाज', 'भूख', 'प्यास',
+            'जीवन', 'मृत्यु', 'मौत', 'जन्म', 'आयु', 'उम्र', 'स्वास्थ्य', 'बीमारी', 'रोग',
+            'काम', 'कार्य', 'नौकरी', 'धंधा', 'मेहनत', 'मदद', 'सहायता', 'सहयोग',
+            'नाम', 'बात', 'चीज', 'वस्तु', 'भाग', 'हिंसा', 'शांति', 'युद्ध',
+            'देश', 'विदेश', 'शहर', 'गाँव', 'स्थान', 'जगह', 'संसार', 'दुनिया', 'विश्व', 'धरती', 'पृथ्वी', 'आकाश', 'समुद्र', 'नदी', 'पहाड़', 'पेड़', 'जंगल', 'पशु', 'पक्षी', 'जानवर',
+            'पुस्तक', 'किताब', 'पत्र', 'अखबार', 'कागज', 'कलम',
+            'भाषा', 'शब्द', 'अर्थ', 'वाक्य', 'बातचीत', 'विचार', 'सोच', 'ज्ञान', 'शिक्षा',
+            'रूप', 'रंग', 'आकार', 'प्रकार', 'तरह', 'विधि', 'तरीका', 'नियम', 'कारण', 'प्रभाव', 'उद्देश्य', 'लक्ष्य',
+            
+            // सामान्य पदवी / भूमिका (Generic Roles/Occupations)
+            'राजा', 'रानी', 'मंत्री', 'शिक्षक', 'गुरु', 'छात्र', 'विद्यार्थी', 'लेखक', 'कवि', 'वैज्ञानिक', 'खिलाड़ी', 'नेता', 'अभिनेता', 'डॉक्टर', 'वैद्य', 'सिपाही', 'सैनिक', 'पुलिस', 'व्यापारी', 'किसान', 'मजदूर',
+            
+            // दिशाएँ (Cardinal Directions)
+            'उत्तर', 'दक्षिण', 'पूर्व', 'पश्चिम', 'दिशा', 'दायें', 'बायें', 'ऊपर', 'नीचे',
+            
+            // सामान्य विशेषण (Generic Descriptive Adjectives)
+            'बड़ा', 'बड़ी', 'बड़े', 'छोटा', 'छोटी', 'छोटे', 'अच्छा', 'अच्छी', 'अच्छे', 'बुरा', 'बुरी', 'बुरे',
+            'नया', 'नई', 'नए', 'पुराना', 'पुरानी', 'पुराने', 'सुंदर', 'महत्वपूर्ण', 'प्रसिद्ध', 'प्रमुख', 'विशेष',
+            'सत्य', 'झूठ', 'सही', 'गलत', 'कठिन', 'सरल', 'आसान', 'भारी', 'हल्का', 'गहरा', 'ऊँचा', 'नीचा',
+            'गर्म', 'ठंडा', 'मीठा', 'कड़वा', 'सफेद', 'काला', 'लाल', 'नीला', 'हरा', 'पीला',
+            
+            // संख्याएँ व क्रम (Numbers & Ordinals)
+            'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ', 'दस',
+            'ग्यारह', 'बारह', 'तेरह', 'चौदह', 'पंद्रह', 'सोलह', 'सत्रह', 'अठारह', 'उन्नीस', 'बीस',
+            'तीस', 'चालीस', 'पचास', 'साठ', 'सत्तर', 'अस्सी', 'नब्बे', 'सौ', 'हजार', 'लाख', 'करोड़', 'अरब',
+            'पहला', 'पहली', 'पहले', 'दूसरा', 'दूसरी', 'दूसरे', 'तीसरा', 'तीसरी', 'तीसरे', 'चौथा', 'चौथी', 'चौथे', 'अंतिम', 'आखिरी',
+            
+            // दिन व महीने (Days & Months)
+            'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार',
+            'जनवरी', 'फ़रवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'सितम्बर', 'अक्टूबर', 'नवंबर', 'नवम्बर', 'दिसंबर', 'दिसम्बर',
+            
+            // सामान्य क्रिया पद व क्रियार्थक रूप
+            'होना', 'करना', 'कहना', 'पाना', 'देना', 'लेना', 'जाना', 'आना', 'रहना', 'बैठना', 'देखना', 'सुनना', 'बोलना', 'चलना', 'लिखना', 'पढ़ना', 'सीखना', 'बनाना', 'रखना', 'दिखाना',
+            
+            // अव्यय व संबंधबोधक
+            'आदि', 'इत्यादि', 'वगैरह', 'सहित', 'रहित', 'बिना', 'समान', 'जैसा', 'वैसा', 'जैसे', 'वैसे'
+        ]),
+        en: new Set([
+            'day', 'days', 'night', 'morning', 'evening', 'year', 'years', 'month', 'months', 'time', 'today', 'yesterday', 'tomorrow',
+            'man', 'men', 'woman', 'women', 'child', 'children', 'person', 'people', 'human', 'life', 'death', 'birth',
+            'home', 'house', 'room', 'door', 'water', 'air', 'fire', 'light', 'food', 'bread',
+            'city', 'town', 'village', 'country', 'world', 'earth', 'land', 'river', 'mountain', 'tree',
+            'book', 'paper', 'word', 'language', 'letter',
+            'king', 'queen', 'teacher', 'student', 'writer', 'player', 'doctor', 'soldier',
+            'north', 'south', 'east', 'west',
+            'big', 'small', 'good', 'bad', 'new', 'old', 'great', 'important', 'famous',
+            'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'hundred', 'thousand', 'million', 'billion',
+            'first', 'second', 'third', 'last',
+            'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+            'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'
+        ]),
+        sa: new Set([
+            'दिनम्', 'रात्रिः', 'समयः', 'कालः', 'वर्षम्', 'मासः', 'जलम्', 'वायुः', 'अग्निः', 'गृहम्',
+            'मनुष्यः', 'मानवः', 'जनः', 'बालकः', 'बालिका', 'माता', 'पिता', 'भ्राता', 'मित्रम्',
+            'जीवनम्', 'मृत्युः', 'जन्म', 'कार्यम्', 'कर्म', 'नाम', 'वचनम्', 'पुस्तकम्', 'भाषा',
+            'एकम्', 'द्वे', 'त्रीणि', 'चत्वारि', 'पञ्च', 'दश', 'शतम्', 'सहस्रम्',
+            'प्रथमः', 'द्वितीया', 'तृतीयः', 'अन्तिमः'
+        ])
+    };
+
+    function isNonLinkableWord(term, lang = 'hi') {
+        if (!term) return false;
+        const clean = term.trim().toLowerCase().replace(/_/g, ' ');
+        const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
+        if (langSet.has(clean)) return true;
+
+        const parts = clean.split(' ').filter(p => !STOPWORDS.hi.has(p) && !STOPWORDS.en.has(p));
+        if (parts.length > 0 && parts.every(p => langSet.has(p))) return true;
+
+        return false;
+    }
+
+    function isSelfLink(term, pageTitle) {
+        if (!term || !pageTitle) return false;
+        const normTerm = term.trim().toLowerCase().replace(/[_\s\-–—]/g, '');
+        const normTitle = pageTitle.trim().toLowerCase().replace(/[_\s\-–—]/g, '');
+        return normTerm === normTitle;
+    }
+
     // ================== अनुप्रयोग स्थिति (State) ==================
     const state = {
         lang: 'hi',
@@ -207,6 +296,8 @@
         DOM.optCleanPipes = $('opt-clean-pipes');
         DOM.optProtectStructures = $('opt-protect-structures');
         DOM.optFilterStopwords = $('opt-filter-stopwords');
+        DOM.optFilterCommonWords = $('opt-filter-common-words');
+        DOM.optPreventSelfLink = $('opt-prevent-self-link');
         DOM.optLinkScope = $('opt-link-scope');
         DOM.optMinLength = $('opt-min-length');
 
@@ -416,7 +507,16 @@
         });
 
         // सेटिंग्स चेकबॉक्स से चिप्स को सिंक करना
-        const filterSyncIds = ['opt-first-only', 'opt-skip-disambig', 'opt-skip-dates', 'opt-skip-units', 'opt-clean-pipes', 'opt-blue-only'];
+        const filterSyncIds = [
+            'opt-first-only',
+            'opt-filter-common-words',
+            'opt-prevent-self-link',
+            'opt-skip-disambig',
+            'opt-skip-dates',
+            'opt-skip-units',
+            'opt-clean-pipes',
+            'opt-blue-only'
+        ];
         filterSyncIds.forEach(id => {
             const cb = $(id);
             if (cb) {
@@ -1060,6 +1160,8 @@
             redLinks: [],
             syntaxIssues: [],
             dateUnitIssues: [],
+            commonWordIssues: [],
+            selfLinkIssues: [],
             arguments: []
         };
 
@@ -1097,7 +1199,44 @@
             });
         }
 
-        // 2. तर्क: व्यर्थ पाइप सिंटेक्स (Redundant Pipes)
+        // 2. तर्क: सामान्य दैनिक शब्द जिनकी कड़ी नहीं बनाई जाती (WP:NOTLINKED / WP:COMMONWORDS)
+        const commonWordIssues = [];
+        existingLinksList.forEach(item => {
+            if (isNonLinkableWord(item.target, lang)) {
+                commonWordIssues.push(item);
+                result.commonWordIssues.push(item);
+                result.total++;
+            }
+        });
+
+        if (commonWordIssues.length > 0) {
+            const examples = Array.from(new Set(commonWordIssues.map(c => `[[${c.target}]]`))).slice(0, 4).join(', ');
+            result.arguments.push({
+                type: 'common-word',
+                title: 'तर्क 2: सामान्य दैनिक शब्द (WP:NOTLINKED / WP:COMMONWORDS)',
+                desc: `विकिपीडिया नियमावली (WP:LINK) अनुसार सामान्य दैनिक भाषा के शब्द (उदा: ${examples}) जो सर्वविदित हैं, उनकी आंतरिक कड़ी नहीं बनाई जाती। ऐसे सामान्य शब्दों की कड़ियों को हटाना चाहिए।`
+            });
+        }
+
+        // 3. तर्क: स्व-कड़ीकरण दोष (WP:CIRCULAR / WP:SELFREF)
+        const selfLinkIssues = [];
+        existingLinksList.forEach(item => {
+            if (state.pageTitle && isSelfLink(item.target, state.pageTitle)) {
+                selfLinkIssues.push(item);
+                result.selfLinkIssues.push(item);
+                result.total++;
+            }
+        });
+
+        if (selfLinkIssues.length > 0) {
+            result.arguments.push({
+                type: 'self-link',
+                title: 'तर्क 3: स्व-कड़ीकरण दोष (WP:CIRCULAR / WP:SELFREF)',
+                desc: `वर्तमान लेख में स्वयं इसी लेख के शीर्षक ([[${state.pageTitle}]]) की आंतरिक कड़ी पाई गई है। विकिपीडिया नीति अनुसार कोई लेख स्वयं अपने शीर्षक को लिंक नहीं कर सकता।`
+            });
+        }
+
+        // 4. तर्क: व्यर्थ पाइप सिंटेक्स (Redundant Pipes)
         const redundantPipes = [];
         existingLinksList.forEach(item => {
             if (item.text && item.target.toLowerCase() === item.text.toLowerCase()) {
@@ -1110,12 +1249,12 @@
         if (redundantPipes.length > 0) {
             result.arguments.push({
                 type: 'syntax',
-                title: 'तर्क 2: व्यर्थ पाइप सिंटेक्स (Redundant Pipes)',
+                title: 'तर्क 4: व्यर्थ पाइप सिंटेक्स (Redundant Pipes)',
                 desc: `जब लक्ष्य पृष्ठ और प्रदर्शित शब्द समरूप हों (उदा: [[${redundantPipes[0].target}|${redundantPipes[0].text}]]), तो पाइप सिंटेक्स अनावश्यक भार बढ़ाता है। इसे स्वच्छ सिंटेक्स [[${redundantPipes[0].target}]] में बदलना तार्किक है।`
             });
         }
 
-        // 3. तर्क: सामान्य वर्ष एवं मात्रक (WP:DATELINK & Units)
+        // 5. तर्क: सामान्य वर्ष एवं मात्रक (WP:DATELINK & Units)
         const dateUnitIssues = [];
         existingLinksList.forEach(item => {
             if (/^\d{4}$/.test(item.target) || /^[०-९]{4}$/.test(item.target)) {
@@ -1132,12 +1271,12 @@
         if (dateUnitIssues.length > 0) {
             result.arguments.push({
                 type: 'date-unit',
-                title: 'तर्क 3: सामान्य वर्ष व मात्रक (WP:DATELINK)',
+                title: 'तर्क 5: सामान्य वर्ष व मात्रक (WP:DATELINK)',
                 desc: `विकिपीडिया नियमावली अनुसार अकेले 4-अंकीय वर्ष (उदा: 1947, 2024) या माप की इकाइयों (किमी, मीटर, किग्रा) को सामान्यतः आंतरिक कड़ी नहीं बनाना चाहिए जब तक कि वे किसी विशिष्ट प्रसंग से न जुड़े हों।`
             });
         }
 
-        // 4. तर्क: बहुविकल्पी पृष्ठ (WP:DISAMBIG)
+        // 6. तर्क: बहुविकल्पी पृष्ठ (WP:DISAMBIG)
         const disambigIssues = [];
         if (candidateMap) {
             candidateMap.forEach((info, term) => {
@@ -1152,12 +1291,12 @@
         if (disambigIssues.length > 0) {
             result.arguments.push({
                 type: 'disambig',
-                title: 'तर्क 4: बहुविकल्पी कड़ियाँ (WP:DISAMBIG)',
+                title: 'तर्क 6: बहुविकल्पी कड़ियाँ (WP:DISAMBIG)',
                 desc: `बहुविकल्पी पृष्ठ (उदा: ${disambigIssues.slice(0, 3).map(d => `[[${d}]]`).join(', ')}) सीधे लिंक होने से पाठक विशिष्ट लेख के बजाय विकल्पों की सूची पर पहुँचता है। ऐसे पदों को अचयनित करना अथवा विशिष्ट लक्ष्य से बदलना चाहिए।`
             });
         }
 
-        // 5. तर्क: अस्तित्वहीन लाल कड़ियाँ (Red Links)
+        // 7. तर्क: अस्तित्वहीन लाल कड़ियाँ (Red Links)
         const redLinkIssues = [];
         if (candidateMap) {
             candidateMap.forEach((info, term) => {
@@ -1172,7 +1311,7 @@
         if (redLinkIssues.length > 0) {
             result.arguments.push({
                 type: 'redlink',
-                title: 'तर्क 5: अस्तित्वहीन लाल कड़ियाँ (Red Links)',
+                title: 'तर्क 7: अस्तित्वहीन लाल कड़ियाँ (Red Links)',
                 desc: `विश्लेषण में ${redLinkIssues.length} शब्द विकिपीडिया पर अनुपलब्ध पाए गए हैं (उदा: ${redLinkIssues.slice(0, 3).map(r => `[[${r}]]`).join(', ')})। अस्तित्वहीन लाल कड़ियों को तब तक शामिल नहीं किया जाना चाहिए जब तक कि वे भविष्य के महत्वपूर्ण लेख न हों।`
             });
         }
@@ -1196,7 +1335,7 @@
         safeSetText('stat-overlinks', report.overlinks.length);
         safeSetText('stat-disambigs', report.disambigs.length);
         safeSetText('stat-red-links', report.redLinks.length);
-        safeSetText('stat-syntax-issues', report.syntaxIssues.length + report.dateUnitIssues.length);
+        safeSetText('stat-syntax-issues', report.syntaxIssues.length + report.dateUnitIssues.length + report.commonWordIssues.length + report.selfLinkIssues.length);
         safeSetText('logic-rule-count', `${report.arguments.length} तार्किक नियम सक्रिय`);
 
         const badge = $('box2-status-badge');
@@ -1237,6 +1376,33 @@
                 `;
             } else {
                 let html = '';
+                if (report.commonWordIssues.length > 0) {
+                    const uniqCommon = Array.from(new Set(report.commonWordIssues.map(c => c.target)));
+                    html += `
+                        <div class="defect-group">
+                            <div class="defect-group-title" style="color: #8b5cf6;">
+                                <span>सामान्य दैनिक शब्द (WP:NOTLINKED)</span>
+                                <span class="badge badge-tool">${report.commonWordIssues.length} पद</span>
+                            </div>
+                            <div class="defect-tags-list">
+                                ${uniqCommon.map(t => `<span class="defect-tag">[[${escapeHtml(t)}]]</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                if (report.selfLinkIssues.length > 0) {
+                    html += `
+                        <div class="defect-group">
+                            <div class="defect-group-title" style="color: #ec4899;">
+                                <span>स्व-कड़ीकरण (WP:CIRCULAR)</span>
+                                <span class="badge badge-tool">${report.selfLinkIssues.length} पद</span>
+                            </div>
+                            <div class="defect-tags-list">
+                                ${report.selfLinkIssues.map(s => `<span class="defect-tag">[[${escapeHtml(s.target)}]]</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
                 if (report.overlinks.length > 0) {
                     html += `
                         <div class="defect-group">
@@ -1285,7 +1451,7 @@
                                 <span class="badge badge-tool">${synAll.length} पद</span>
                             </div>
                             <div class="defect-tags-list">
-                                ${synAll.map(s => `<span class="defect-tag">${escapeHtml(s)}</span>`).join('')}
+                                ${synAll.map(s => `<span class="defect-tag">${escapeHtml(s.target || s)}</span>`).join('')}
                             </div>
                         </div>
                     `;
@@ -1311,7 +1477,25 @@
     function sanitizeContaminatedWikitext(rawText, contaminations) {
         let text = rawText;
 
-        // 1. दोहराई गई कड़ियाँ साफ करें (WP:OVERLINKING)
+        // 1. स्व-कड़ीकरण हटाएं (WP:CIRCULAR / WP:SELFREF)
+        if (state.pageTitle) {
+            const escapedTitle = escapeRegex(state.pageTitle.trim());
+            const selfRegex = new RegExp(`\\[\\[(${escapedTitle})(?:#[^\\]|]*)?(?:\\|([^\\]]+))?\\]\\]`, 'gi');
+            text = text.replace(selfRegex, (match, target, display) => display || target);
+        }
+
+        // 2. सामान्य शब्द जिनकी आंतरिक कड़ी नहीं बनाई जाती हटाएं (WP:NOTLINKED / WP:COMMONWORDS)
+        const commonSet = NEVER_LINK_WORDS[state.lang] || NEVER_LINK_WORDS.hi;
+        text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
+            if (/^(category|श्रेणी|file|image|चित्र|फ़ाइल):/i.test(target)) return match;
+            const norm = target.trim().toLowerCase().replace(/_/g, ' ');
+            if (commonSet.has(norm)) {
+                return display || target;
+            }
+            return match;
+        });
+
+        // 3. दोहराई गई कड़ियाँ साफ करें (WP:OVERLINKING)
         const seenTargets = new Set();
         text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
             if (/^(category|श्रेणी|file|image|चित्र|फ़ाइल):/i.test(target)) return match;
@@ -1326,7 +1510,7 @@
             }
         });
 
-        // 2. व्यर्थ पाइप हटाएं [[X|X]] -> [[X]]
+        // 4. व्यर्थ पाइप हटाएं [[X|X]] -> [[X]]
         text = text.replace(/\[\[([^\]|#]+)\|([^\]]+)\]\]/g, (match, target, display) => {
             if (target.trim().toLowerCase() === display.trim().toLowerCase()) {
                 return `[[${display.trim()}]]`;
@@ -1334,10 +1518,10 @@
             return match;
         });
 
-        // 3. अकेले 4-अंकीय वर्ष हटाएं [[1947]] -> 1947
+        // 5. अकेले 4-अंकीय वर्ष हटाएं [[1947]] -> 1947
         text = text.replace(/\[\[([0-9]{4}|[०-९]{4})\]\]/g, '$1');
 
-        // 4. मात्रक कड़ियाँ हटाएं [[किमी]] -> किमी
+        // 6. मात्रक कड़ियाँ हटाएं [[किमी]] -> किमी
         UNITS_OF_MEASURE.forEach(unit => {
             const escaped = escapeRegex(unit);
             const regex = new RegExp(`\\[\\[(${escaped})\\]\\]`, 'gi');
@@ -1486,6 +1670,8 @@
         const skipDates = DOM.optSkipDates ? DOM.optSkipDates.checked : true;
         const skipUnits = DOM.optSkipUnits ? DOM.optSkipUnits.checked : true;
         const filterStopwords = DOM.optFilterStopwords ? DOM.optFilterStopwords.checked : true;
+        const filterCommonWords = DOM.optFilterCommonWords ? DOM.optFilterCommonWords.checked : true;
+        const preventSelfLink = DOM.optPreventSelfLink ? DOM.optPreventSelfLink.checked : true;
 
         const stopwordSet = STOPWORDS[lang] || STOPWORDS.hi;
         const textWithoutTokens = cleanText.replace(/\x01PROTECTED_\d+\x02/g, ' ');
@@ -1504,7 +1690,7 @@
             for (let n = 3; n >= 1; n--) {
                 if (i + n <= words.length) {
                     const phrase = words.slice(i, i + n).join(' ').trim();
-                    if (isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet)) {
+                    if (isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet, lang, filterCommonWords, preventSelfLink)) {
                         candidates.add(phrase);
                     }
                 }
@@ -1514,16 +1700,32 @@
         return Array.from(candidates);
     }
 
-    function isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet) {
+    function isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet, lang = 'hi', filterCommonWords = true, preventSelfLink = true) {
         if (!phrase || phrase.length < minLength) return false;
         if (/^\d+$/.test(phrase)) return false;
 
         const lower = phrase.toLowerCase();
 
+        // 1. उपयोगकर्ता कस्टम बहिष्कार सूची
         if (state.customBlacklist && state.customBlacklist.has(lower)) return false;
+
+        // 2. स्व-कड़ीकरण रोकें (WP:CIRCULAR / WP:SELFREF)
+        if (preventSelfLink && state.pageTitle && isSelfLink(phrase, state.pageTitle)) {
+            return false;
+        }
+
+        // 3. सामान्य दैनिक शब्द जिनकी विकिपीडिया पर कड़ी नहीं बनाई जाती (WP:NOTLINKED / WP:COMMONWORDS)
+        if (filterCommonWords && isNonLinkableWord(phrase, lang)) {
+            return false;
+        }
+
+        // 4. सामान्य तिथियाँ व 4-अंकीय वर्ष (WP:DATELINK)
         if (skipDates && (DATE_WORDS.has(lower) || /^\d{4}$/.test(phrase) || /^[०-९]{4}$/.test(phrase))) return false;
+
+        // 5. माप व इकाइयाँ
         if (skipUnits && UNITS_OF_MEASURE.has(lower)) return false;
 
+        // 6. स्टॉपवर्ड्स
         if (filterStopwords) {
             if (stopwordSet.has(lower)) return false;
             const parts = lower.split(' ');
@@ -1542,6 +1744,8 @@
         const skipDisambig = DOM.optSkipDisambig ? DOM.optSkipDisambig.checked : true;
         const skipRed = DOM.optBlueOnly ? DOM.optBlueOnly.checked : true;
         const resolveRedirects = DOM.optResolveRedirects ? DOM.optResolveRedirects.checked : true;
+        const filterCommonWords = DOM.optFilterCommonWords ? DOM.optFilterCommonWords.checked : true;
+        const preventSelfLink = DOM.optPreventSelfLink ? DOM.optPreventSelfLink.checked : true;
 
         const candidateArray = Array.from(candidateMap.keys());
         candidateArray.sort((a, b) => b.length - a.length);
@@ -1549,6 +1753,17 @@
         for (const term of candidateArray) {
             const info = candidateMap.get(term);
             if (!info) continue;
+
+            // सुरक्षा जाँच: सामान्य दैनिक शब्द व स्व-कड़ीकरण का बहिष्कार
+            if (preventSelfLink && state.pageTitle && isSelfLink(term, state.pageTitle)) {
+                continue;
+            }
+            if (filterCommonWords && isNonLinkableWord(term, state.lang)) {
+                continue;
+            }
+            if (state.customBlacklist && state.customBlacklist.has(term.toLowerCase())) {
+                continue;
+            }
 
             const exists = info.exists;
             const isRedirect = info.isRedirect;
@@ -1707,7 +1922,7 @@
                     if (confirm(`क्या आप '${s.term}' को हमेशा के लिए बहिष्कार सूची (Blacklist) में जोड़ना चाहते हैं?`)) {
                         state.customBlacklist.add(s.term.toLowerCase());
                         saveBlacklist();
-                        state.suggestions = state.suggestions.filter(item => item.id !== s.id);
+                        state.suggestions = state.suggestions.filter(item => item.term.toLowerCase() !== s.term.toLowerCase());
                         renderSuggestionsTable();
                         recalculateModifiedWikitext();
                         showToast(`'${s.term}' बहिष्कार सूची में जोड़ा गया`);
@@ -2109,6 +2324,11 @@
             saveBlacklist();
             safeSetValue(DOM.blacklistNewInput, '');
             renderBlacklistTags();
+            if (state.suggestions && state.suggestions.length > 0) {
+                state.suggestions = state.suggestions.filter(item => item.term.toLowerCase() !== val);
+                renderSuggestionsTable();
+                recalculateModifiedWikitext();
+            }
             showToast(`'${val}' जोड़ा गया`);
         }
     }

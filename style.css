@@ -709,6 +709,12 @@ a:hover {
 .logic-argument-item.logic-date-unit {
     border-left-color: var(--text-secondary);
 }
+.logic-argument-item.logic-common-word {
+    border-left-color: #8b5cf6;
+}
+.logic-argument-item.logic-self-link {
+    border-left-color: #ec4899;
+}
 .logic-argument-item.logic-clean {
     border-left-color: var(--accent-green);
 }
