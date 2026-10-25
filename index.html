@@ -125,15 +125,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="form-group flex-1">
-                        <label class="form-label">त्वरित उदाहरण:</label>
-                        <div class="preset-buttons">
-                            <button type="button" class="btn btn-chip preset-btn" data-lang="hi" data-title="चन्द्रयान-३">चन्द्रयान-३</button>
-                            <button type="button" class="btn btn-chip preset-btn" data-lang="hi" data-title="तुलसीदास">तुलसीदास</button>
-                            <button type="button" class="btn btn-chip preset-btn" data-lang="hi" data-title="आर्यभट">आर्यभट</button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- 1.2 लेख लोड करने के विकल्प (Tabs) -->
@@ -149,7 +140,7 @@
                 <div id="tab-input-wiki" class="tab-content active">
                     <div class="form-group" style="margin-bottom: 6px;">
                         <div class="input-with-button">
-                            <input type="text" id="page-input" class="form-control" placeholder="उदा: चन्द्रयान-३ या पूरा URL" value="चन्द्रयान-३">
+                            <input type="text" id="page-input" class="form-control" placeholder="विकिपीडिया लेख का शीर्षक अथवा पूरा URL दर्ज करें...">
                             <button type="button" id="load-page-btn" class="btn btn-secondary">लेख लोड करें</button>
                         </div>
                     </div>
@@ -337,11 +328,15 @@
                     </div>
                 </div>
 
-                <!-- 1.5 बॉक्स 1 मुख्य विश्लेषण बटन -->
+                <!-- 1.5 बॉक्स 1 मुख्य विश्लेषण बटन एवं सक्रिय परीक्षण स्थिति -->
                 <div class="action-footer" style="margin-top: 10px;">
                     <button type="button" id="analyze-btn" class="btn btn-primary btn-lg" style="width: 100%;">
                         तार्किक विश्लेषण एवं दूषित तत्व पहचान (Analyze & Detect)
                     </button>
+                    <div id="analyze-status-banner" class="analyze-status-banner" style="display: none;">
+                        <span class="analyze-spinner"></span>
+                        <span id="analyze-status-text">परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की वैधता जाँची जा रही है...</span>
+                    </div>
                 </div>
             </section>
 

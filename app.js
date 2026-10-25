@@ -281,6 +281,8 @@
         DOM.loadSampleBtn = $('load-sample-btn');
         DOM.clearRawBtn = $('clear-raw-btn');
         DOM.analyzeBtn = $('analyze-btn');
+        DOM.analyzeStatusBanner = $('analyze-status-banner');
+        DOM.analyzeStatusText = $('analyze-status-text');
         DOM.themeToggleBtn = $('theme-toggle-btn');
         DOM.shortcutsBtn = $('shortcuts-btn');
 
@@ -1107,21 +1109,41 @@
         showProgress(true);
         safeSetDisplay(DOM.resultsCard, 'none');
 
+        // सक्रिय परीक्षण संकेत एवं संदेश (Immediate active testing indicator)
+        if (DOM.analyzeBtn) {
+            DOM.analyzeBtn.disabled = true;
+            DOM.analyzeBtn.innerHTML = '<span class="analyze-spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff; margin-right: 8px;"></span> परीक्षण प्रक्रिया शुरू हो गई है... विश्लेषण जारी है';
+        }
+        safeSetDisplay('analyze-status-banner', 'flex');
+        safeSetText('analyze-status-text', 'परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की सुरक्षा...');
+
+        const box2Badge = $('box2-status-badge');
+        if (box2Badge) {
+            box2Badge.className = 'workbench-badge badge-analyzing';
+            box2Badge.textContent = 'परीक्षण जारी है...';
+        }
+        safeSetText('box2-status-text', 'परीक्षण प्रक्रिया शुरू हो गई है: कड़ियों व संदूषण का विश्लेषण किया जा रहा है...');
+        setWorkflowStep(2);
+
         try {
             // चरण 1: संरचनात्मक सुरक्षा
+            safeSetText('analyze-status-text', 'परीक्षण प्रक्रिया (चरण 1/4): विकिटेक्स्ट संरचनाओं व साँचों की सुरक्षा...');
             updateProgress('चरण 1/4: विकिटेक्स्ट संरचनाओं का विश्लेषण...', 'टेम्पलेट, संदर्भ, मौजूदा कड़ियों की सुरक्षा...', 20, 'विकिटेक्स्ट पार्सिंग आरंभ...');
             const { cleanText, protectedTokens, existingLinks } = protectWikitextStructures(wikitext);
             state.existingLinks = existingLinks;
 
             // चरण 2: तार्किक उम्मीदवार निष्कासन
+            safeSetText('analyze-status-text', 'परीक्षण प्रक्रिया (चरण 2/4): उम्मीदवार शब्दों की तार्किक पहचान...');
             updateProgress('चरण 2/4: उम्मीदवार शब्दों की तार्किक पहचान...', 'n-gram, तिथियाँ व मात्रक फिल्टर...', 45, `संरक्षित मौजूदा कड़ियाँ: ${existingLinks.size}`);
             const candidates = extractCandidates(cleanText, state.lang);
 
             // चरण 3: विकिपीडिया API बैच सत्यापन
+            safeSetText('analyze-status-text', `परीक्षण प्रक्रिया (चरण 3/4): विकिपीडिया पर ${candidates.length} उम्मीदवार पदों का सत्यापन...`);
             updateProgress('चरण 3/4: विकिपीडिया पर सत्यापन...', `${candidates.length} उम्मीदवार पदों का सत्यापन...`, 70, `सत्यापन उम्मीदवार: ${candidates.length}`);
             const candidateMap = await verifyBatchTitles(state.lang, candidates);
 
             // चरण 4: सुझाव तालिका व डिफ़ निर्माण
+            safeSetText('analyze-status-text', 'परीक्षण प्रक्रिया (चरण 4/4): सुझाव तालिका व विकिपीडिया डिफ़ तैयार किया जा रहा है...');
             updateProgress('चरण 4/4: तार्किक कड़ियाँ एवं विकिपीडिया डिफ़ तैयार किया जा रहा है...', 'सुझाव तालिका और डिफ़ का निर्माण...', 90, 'फ़िल्टर एवं सत्यापन पूर्ण');
             buildSuggestions(cleanText, candidateMap);
 
@@ -1148,6 +1170,12 @@
             console.error('Analysis error:', err);
             alert(`विश्लेषण में त्रुटि: ${err.message}`);
             showProgress(false);
+        } finally {
+            if (DOM.analyzeBtn) {
+                DOM.analyzeBtn.disabled = false;
+                DOM.analyzeBtn.textContent = 'तार्किक विश्लेषण एवं दूषित तत्व पहचान (Analyze & Detect)';
+            }
+            safeSetDisplay('analyze-status-banner', 'none');
         }
     }
 
@@ -1641,9 +1669,11 @@
         text = text.replace(/<ref[\s\S]*?<\/ref>/gi, saveToken);
         text = text.replace(/<ref[^>]*\/>/gi, saveToken);
 
-        // टेम्पलेट्स {{ ... }}
-        text = text.replace(/\{\{[^{}]*\}\}/g, saveToken);
-        text = text.replace(/\{\{[^{}]*\}\}/g, saveToken);
+        // टेम्पलेट्स {{ ... }} (बहु-स्तरीय नेस्टेड साँचों की पूर्ण सुरक्षा)
+        let templateLoop = 0;
+        while (/\{\{[^{}]*\}\}/.test(text) && templateLoop++ < 20) {
+            text = text.replace(/\{\{[^{}]*\}\}/g, saveToken);
+        }
 
         // अनुभाग शीर्षक
         text = text.replace(/^==+[^=]+==+\s*$/gm, saveToken);
@@ -1664,6 +1694,42 @@
         return { cleanText: text, protectedTokens, existingLinks };
     }
 
+    // ================== सुरक्षित विकिटेक्स्ट पुनर्बहाली (Unprotect) ==================
+    function unprotectWikitext(text, protectedTokens) {
+        if (!text || !protectedTokens || protectedTokens.length === 0) return text;
+
+        let result = text;
+
+        // 1. उल्टे क्रम में (Reverse order) प्रतिस्थापन: बाहरी टोकन पहले सुलझेंगे ताकि नेस्टेड साँचे न छूटें
+        for (let i = protectedTokens.length - 1; i >= 0; i--) {
+            const t = protectedTokens[i];
+            if (result.includes(t.placeholder)) {
+                result = result.split(t.placeholder).join(t.original);
+            }
+        }
+
+        // 2. सुरक्षा चक्र: यदि बहु-स्तरीय नेस्टिंग या बिना नियंत्रण वर्णों वाला टोकन शेष हो
+        let safetyPasses = 0;
+        while (/[\x01\x02]?PROTECTED_\d+[\x01\x02]?/.test(result) && safetyPasses++ < 15) {
+            let changed = false;
+            for (let i = protectedTokens.length - 1; i >= 0; i--) {
+                const t = protectedTokens[i];
+                if (result.includes(t.placeholder)) {
+                    result = result.split(t.placeholder).join(t.original);
+                    changed = true;
+                }
+                const stripped = t.placeholder.replace(/[\x01\x02]/g, '');
+                if (result.includes(stripped)) {
+                    result = result.split(stripped).join(t.original);
+                    changed = true;
+                }
+            }
+            if (!changed) break;
+        }
+
+        return result;
+    }
+
     // ================== उम्मीदवार निष्कासन ==================
     function extractCandidates(cleanText, lang) {
         const minLength = DOM.optMinLength ? parseInt(DOM.optMinLength.value, 10) || 3 : 3;
@@ -1674,7 +1740,7 @@
         const preventSelfLink = DOM.optPreventSelfLink ? DOM.optPreventSelfLink.checked : true;
 
         const stopwordSet = STOPWORDS[lang] || STOPWORDS.hi;
-        const textWithoutTokens = cleanText.replace(/\x01PROTECTED_\d+\x02/g, ' ');
+        const textWithoutTokens = cleanText.replace(/[\x01\x02]?PROTECTED_\d+[\x01\x02]?/g, ' ');
 
         const words = [];
         const wordRegex = /[\p{L}\p{M}\d_]+/gu;
@@ -1791,7 +1857,7 @@
                 const index = match.index;
                 const start = Math.max(0, index - 35);
                 const end = Math.min(cleanText.length, index + term.length + 35);
-                let context = cleanText.substring(start, end).replace(/\x01PROTECTED_\d+\x02/g, '...');
+                let context = cleanText.substring(start, end).replace(/[\x01\x02]?PROTECTED_\d+[\x01\x02]?/g, '...');
 
                 suggestions.push({
                     id: idCounter++,
@@ -2017,9 +2083,8 @@
             modifiedText = applyReplacements(modifiedText, activeSuggestions, firstOnly, cleanPipes);
         }
 
-        protectedTokens.forEach(t => {
-            modifiedText = modifiedText.replace(t.placeholder, t.original);
-        });
+        // सुरक्षित टोकनों की पूर्ण व सुरक्षित पुनर्बहाली
+        modifiedText = unprotectWikitext(modifiedText, protectedTokens);
 
         state.processedWikitext = modifiedText;
         safeSetValue(DOM.finalWikitextOutput, modifiedText);
@@ -2448,14 +2513,54 @@
             return;
         }
 
-        const editUrl = `https://${state.lang}.wikipedia.org/w/index.php?title=${encodeURIComponent(title)}&action=edit`;
+        const modifiedText = safeGetValue(DOM.finalWikitextOutput) || state.processedWikitext || state.originalWikitext;
+        if (!modifiedText) {
+            alert('संशोधित विकिटेक्स्ट उपलब्ध नहीं है। कृपया पहले लेख का विश्लेषण करें।');
+            return;
+        }
+
+        // 1. संशोधित विकिटेक्स्ट क्लिपबोर्ड पर भी कॉपी करें (अतिरिक्त सुरक्षा व बैकअप)
         copyModifiedWikitext();
 
-        const openWin = window.open(editUrl, '_blank');
-        if (openWin) {
-            alert(`विकिपीडिया संपादन पृष्ठ खोला गया है।\nसंशोधित विकिटेक्स्ट क्लिपबोर्ड पर कॉपी हो चुका है, वहाँ पेस्ट कर सुरक्षित करें।`);
-        } else {
-            alert(`कृपया इस लिंक पर जाएँ: ${editUrl}`);
+        // 2. विकिपीडिया POST फॉर्म सबमिट करें ताकि विकिपीडिया पर पुराना लेख न दिखकर नया सुधारा गया लेख व डिफ़ सीधे खुले
+        try {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `https://${state.lang}.wikipedia.org/w/index.php?title=${encodeURIComponent(title)}&action=submit`;
+            form.target = '_blank';
+
+            // नया सुधारा गया लेख विकिटेक्स्ट
+            const textarea = document.createElement('textarea');
+            textarea.name = 'wpTextbox1';
+            textarea.value = modifiedText;
+            textarea.style.display = 'none';
+            form.appendChild(textarea);
+
+            // डिफ़/अंतर सक्रिय करना ताकि विकिपीडिया पर भी किए गए सुधार सीधे दिखें
+            const diffInput = document.createElement('input');
+            diffInput.type = 'hidden';
+            diffInput.name = 'wpDiff';
+            diffInput.value = 'अंतर दिखाएँ';
+            form.appendChild(diffInput);
+
+            // संपादन सारांश (Edit Summary)
+            const summaryInput = document.createElement('input');
+            summaryInput.type = 'hidden';
+            summaryInput.name = 'wpSummary';
+            summaryInput.value = 'तार्किक आंतरिक कड़ियाँ जोड़ी गईं (विकिपीडिया दिशानिर्देश अनुसार)';
+            form.appendChild(summaryInput);
+
+            document.body.appendChild(form);
+            form.submit();
+            setTimeout(() => {
+                if (form.parentNode) form.parentNode.removeChild(form);
+            }, 1000);
+
+            showToast('नया सुधारा गया लेख विकिपीडिया पर लोड किया जा रहा है...');
+        } catch (e) {
+            console.error('Form submission failed, fallback to direct url:', e);
+            const editUrl = `https://${state.lang}.wikipedia.org/w/index.php?title=${encodeURIComponent(title)}&action=edit`;
+            window.open(editUrl, '_blank');
         }
     }
 
