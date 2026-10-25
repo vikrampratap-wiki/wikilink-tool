@@ -157,6 +157,8 @@
         DOM.compactTitleText = $('compact-title-text');
         DOM.compactLangText = $('compact-lang-text');
         DOM.btnToggleInputCard = $('btn-toggle-input-card');
+        DOM.dualWorkbenchContainer = $('dual-workbench-container');
+        DOM.workbenchFlowStrip = $('workbench-flow-strip');
 
         // बॉक्स 2 (दूषित लेख एवं तार्किक निदान)
         DOM.contaminatedBoxCard = $('contaminated-box-card');
@@ -170,7 +172,9 @@
         DOM.btnCopyContaminated = $('btn-copy-contaminated');
         DOM.btnSanitizeContaminated = $('btn-sanitize-contaminated');
         DOM.contaminationArgumentsContainer = $('contamination-arguments-container');
+        DOM.contaminationDetailsContainer = $('contamination-details-container');
         DOM.logicRuleCount = $('logic-rule-count');
+        DOM.box2StatusText = $('box2-status-text');
 
         // लोडिंग विकल्प
         DOM.pageInput = $('page-input');
@@ -388,7 +392,52 @@
 
         // सेटिंग्स टॉगल
         safeAddListener(DOM.toggleSettingsBtn, 'click', () => {
-            if (DOM.settingsAccordion) DOM.settingsAccordion.classList.toggle('collapsed');
+            const body = $('settings-body');
+            if (body) {
+                const isHidden = (body.style.display === 'none' || !body.style.display);
+                body.style.display = isHidden ? 'block' : 'none';
+                const arrow = DOM.toggleSettingsBtn ? DOM.toggleSettingsBtn.querySelector('.accordion-arrow') : null;
+                if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+            }
+        });
+
+        // बॉक्स 1: सक्रिय तार्किक छन्नी चिप्स
+        document.querySelectorAll('.filter-chip-toggle').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const targetId = chip.dataset.target;
+                const checkbox = $(targetId);
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    chip.classList.toggle('active', checkbox.checked);
+                    const name = chip.textContent.replace('✓', '').trim();
+                    showToast(`${name}: ${checkbox.checked ? 'सक्रिय' : 'निष्क्रिय'}`);
+                }
+            });
+        });
+
+        // सेटिंग्स चेकबॉक्स से चिप्स को सिंक करना
+        const filterSyncIds = ['opt-first-only', 'opt-skip-disambig', 'opt-skip-dates', 'opt-skip-units', 'opt-clean-pipes', 'opt-blue-only'];
+        filterSyncIds.forEach(id => {
+            const cb = $(id);
+            if (cb) {
+                cb.addEventListener('change', () => {
+                    const chip = document.querySelector(`.filter-chip-toggle[data-target="${id}"]`);
+                    if (chip) chip.classList.toggle('active', cb.checked);
+                });
+            }
+        });
+
+        // बॉक्स 2: उप-टैब्स स्विचिंग
+        document.querySelectorAll('.box2-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabKey = btn.dataset.box2Tab;
+                document.querySelectorAll('.box2-tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.querySelectorAll('.box2-tab-pane').forEach(p => p.style.display = 'none');
+                const activePane = $(`box2-pane-${tabKey}`);
+                if (activePane) activePane.style.display = 'block';
+            });
         });
 
         // विकिटेक्स्ट इनपुट काउंट
@@ -530,13 +579,21 @@
         if (DOM.btnDiffUnified) DOM.btnDiffUnified.classList.toggle('active-chip', state.diffMode === 'unified');
     }
 
+    function setWorkflowStep(stepNum) {
+        ['flow-step-1', 'flow-step-2', 'flow-step-3'].forEach((id, idx) => {
+            const el = $(id);
+            if (el) el.classList.toggle('active', idx + 1 <= stepNum);
+        });
+    }
+
     function toggleInputControlCard() {
-        if (!DOM.inputControlCard) return;
-        const isHidden = DOM.inputControlCard.style.display === 'none';
-        DOM.inputControlCard.style.display = isHidden ? 'flex' : 'none';
-        safeSetText(DOM.btnToggleInputCard, isHidden ? 'इनपुट पटल छिपाएं' : 'इनपुट और सेटिंग्स बदलें');
+        const container = $('dual-workbench-container') || DOM.inputControlCard;
+        if (!container) return;
+        const isHidden = (container.style.display === 'none');
+        container.style.display = isHidden ? 'grid' : 'none';
+        safeSetText(DOM.btnToggleInputCard, isHidden ? 'कार्यपटल (बॉक्स 1 व 2) छिपाएं' : 'कार्यपटल (बॉक्स 1 व 2) दिखाएं');
         if (isHidden) {
-            DOM.inputControlCard.scrollIntoView({ behavior: 'smooth' });
+            container.scrollIntoView({ behavior: 'smooth' });
         }
     }
 
@@ -1148,6 +1205,11 @@
             badge.textContent = report.total > 0 ? `${report.total} दूषित तत्व चिह्नित` : 'स्वच्छ लेख';
         }
 
+        const card = $('contaminated-box-card');
+        if (card) {
+            card.classList.remove('is-sanitized');
+        }
+
         const sanitizeBtn = $('btn-sanitize-contaminated');
         if (sanitizeBtn) {
             sanitizeBtn.disabled = (report.total === 0);
@@ -1163,6 +1225,87 @@
                 </div>
             `).join('');
         }
+
+        // विस्तृत दोष सूची (Contamination Details Container)
+        const detailsContainer = $('contamination-details-container');
+        if (detailsContainer) {
+            if (report.total === 0) {
+                detailsContainer.innerHTML = `
+                    <div style="color: var(--accent-green); font-size: 0.85rem; padding: 16px; text-align: center; font-weight: 600;">
+                        ✓ विकिटेक्स्ट में कोई अति-कड़ीकरण, बहुविकल्पी पद अथवा सिंटेक्स दोष नहीं मिला। लेख पूरी तरह शुद्ध है।
+                    </div>
+                `;
+            } else {
+                let html = '';
+                if (report.overlinks.length > 0) {
+                    html += `
+                        <div class="defect-group">
+                            <div class="defect-group-title" style="color: var(--accent-orange);">
+                                <span>अति-कड़ीकरण (WP:OVERLINKING)</span>
+                                <span class="badge badge-tool">${report.overlinks.length} पद</span>
+                            </div>
+                            <div class="defect-tags-list">
+                                ${report.overlinks.map(o => `<span class="defect-tag">[[${escapeHtml(o.term)}]] × ${o.count}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                if (report.disambigs.length > 0) {
+                    html += `
+                        <div class="defect-group">
+                            <div class="defect-group-title" style="color: var(--accent-red);">
+                                <span>बहुविकल्पी कड़ियाँ (WP:DISAMBIG)</span>
+                                <span class="badge badge-tool">${report.disambigs.length} पद</span>
+                            </div>
+                            <div class="defect-tags-list">
+                                ${report.disambigs.map(d => `<span class="defect-tag">[[${escapeHtml(d.term)}]]</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                if (report.redLinks.length > 0) {
+                    html += `
+                        <div class="defect-group">
+                            <div class="defect-group-title" style="color: #ef4444;">
+                                <span>अस्तित्वहीन लाल कड़ियाँ</span>
+                                <span class="badge badge-tool">${report.redLinks.length} पद</span>
+                            </div>
+                            <div class="defect-tags-list">
+                                ${report.redLinks.map(r => `<span class="defect-tag">[[${escapeHtml(r.term)}]]</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                if (report.syntaxIssues.length > 0 || report.dateUnitIssues.length > 0) {
+                    const synAll = [...report.syntaxIssues, ...report.dateUnitIssues];
+                    html += `
+                        <div class="defect-group">
+                            <div class="defect-group-title" style="color: var(--text-secondary);">
+                                <span>व्यर्थ पाइप / सामान्य तिथियाँ / मात्रक</span>
+                                <span class="badge badge-tool">${synAll.length} पद</span>
+                            </div>
+                            <div class="defect-tags-list">
+                                ${synAll.map(s => `<span class="defect-tag">${escapeHtml(s)}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                detailsContainer.innerHTML = html;
+            }
+        }
+
+        // टैब लेबल्स में काउंट अद्यतन
+        safeSetText('tab-box2-logic-btn', `तार्किक निदान (${report.arguments.length})`);
+        safeSetText('tab-box2-details-btn', `दोष सूची (${report.total})`);
+
+        const statusText = $('box2-status-text');
+        if (statusText) {
+            statusText.textContent = report.total > 0 
+                ? `${report.total} संभावित दोष चिह्नित: WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK तार्किक आधार पर जाँचें`
+                : 'तार्किक नीति: कोई दोष नहीं मिला। लेख पूरी तरह शुद्ध है।';
+        }
+
+        setWorkflowStep(2);
     }
 
     function sanitizeContaminatedWikitext(rawText, contaminations) {
@@ -1216,11 +1359,19 @@
         safeSetValue(DOM.rawWikitextInput, cleanedText);
         updateCharCount();
 
+        // बॉक्स 2 विकिटेक्स्ट अद्यतन
+        safeSetValue('contaminated-wikitext-output', cleanedText);
+
         // बॉक्स 2 स्थिति अद्यतन
         const badge = $('box2-status-badge');
         if (badge) {
             badge.className = 'workbench-badge badge-sanitized';
             badge.textContent = 'तार्किक शुद्धिकरण पूर्ण';
+        }
+
+        const card = $('contaminated-box-card');
+        if (card) {
+            card.classList.add('is-sanitized');
         }
 
         const sanitizeBtn = $('btn-sanitize-contaminated');
@@ -1231,13 +1382,28 @@
 
         safeSetText('stat-total-contaminations', '0');
         safeSetText('stat-overlinks', '0');
+        safeSetText('stat-disambigs', '0');
+        safeSetText('stat-red-links', '0');
         safeSetText('stat-syntax-issues', '0');
+
+        const statusText = $('box2-status-text');
+        if (statusText) {
+            statusText.textContent = 'तार्किक शुद्धिकरण सफल: 0 दोष शेष। स्वच्छ एवं संतुलित विकिटेक्स्ट तैयार है।';
+        }
+
+        const detailsContainer = $('contamination-details-container');
+        if (detailsContainer) {
+            detailsContainer.innerHTML = `
+                <div style="color: var(--accent-green); font-size: 0.85rem; padding: 16px; text-align: center; font-weight: 600;">
+                    ✓ सभी पहचाने गए दूषित तत्व सफलतापूर्वक शुद्ध कर दिए गए हैं। विकिटेक्स्ट अब विकिपीडिया नीति अनुरूप है।
+                </div>
+            `;
+        }
 
         const container = $('contamination-arguments-container');
         if (container) {
             const successNote = document.createElement('div');
-            successNote.className = 'logic-argument-item';
-            successNote.style.borderLeftColor = 'var(--accent-green)';
+            successNote.className = 'logic-argument-item logic-clean';
             successNote.innerHTML = `
                 <div class="logic-argument-title" style="color: var(--accent-green);">तार्किक शुद्धिकरण सफलतापूर्वक लागू हुआ</div>
                 <div class="logic-argument-desc">अति-कड़ीकरण (WP:OVERLINKING), व्यर्थ पाइप सिंटेक्स तथा मात्रक कड़ियाँ तार्किक नियमों अनुसार शुद्ध कर दी गई हैं। नीचे मीडियाविकी डिफ़ में परिवर्तन देखें।</div>
@@ -1245,6 +1411,9 @@
             container.prepend(successNote);
         }
 
+        safeSetText('tab-box2-details-btn', 'दोष सूची (0)');
+
+        setWorkflowStep(3);
         recalculateModifiedWikitext();
         showToast('दूषित लेख तार्किक नियमों द्वारा शुद्ध कर दिया गया');
     }
@@ -2113,6 +2282,18 @@
             if (sanitizeBtn) {
                 sanitizeBtn.disabled = true;
                 sanitizeBtn.textContent = 'तार्किक रूप से दूषित लेख शुद्ध करें';
+            }
+
+            setWorkflowStep(1);
+            safeSetText('tab-box2-logic-btn', 'तार्किक निदान व नीतियां');
+            safeSetText('tab-box2-details-btn', 'दोष सूची विवरण');
+            const card = $('contaminated-box-card');
+            if (card) card.classList.remove('is-sanitized');
+            const statusText = $('box2-status-text');
+            if (statusText) statusText.textContent = 'तार्किक नीति: WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK एवं WP:PIPE का सत्यापन';
+            const detailsContainer = $('contamination-details-container');
+            if (detailsContainer) {
+                detailsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 16px; text-align: center;">पहचाने गए अति-कड़ीकृत शब्दों, बहुविकल्पी पदों एवं सिंटेक्स दोषों का पदवार विवरण यहाँ दिखेगा।</div>';
             }
 
             state.originalWikitext = '';

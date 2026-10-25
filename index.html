@@ -51,8 +51,26 @@
             </div>
             <div class="compact-actions">
                 <button type="button" id="btn-toggle-input-card" class="btn btn-secondary btn-sm">
-                    इनपुट और सेटिंग्स बदलें
+                    कार्यपटल (बॉक्स 1 व 2) दिखाएं / छिपाएं
                 </button>
+            </div>
+        </div>
+
+        <!-- तार्किक कार्यप्रवाह पट्टी (Workbench Workflow Stepper) -->
+        <div class="workbench-flow-strip" id="workbench-flow-strip">
+            <div class="flow-step step-1 active" id="flow-step-1">
+                <span class="flow-num">1</span>
+                <span class="flow-label">बॉक्स 1: मूल लेख एवं तार्किक छन्नी</span>
+            </div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-step step-2" id="flow-step-2">
+                <span class="flow-num">2</span>
+                <span class="flow-label">बॉक्स 2: दूषित लेख एवं तार्किक निदान</span>
+            </div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-step step-3" id="flow-step-3">
+                <span class="flow-num">3</span>
+                <span class="flow-label">समीक्षा एवं विकिपीडिया डिफ़</span>
             </div>
         </div>
 
@@ -63,13 +81,13 @@
                 <div class="workbench-card-header">
                     <div>
                         <h2 class="workbench-card-title">बॉक्स 1: मूल लेख एवं तार्किक छन्नी</h2>
-                        <small class="form-hint">यहाँ लेख दर्ज करें जिस पर छन्नी एवं तार्किक नियम चलेंगे</small>
+                        <small class="form-hint">यहाँ विकिपीडिया लेख लोड करें एवं कड़ियों की तार्किक छन्नी निर्धारित करें</small>
                     </div>
-                    <span class="workbench-badge badge-source">स्रोत कार्यपटल</span>
+                    <span class="workbench-badge badge-source">स्रोत व छन्नी</span>
                 </div>
 
-                <!-- भाषा चयन एवं त्वरित उदाहरण -->
-                <div class="form-row">
+                <!-- 1.1 भाषा चयन एवं त्वरित उदाहरण -->
+                <div class="form-row workbench-lang-row">
                     <div class="form-group flex-2">
                         <label for="lang-select" class="form-label">
                             विकिपीडिया भाषा चुनें (Language):
@@ -118,7 +136,7 @@
                     </div>
                 </div>
 
-                <!-- लेख लोड करने के विकल्प (Tabs) -->
+                <!-- 1.2 लेख लोड करने के विकल्प (Tabs) -->
                 <div class="tabs-nav input-tabs">
                     <button type="button" class="tab-btn active" data-tab="tab-input-wiki">शीर्षक / URL</button>
                     <button type="button" class="tab-btn" data-tab="tab-input-random">यादृच्छिक</button>
@@ -127,9 +145,9 @@
                     <button type="button" class="tab-btn" data-tab="tab-input-raw">पेस्ट करें</button>
                 </div>
 
-                <!-- विकल्प 1: विकिपीडिया शीर्षक / URL -->
+                <!-- इनपुट टैब सामग्री -->
                 <div id="tab-input-wiki" class="tab-content active">
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 6px;">
                         <div class="input-with-button">
                             <input type="text" id="page-input" class="form-control" placeholder="उदा: चन्द्रयान-३ या पूरा URL" value="चन्द्रयान-३">
                             <button type="button" id="load-page-btn" class="btn btn-secondary">लेख लोड करें</button>
@@ -137,9 +155,8 @@
                     </div>
                 </div>
 
-                <!-- विकल्प 2: यादृच्छिक लेख -->
                 <div id="tab-input-random" class="tab-content">
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 6px;">
                         <div class="input-with-button">
                             <button type="button" id="load-random-btn" class="btn btn-secondary">यादृच्छिक लेख प्राप्त करें</button>
                             <span id="random-loading-status" class="status-inline-text"></span>
@@ -147,14 +164,13 @@
                     </div>
                 </div>
 
-                <!-- विकल्प 3: श्रेणी से लोड करें -->
                 <div id="tab-input-category" class="tab-content">
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 6px;">
                         <div class="input-with-button">
                             <input type="text" id="category-input" class="form-control" placeholder="उदा: श्रेणी:हिन्दी साहित्य" value="श्रेणी:हिन्दी साहित्य">
                             <button type="button" id="load-category-btn" class="btn btn-secondary">श्रेणी खोजें</button>
                         </div>
-                        <div id="category-pages-wrap" style="display: none; margin-top: 10px;">
+                        <div id="category-pages-wrap" style="display: none; margin-top: 8px;">
                             <div class="input-with-button">
                                 <select id="category-pages-select" class="form-control"></select>
                                 <button type="button" id="load-selected-cat-page-btn" class="btn btn-primary">यह लेख लोड करें</button>
@@ -163,22 +179,20 @@
                     </div>
                 </div>
 
-                <!-- विकल्प 4: फ़ाइल अपलोड -->
                 <div id="tab-input-file" class="tab-content">
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 6px;">
                         <input type="file" id="file-upload-input" class="form-control" accept=".txt,.wiki,.text">
                     </div>
                 </div>
 
-                <!-- विकल्प 5: कच्चा पाठ पेस्ट -->
                 <div id="tab-input-raw" class="tab-content">
-                    <small class="form-hint">नीचे दिए गए टेक्स्ट बॉक्स में सीधे विकिटेक्स्ट या सादा पाठ लिखें।</small>
+                    <small class="form-hint" style="margin-bottom: 6px; display: block;">नीचे दिए गए टेक्स्ट बॉक्स में सीधे विकिटेक्स्ट या सादा पाठ लिखें अथवा संपादित करें।</small>
                 </div>
 
-                <!-- मूल विकिटेक्स्ट इनपुट क्षेत्र -->
-                <div class="form-group" style="margin-top: 8px;">
+                <!-- 1.3 मूल विकिटेक्स्ट इनपुट क्षेत्र -->
+                <div class="form-group" style="margin-bottom: 6px;">
                     <label for="raw-wikitext-input" class="form-label">मूल विकिटेक्स्ट / लेख पाठ:</label>
-                    <textarea id="raw-wikitext-input" class="form-control monospace-input" rows="8" placeholder="यहाँ अपना विकिपीडिया लेख का विकिटेक्स्ट दर्ज करें अथवा विकिपीडिया से लोड करें..."></textarea>
+                    <textarea id="raw-wikitext-input" class="form-control monospace-input workbench-textarea" placeholder="यहाँ अपना विकिपीडिया लेख का विकिटेक्स्ट दर्ज करें अथवा विकिपीडिया से लोड करें..."></textarea>
                     <div class="raw-tools">
                         <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
                         <div>
@@ -188,13 +202,27 @@
                     </div>
                 </div>
 
-                <!-- तार्किक कड़ियाँ सेटिंग्स (Collapsible) -->
-                <div class="settings-accordion">
-                    <div class="settings-header" id="toggle-settings-btn">
-                        <span>तार्किक आंतरिक कड़ी नियम एवं सेटिंग्स</span>
-                        <span class="accordion-arrow">▼</span>
+                <!-- 1.4 तार्किक छन्नी नियंत्रण पटल (Logical Filter Toolbar inside Box 1) -->
+                <div class="active-filters-toolbar">
+                    <div class="filter-toolbar-header">
+                        <span class="filter-toolbar-title">तार्किक छन्नी (Active Logical Filters):</span>
+                        <button type="button" id="toggle-settings-btn" class="btn btn-text btn-sm btn-settings-toggle">
+                            विस्तृत 11 नियम व सेटिंग्स <span class="accordion-arrow">▼</span>
+                        </button>
                     </div>
-                    <div class="settings-body" id="settings-body">
+                    <div class="filter-chips-grid">
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-first-only" title="WP:OVERLINKING नियम">✓ प्रथम उल्लेख (WP:OVERLINK)</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-disambig" title="WP:DISAMBIG नियम">✓ बहुविकल्पी निवारण</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-dates" title="WP:DATELINK नियम">✓ वर्ष व दिनांक छन्नी</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-units" title="मात्रक व इकाइयाँ छोड़ें">✓ मात्रक व इकाइयाँ छन्नी</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-clean-pipes" title="व्यर्थ पाइप हटाएं">✓ स्वच्छ पाइप [[X]]</button>
+                        <button type="button" class="filter-chip-toggle active" data-target="opt-blue-only" title="केवल नीली कड़ियाँ">✓ केवल पुष्ट कड़ियाँ</button>
+                    </div>
+                </div>
+
+                <!-- विस्तारणीय सेटिंग्स (Collapsible Detailed Settings) -->
+                <div class="settings-accordion">
+                    <div class="settings-body" id="settings-body" style="display: none;">
                         <div class="settings-grid">
                             <label class="setting-item">
                                 <input type="checkbox" id="opt-first-only" checked>
@@ -291,7 +319,7 @@
                     </div>
                 </div>
 
-                <!-- बॉक्स 1 मुख्य विश्लेषण बटन -->
+                <!-- 1.5 बॉक्स 1 मुख्य विश्लेषण बटन -->
                 <div class="action-footer" style="margin-top: 10px;">
                     <button type="button" id="analyze-btn" class="btn btn-primary btn-lg" style="width: 100%;">
                         तार्किक विश्लेषण एवं दूषित तत्व पहचान (Analyze & Detect)
@@ -304,12 +332,12 @@
                 <div class="workbench-card-header">
                     <div>
                         <h2 class="workbench-card-title">बॉक्स 2: दूषित लेख एवं तार्किक निदान</h2>
-                        <small class="form-hint">विश्लेषण के बाद दूषित कड़ियाँ एवं दोष तार्किक आधार सहित यहाँ पहुँचेंगे</small>
+                        <small class="form-hint">विश्लेषण उपरांत दूषित कड़ियाँ, अति-कड़ीकरण एवं नीतिगत तर्क यहाँ प्रदर्शित होंगे</small>
                     </div>
                     <span id="box2-status-badge" class="workbench-badge badge-waiting">प्रतीक्षारत</span>
                 </div>
 
-                <!-- दूषित तत्व सांख्यिकी ग्रिड -->
+                <!-- 2.1 दूषित तत्व सांख्यिकी ग्रिड -->
                 <div class="contamination-stats-grid">
                     <div class="contamination-stat-item">
                         <span class="contamination-stat-label">कुल दूषित तत्व</span>
@@ -333,31 +361,56 @@
                     </div>
                 </div>
 
-                <!-- दूषित विकिटेक्स्ट बॉक्स -->
-                <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label for="contaminated-wikitext-output" class="form-label" style="margin-bottom: 0;">दूषित / अशुद्ध लेख विकिटेक्स्ट:</label>
-                        <button type="button" id="btn-copy-contaminated" class="btn btn-text btn-sm">दूषित पाठ कॉपी करें</button>
+                <!-- 2.2 बॉक्स 2 दृश्य चयन टैब एवं कॉपी क्रिया -->
+                <div class="box2-nav-toolbar">
+                    <div class="box2-tabs">
+                        <button type="button" class="box2-tab-btn active" data-box2-tab="text" id="tab-box2-text-btn">दूषित विकिटेक्स्ट</button>
+                        <button type="button" class="box2-tab-btn" data-box2-tab="logic" id="tab-box2-logic-btn">तार्किक निदान व नीतियां</button>
+                        <button type="button" class="box2-tab-btn" data-box2-tab="details" id="tab-box2-details-btn">दोष सूची विवरण</button>
                     </div>
-                    <textarea id="contaminated-wikitext-output" class="form-control monospace-input" rows="8" readonly placeholder="विश्लेषण आरंभ होने पर दूषित/समस्याग्रस्त विकिटेक्स्ट स्वतः यहाँ पहुँचेगा..."></textarea>
+                    <button type="button" id="btn-copy-contaminated" class="btn btn-text btn-sm">दूषित पाठ कॉपी करें</button>
                 </div>
 
-                <!-- तर्कों का प्रयोग (Wikipedia Policy Arguments Container) -->
-                <div class="contamination-logic-box">
-                    <div class="logic-box-title">
-                        <span>विकिपीडिया तार्किक विश्लेषण (Policy Arguments)</span>
-                        <span id="logic-rule-count" class="badge badge-tool">0 नियम सक्रिय</span>
+                <!-- 2.3 बॉक्स 2 सामग्री क्षेत्र (220px fixed height) -->
+                <div class="box2-content-area">
+                    <!-- दृश्य 1: दूषित विकिटेक्स्ट बॉक्स -->
+                    <div id="box2-pane-text" class="box2-tab-pane active">
+                        <textarea id="contaminated-wikitext-output" class="form-control monospace-input workbench-textarea" readonly placeholder="विश्लेषण आरंभ होने पर दूषित/समस्याग्रस्त विकिटेक्स्ट स्वतः यहाँ पहुँचेगा..."></textarea>
                     </div>
-                    <div id="contamination-arguments-container">
-                        <div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px; text-align: center;">
-                            लेख का विश्लेषण करने पर पाए गए दोषों का तार्किक कारण (WP:LINK, WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK) यहाँ प्रदर्शित होगा।
+
+                    <!-- दृश्य 2: तर्कों का प्रयोग (Wikipedia Policy Arguments Container) -->
+                    <div id="box2-pane-logic" class="box2-tab-pane" style="display: none;">
+                        <div class="contamination-logic-box">
+                            <div class="logic-box-title">
+                                <span>विकिपीडिया तार्किक विश्लेषण (Policy Arguments)</span>
+                                <span id="logic-rule-count" class="badge badge-tool">0 नियम सक्रिय</span>
+                            </div>
+                            <div id="contamination-arguments-container">
+                                <div style="color: var(--text-muted); font-size: 0.85rem; padding: 16px; text-align: center;">
+                                    लेख का विश्लेषण करने पर पाए गए दोषों का तार्किक कारण (WP:LINK, WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK) यहाँ प्रदर्शित होगा।
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- दृश्य 3: दोष विवरण सूची -->
+                    <div id="box2-pane-details" class="box2-tab-pane" style="display: none;">
+                        <div id="contamination-details-container" class="contamination-details-box">
+                            <div style="color: var(--text-muted); font-size: 0.85rem; padding: 16px; text-align: center;">
+                                पहचाने गए अति-कड़ीकृत शब्दों, बहुविकल्पी पदों एवं सिंटेक्स दोषों का पदवार विवरण यहाँ दिखेगा।
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- बॉक्स 2 क्रिया बटन -->
-                <div class="action-footer" style="margin-top: 10px; display: flex; gap: 8px;">
-                    <button type="button" id="btn-sanitize-contaminated" class="btn btn-success btn-lg" style="flex: 1;" disabled>
+                <!-- 2.4 तार्किक स्थिति सारांश पट्टी -->
+                <div class="box2-status-strip">
+                    <span class="box2-status-text" id="box2-status-text">तार्किक नीति: WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK एवं WP:PIPE का सत्यापन</span>
+                </div>
+
+                <!-- 2.5 बॉक्स 2 क्रिया बटन -->
+                <div class="action-footer" style="margin-top: 10px;">
+                    <button type="button" id="btn-sanitize-contaminated" class="btn btn-success btn-lg" style="width: 100%;" disabled>
                         तार्किक रूप से दूषित लेख शुद्ध करें (Clean & Sanitize)
                     </button>
                 </div>

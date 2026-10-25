@@ -347,12 +347,76 @@ a:hover {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+/* ================== तार्किक कार्यप्रवाह पट्टी (Workbench Flow Stepper) ================== */
+.workbench-flow-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.flow-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.flow-step.active {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.flow-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.flow-step.active .flow-num {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.flow-arrow {
+    color: var(--border-color);
+    font-size: 0.95rem;
+    font-weight: bold;
+    user-select: none;
+}
+
+@media (max-width: 768px) {
+    .workbench-flow-strip {
+        display: none;
+    }
+}
+
 /* ================== दोहरे कार्यपटल (Dual-Box Workbench) ================== */
 .dual-workbench-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     margin-bottom: 20px;
+    align-items: stretch;
 }
 
 @media (max-width: 992px) {
@@ -369,8 +433,23 @@ a:hover {
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    justify-content: space-between;
+    height: 100%;
+    gap: 12px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#input-control-card {
+    border-top: 4px solid var(--primary-color);
+}
+
+#contaminated-box-card {
+    border-top: 4px solid var(--accent-orange);
+    transition: border-top-color 0.3s ease;
+}
+
+#contaminated-box-card.is-sanitized {
+    border-top-color: var(--accent-green);
 }
 
 .workbench-card:focus-within {
@@ -382,13 +461,13 @@ a:hover {
     justify-content: space-between;
     align-items: flex-start;
     border-bottom: 1px solid var(--border-light);
-    padding-bottom: 12px;
+    padding-bottom: 10px;
     flex-wrap: wrap;
     gap: 8px;
 }
 
 .workbench-card-title {
-    font-size: 1.12rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.3;
@@ -426,23 +505,94 @@ a:hover {
     border: 1px solid var(--accent-green);
 }
 
+/* सममित टेक्स्टएरिया ऊंचाई */
+.workbench-textarea {
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: 220px !important;
+    resize: vertical;
+}
+
+/* बॉक्स 1: सक्रिय तार्किक छन्नी पट्टी (Integrated Filter Toolbar) */
+.active-filters-toolbar {
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-toolbar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.filter-toolbar-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.btn-settings-toggle {
+    font-size: 0.76rem !important;
+    padding: 2px 6px !important;
+    color: var(--primary-color) !important;
+}
+
+.filter-chips-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.filter-chip-toggle {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.filter-chip-toggle:hover {
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+}
+
+.filter-chip-toggle.active {
+    background-color: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
 /* बॉक्स 2: दूषित सांख्यिकी ग्रिड */
 .contamination-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
 }
 
 .contamination-stat-item {
     background-color: var(--bg-alt);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    padding: 8px 10px;
+    padding: 6px 8px;
     text-align: center;
 }
 
 .contamination-stat-label {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
     display: block;
     margin-bottom: 2px;
@@ -452,8 +602,63 @@ a:hover {
 }
 
 .contamination-stat-value {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 700;
+}
+
+/* बॉक्स 2: नेविगेशन टूलबार एवं उप-टैब्स */
+.box2-nav-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.box2-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.box2-tab-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.box2-tab-btn:hover {
+    background-color: var(--bg-alt);
+    color: var(--text-primary);
+}
+
+.box2-tab-btn.active {
+    background-color: var(--bg-alt);
+    border-color: var(--border-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* बॉक्स 2: सामग्री क्षेत्र */
+.box2-content-area {
+    position: relative;
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+}
+
+.box2-tab-pane {
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 /* तर्कों का प्रयोग (Wikipedia Policy Arguments Box) */
@@ -461,16 +666,16 @@ a:hover {
     background-color: var(--bg-alt);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    padding: 12px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 220px;
+    height: 100%;
     overflow-y: auto;
 }
 
 .logic-box-title {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 4px;
@@ -485,7 +690,7 @@ a:hover {
     border-left: 4px solid var(--accent-orange);
     border-radius: 4px;
     padding: 8px 10px;
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     animation: fadeIn 0.3s ease;
 }
 
@@ -504,6 +709,9 @@ a:hover {
 .logic-argument-item.logic-date-unit {
     border-left-color: var(--text-secondary);
 }
+.logic-argument-item.logic-clean {
+    border-left-color: var(--accent-green);
+}
 
 .logic-argument-title {
     font-weight: 700;
@@ -514,7 +722,68 @@ a:hover {
 .logic-argument-desc {
     color: var(--text-secondary);
     line-height: 1.4;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
+}
+
+/* बॉक्स 2: दोष सूची विवरण बॉक्स (Contamination Details Box) */
+.contamination-details-box {
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.defect-group {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 10px;
+}
+
+.defect-group-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.defect-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.defect-tag {
+    font-size: 0.74rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+/* बॉक्स 2: स्थिति सारांश पट्टी */
+.box2-status-strip {
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.box2-status-text {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
 }
 
 .card-header {
