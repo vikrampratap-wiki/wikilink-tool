@@ -6,7 +6,7 @@
 DIR="$(dirname "$(readlink -f "$0")")"
 FILE_PATH="$DIR/index.html"
 
-echo "🔗 विकीलिंक सहायक उपकरण वेबसाइट आरंभ की जा रही है..."
+echo "विकीलिंक सहायक उपकरण वेबसाइट आरंभ की जा रही है..."
 
 if command -v xdg-open > /dev/null; then
     xdg-open "$FILE_PATH"

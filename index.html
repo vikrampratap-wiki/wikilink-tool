@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>विकीलिंक सहायक (WikiLink Assistant) - तार्किक विकिपीडिया आंतरिक कड़ी टूल</title>
+    <title>विकीलिंक सहायक (WikiLink Assistant) - विकिपीडिया आंतरिक कड़ी टूल</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,21 +14,20 @@
     <header class="app-header">
         <div class="header-inner container">
             <div class="logo-area">
-                <div class="logo-icon">🔗</div>
-                <div>
+                <div class="logo-text-block">
                     <div class="logo-title-wrap">
                         <h1 class="app-title">विकीलिंक सहायक</h1>
                         <span class="badge badge-tool">WikiLink Assistant</span>
-                        <span class="badge badge-version">v1.2</span>
+                        <span class="badge badge-version">v2.0</span>
                     </div>
-                    <p class="app-subtitle">चुनी हुई भाषा के विकिपीडिया लेख में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, छन्नी व समीक्षा का स्वतंत्र उपकरण</p>
+                    <p class="app-subtitle">विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने एवं समीक्षा का स्वतंत्र उपकरण</p>
                 </div>
             </div>
             <div class="header-actions">
-                <button id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स (Ctrl+/)">⌨️ शॉर्टकट्स</button>
-                <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="डार्क/लाइट थीम बदलें">🌓 थीम</button>
-                <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank" class="btn btn-outline btn-sm" title="विकिपीडिया सदस्य पृष्ठ">सदस्य:विक्रम प्रताप ↗</a>
-                <a href="https://github.com/vikrampratap-wiki/wikilink-tool" target="_blank" class="btn btn-outline btn-sm" title="गिटहब रिपॉजिटरी">GitHub ↗</a>
+                <button id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स">शॉर्टकट्स</button>
+                <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="डार्क/लाइट थीम बदलें">थीम बदलें</button>
+                <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank" class="btn btn-outline btn-sm" title="विकिपीडिया सदस्य पृष्ठ">सदस्य:विक्रम प्रताप</a>
+                <a href="https://github.com/vikrampratap-wiki/wikilink-tool" target="_blank" class="btn btn-outline btn-sm" title="गिटहब रिपॉजिटरी">GitHub</a>
             </div>
         </div>
     </header>
@@ -37,25 +36,38 @@
     <main class="main-content container">
 
         <!-- सूचना बैनर (Zero-Login / Independent Tool Information Banner) -->
-        <div class="banner banner-info">
-            <div class="banner-icon">ℹ️</div>
+        <div class="banner banner-info" id="info-banner">
             <div class="banner-body">
-                <strong>स्वतंत्र एवं सुरक्षित उपकरण (reFill की भाँति):</strong> यह टूल विकिपीडिया लेखों का विश्लेषण कर तार्किक कड़ियाँ स्वतः जोड़ता है। विकिपीडिया पर बाहरी टूल से सुरक्षित संपादन हेतु OAuth क्रेडेंशियल्स की आवश्यकता होती है, अतः किसी भी अप्रमाणित लॉगिन के स्थान पर यह टूल आपको <strong>उन्नत छन्नी, लाइव डिफ़, सारांश पूर्वावलोकन और 1-क्लिक विकिटेक्स्ट कॉपी</strong> की सुविधा देता है, जिसे आप सीधे विकिपीडिया के संपादन पृष्ठ पर सुरक्षित रूप से पेस्ट कर सकते हैं।
+                <strong>स्वतंत्र एवं सुरक्षित उपकरण:</strong> यह टूल विकिपीडिया लेखों का विश्लेषण कर तार्किक कड़ियाँ स्वतः जोड़ता है। विकिपीडिया पर बाहरी टूल से सीधे संपादन हेतु विकिमीडिया OAuth क्रेडेंशियल्स की आवश्यकता होती है, अतः किसी भी अप्रमाणित लॉगिन के स्थान पर यह टूल आपको <strong>विकिपीडिया-शैली लाइव डिफ़, पूर्वावलोकन और 1-क्लिक विकिटेक्स्ट कॉपी</strong> की सुविधा देता है, जिसे आप सीधे विकिपीडिया के संपादन पृष्ठ पर सुरक्षित रूप से पेस्ट कर सकते हैं।
+            </div>
+        </div>
+
+        <!-- कॉम्पैक्ट सारांश पट्टी (विश्लेषण के बाद प्रदर्शित होती है जब इनपुट फॉर्म छुप जाता है) -->
+        <div id="compact-active-article-bar" class="compact-article-bar" style="display: none;">
+            <div class="compact-info">
+                <span class="compact-label">वर्तमान लेख:</span>
+                <strong id="compact-title-text">-</strong>
+                <span class="compact-lang-badge" id="compact-lang-text">hi</span>
+            </div>
+            <div class="compact-actions">
+                <button type="button" id="btn-toggle-input-card" class="btn btn-secondary btn-sm">
+                    इनपुट और सेटिंग्स बदलें
+                </button>
             </div>
         </div>
 
         <!-- 1. इनपुट एवं नियंत्रण पटल (Input & Control Card) -->
-        <section class="card control-card">
+        <section id="input-control-card" class="card control-card">
             <div class="card-header">
-                <h2>📥 1. भाषा एवं लेख का चयन</h2>
-                <span class="step-badge">चरण 1 / 3</span>
+                <h2>1. भाषा एवं लेख का चयन</h2>
+                <span class="step-badge">चरण 1 / 2</span>
             </div>
 
             <!-- भाषा चयन पंक्ति -->
             <div class="form-row">
                 <div class="form-group flex-2">
                     <label for="lang-select" class="form-label">
-                        🌐 विकिपीडिया भाषा चुनें (Wikipedia Language):
+                        विकिपीडिया भाषा चुनें (Wikipedia Language):
                     </label>
                     <div class="lang-selector-group">
                         <select id="lang-select" class="form-control">
@@ -102,35 +114,88 @@
                 </div>
             </div>
 
-            <!-- इनपुट मोड टैब (Input Mode Tabs) -->
+            <!-- लेख लोड करने के विभिन्न विकल्प (Tabs) -->
             <div class="tabs-nav input-tabs">
-                <button type="button" class="tab-btn active" data-tab="tab-input-wiki">🌐 विकिपीडिया लेख शीर्षक या URL से लोड करें</button>
-                <button type="button" class="tab-btn" data-tab="tab-input-raw">📝 सीधे विकिटेक्स्ट या सादा पाठ पेस्ट करें</button>
+                <button type="button" class="tab-btn active" data-tab="tab-input-wiki">विकिपीडिया लेख शीर्षक या URL</button>
+                <button type="button" class="tab-btn" data-tab="tab-input-random">यादृच्छिक लेख (Random)</button>
+                <button type="button" class="tab-btn" data-tab="tab-input-category">विकिपीडिया श्रेणी से लोड करें</button>
+                <button type="button" class="tab-btn" data-tab="tab-input-file">फ़ाइल अपलोड (.txt / .wiki)</button>
+                <button type="button" class="tab-btn" data-tab="tab-input-raw">विकिटेक्स्ट / सादा पाठ पेस्ट करें</button>
             </div>
 
-            <!-- टैब 1: विकिपीडिया शीर्षक / URL -->
+            <!-- विकल्प 1: विकिपीडिया शीर्षक / URL -->
             <div id="tab-input-wiki" class="tab-content active">
                 <div class="form-group">
                     <label for="page-input" class="form-label">विकिपीडिया लेख का शीर्षक अथवा पूरा URL दर्ज करें:</label>
                     <div class="input-with-button">
                         <input type="text" id="page-input" class="form-control" placeholder="उदा: चन्द्रयान-३ या https://hi.wikipedia.org/wiki/चन्द्रयान-३" value="चन्द्रयान-३">
                         <button id="load-page-btn" class="btn btn-secondary">
-                            <span>📥</span> लेख लोड करें
+                            लेख लोड करें
                         </button>
                     </div>
-                    <small class="form-hint">URL या पृष्ठ नाम पेस्ट कर सकते हैं। यह स्वतः विकिपीडिया REST / Action API से नवीनतम विकिटेक्स्ट लोड कर लेगा।</small>
+                    <small class="form-hint">URL या पृष्ठ नाम दर्ज करें। यह स्वतः विकिपीडिया REST / Action API से अद्यतन विकिटेक्स्ट प्राप्त कर लेगा।</small>
                 </div>
             </div>
 
-            <!-- टैब 2: सीधे विकिटेक्स्ट इनपुट -->
+            <!-- विकल्प 2: यादृच्छिक लेख (Random Article) -->
+            <div id="tab-input-random" class="tab-content">
+                <div class="form-group">
+                    <label class="form-label">विकिपीडिया से कोई भी यादृच्छिक लेख (Random Article) प्राप्त करें:</label>
+                    <div class="input-with-button">
+                        <button type="button" id="load-random-btn" class="btn btn-secondary">
+                            यादृच्छिक लेख प्राप्त करें
+                        </button>
+                        <span id="random-loading-status" class="status-inline-text"></span>
+                    </div>
+                    <small class="form-hint">यह चुनी हुई भाषा के मुख्य नामस्थान (Namespace 0) से कोई यादृच्छिक पृष्ठ स्वतः लोड करता है।</small>
+                </div>
+            </div>
+
+            <!-- विकल्प 3: विकिपीडिया श्रेणी से लोड करें (Category) -->
+            <div id="tab-input-category" class="tab-content">
+                <div class="form-group">
+                    <label for="category-input" class="form-label">विकिपीडिया श्रेणी का नाम दर्ज करें:</label>
+                    <div class="input-with-button">
+                        <input type="text" id="category-input" class="form-control" placeholder="उदा: श्रेणी:हिन्दी साहित्य अथवा श्रेणी:भारत के राज्य" value="श्रेणी:हिन्दी साहित्य">
+                        <button type="button" id="load-category-btn" class="btn btn-secondary">
+                            श्रेणी के लेख खोजें
+                        </button>
+                    </div>
+                    <div id="category-pages-wrap" style="display: none; margin-top: 12px;">
+                        <label for="category-pages-select" class="form-label">श्रेणी के अंतर्गत प्राप्त लेखों में से चुनें:</label>
+                        <div class="input-with-button">
+                            <select id="category-pages-select" class="form-control">
+                                <!-- लेख यहाँ जोड़े जाएँगे -->
+                            </select>
+                            <button type="button" id="load-selected-cat-page-btn" class="btn btn-primary">
+                                यह लेख लोड करें
+                            </button>
+                        </div>
+                    </div>
+                    <small class="form-hint">किसी भी विकिपीडिया श्रेणी के सदस्यों की सूची से लेख का चयन करें।</small>
+                </div>
+            </div>
+
+            <!-- विकल्प 4: फ़ाइल अपलोड (.txt / .wiki) -->
+            <div id="tab-input-file" class="tab-content">
+                <div class="form-group">
+                    <label for="file-upload-input" class="form-label">कंप्यूटर से .txt अथवा .wiki फ़ाइल चुनें:</label>
+                    <input type="file" id="file-upload-input" class="form-control" accept=".txt,.wiki,.text">
+                    <small class="form-hint">ऑफ़लाइन तैयार किया गया विकिटेक्स्ट या लेख फ़ाइल अपलोड करें।</small>
+                </div>
+            </div>
+
+            <!-- विकल्प 5: सीधे विकिटेक्स्ट इनपुट -->
             <div id="tab-input-raw" class="tab-content">
                 <div class="form-group">
                     <label for="raw-wikitext-input" class="form-label">विकिटेक्स्ट (Wikitext) अथवा सादा पाठ (Plain Text):</label>
                     <textarea id="raw-wikitext-input" class="form-control monospace-input" rows="7" placeholder="यहाँ अपना विकिपीडिया लेख का कच्चा विकिटेक्स्ट अथवा साधारण पाठ पेस्ट करें..."></textarea>
                     <div class="raw-tools">
                         <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
-                        <button type="button" id="load-sample-btn" class="btn btn-text btn-sm">नमूना पाठ भरें</button>
-                        <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">साफ़ करें</button>
+                        <div>
+                            <button type="button" id="load-sample-btn" class="btn btn-text btn-sm">नमूना पाठ भरें</button>
+                            <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">साफ़ करें</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -138,7 +203,7 @@
             <!-- तार्किक कड़ियाँ सेटिंग्स (Logical Wikilinking Settings - Collapsible) -->
             <div class="settings-accordion">
                 <div class="settings-header" id="toggle-settings-btn">
-                    <span>⚙️ तार्किक आंतरिक कड़ी नियम एवं सेटिंग्स (Logical Wikilinking Rules)</span>
+                    <span>तार्किक आंतरिक कड़ी नियम एवं सेटिंग्स</span>
                     <span class="accordion-arrow">▼</span>
                 </div>
                 <div class="settings-body" id="settings-body">
@@ -218,7 +283,7 @@
                         <div class="setting-item setting-item-input">
                             <div class="setting-desc">
                                 <strong>कड़ीकरण आवृत्ति (Linking Scope):</strong>
-                                <p>कड़ियों का भौगोलिक दायरा चुनें।</p>
+                                <p>कड़ियों का दायरा चुनें।</p>
                             </div>
                             <select id="opt-link-scope" class="form-control form-control-sm" style="width: 170px;">
                                 <option value="article" selected>संपूर्ण लेख में एक बार</option>
@@ -238,26 +303,82 @@
                 </div>
             </div>
 
-            <!-- सहायक उपकरण त्वरित पट्टी (Auxiliary Tools Bar) -->
-            <div class="aux-tools-banner">
-                <span class="aux-tools-title">🧰 त्वरित सहायक उपकरण:</span>
-                <div class="aux-tools-actions">
-                    <button type="button" id="btn-open-duplicate-cleaner" class="btn btn-outline btn-sm" title="मूल लेख में पहले से मौजूद डुप्लिकेट कड़ियों की सफाई">
-                        🧹 डुप्लिकेट कड़ी शोधक (Overlink Cleaner)
-                    </button>
-                    <button type="button" id="btn-open-blacklist-mgr" class="btn btn-outline btn-sm" title="अपनी कस्टम बहिष्कार शब्द सूची प्रबंधित करें">
-                        ⚙️ शब्द बहिष्कार प्रबंधक (Blacklist)
-                    </button>
-                    <button type="button" id="btn-download-standalone-html" class="btn btn-outline btn-sm" title="ऑफलाइन चलाने हेतु सिंगल HTML फाइल डाउनलोड करें">
-                        💾 ऑफलाइन ऑल-इन-वन HTML
+            <!-- सहायक उपकरण पटल एवं उपयोग विधि -->
+            <div class="aux-tools-card">
+                <div class="aux-tools-header">
+                    <div>
+                        <h3 class="aux-tools-title">त्वरित सहायक उपकरण एवं उपयोग विधि</h3>
+                        <p class="aux-tools-subtitle">लेख को शुद्ध, संतुलित एवं विकिपीडिया नीति अनुरूप बनाने हेतु निम्नलिखित टूल्स का उपयोग करें:</p>
+                    </div>
+                    <button type="button" id="btn-toggle-aux-guide" class="btn btn-outline btn-sm">
+                        उपयोग विधि निर्देश देखें
                     </button>
                 </div>
+
+                <div class="aux-tools-grid">
+                    <!-- टूल 1: डुप्लिकेट कड़ी शोधक -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>1. डुप्लिकेट कड़ी शोधक (Overlink Cleaner)</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> लेख में पहले से मौजूद बार-बार दोहराई गई कड़ियों (WP:OVERLINKING) को खोजता है।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> लेख लोड होने के बाद नीचे बटन दबाएँ। यह डुप्लिकेट कड़ियों की सूची दिखाएगा और 1-क्लिक में अतिरिक्त कड़ियों को साफ कर केवल पहले उल्लेख को रखेगा।</p>
+                        </div>
+                        <button type="button" id="btn-open-duplicate-cleaner" class="btn btn-secondary btn-sm">
+                            डुप्लिकेट कड़ियाँ जाँचें व साफ़ करें
+                        </button>
+                    </div>
+
+                    <!-- टूल 2: शब्द बहिष्कार प्रबंधक -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>2. शब्द बहिष्कार प्रबंधक (Custom Blacklist)</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> उन शब्दों को नियंत्रित करता है जिन्हें आप कभी भी कड़ी नहीं बनाना चाहते।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> नीचे बटन दबाकर नए शब्द जोड़ें (उदा: 'समय', 'स्थान') अथवा परिणाम तालिका में किसी भी शब्द के आगे 'अनदेखा' दबाएँ।</p>
+                        </div>
+                        <button type="button" id="btn-open-blacklist-mgr" class="btn btn-secondary btn-sm">
+                            बहिष्कार सूची प्रबंधित करें
+                        </button>
+                    </div>
+
+                    <!-- टूल 3: ऑफ़लाइन ऑल-इन-वन HTML -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>3. ऑफ़लाइन ऑल-इन-वन HTML</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> बिना सर्वर या इंटरनेट के टूल को अपने कंप्यूटर पर स्थानीय रूप से सुरक्षित चलाना।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> बटन दबाकर एकल HTML फ़ाइल डाउनलोड करें और बिना इंटरनेट के किसी भी ब्राउज़र में सीधे खोलें।</p>
+                        </div>
+                        <button type="button" id="btn-download-standalone-html" class="btn btn-secondary btn-sm">
+                            एकल ऑफ़लाइन HTML डाउनलोड करें
+                        </button>
+                    </div>
+                </div>
+
+                <!-- विस्तारणीय उपयोग निर्देश -->
+                <div id="aux-guide-details" class="aux-guide-details" style="display: none;">
+                    <h4>सहायक उपकरणों का चरणबद्ध उपयोग:</h4>
+                    <ol>
+                        <li><strong>लेख लोड करें:</strong> सबसे पहले ऊपर विकिपीडिया लेख लोड करें या विकिटेक्स्ट दर्ज करें।</li>
+                        <li><strong>डुप्लिकेट कड़ियों की सफाई:</strong> 'डुप्लिकेट कड़ियाँ जाँचें व साफ़ करें' दबाकर सुनिश्चित करें कि पहले से कोई अति-कड़ीकरण न हो।</li>
+                        <li><strong>तार्किक कड़ीकरण:</strong> 'तार्किक कड़ियाँ खोजें' दबाकर नई कड़ियों का विश्लेषण करें।</li>
+                        <li><strong>समीक्षा व डिफ़:</strong> मीडियाविकी डिफ़ में परिवर्तनों की पुष्टि करें और तालिका में इच्छित कड़ियाँ चुनें।</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- कीबोर्ड शॉर्टकट्स त्वरित पट्टी -->
+            <div class="shortcuts-quick-strip">
+                <span class="shortcuts-title">कीबोर्ड शॉर्टकट्स:</span>
+                <span class="shortcut-pill"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> विश्लेषण</span>
+                <span class="shortcut-pill"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> विकिटेक्स्ट कॉपी</span>
+                <span class="shortcut-pill"><kbd>Ctrl</kbd> + <kbd>O</kbd> विकिपीडिया संपादन</span>
+                <span class="shortcut-pill"><kbd>Esc</kbd> मोडल बंद</span>
+                <button type="button" id="btn-show-all-shortcuts" class="btn btn-text btn-sm" style="margin-left: auto;">सभी शॉर्टकट्स देखें</button>
             </div>
 
             <!-- मुख्य एक्शन बटन -->
             <div class="action-footer">
                 <button id="analyze-btn" class="btn btn-primary btn-lg">
-                    <span class="btn-icon">⚡</span> तार्किक कड़ियाँ खोजें और विश्लेषण करें (Analyze & Link)
+                    तार्किक कड़ियाँ खोजें और विश्लेषण करें (Analyze & Link)
                 </button>
             </div>
         </section>
@@ -277,11 +398,11 @@
             <div id="progress-log" class="progress-log"></div>
         </section>
 
-        <!-- 3. परिणाम एवं समीक्षा पटल (Results & Review Section - Like reFill) -->
+        <!-- 3. परिणाम एवं समीक्षा पटल (Results & Review Section) -->
         <section id="results-card" class="card results-card" style="display: none;">
             <div class="card-header results-header">
                 <div>
-                    <h2>📊 2. कड़ियों की समीक्षा एवं परिणाम (Review & Diff)</h2>
+                    <h2>2. कड़ियों की समीक्षा एवं विकिपीडिया डिफ़ (Review & Diff)</h2>
                     <p class="section-subtext" id="results-summary-text">विश्लेषण पूर्ण हुआ। कृपया जोड़ी गई कड़ियों की समीक्षा करें।</p>
                 </div>
                 <div class="results-meta-badges" id="results-counters">
@@ -293,7 +414,7 @@
                 </div>
             </div>
 
-            <!-- कड़ी घनत्व विश्लेषक पट्टी (Link Density Gauge Bar) -->
+            <!-- कड़ी घनत्व विश्लेषक पट्टी -->
             <div class="density-gauge-card" id="density-gauge-card">
                 <div class="density-metrics">
                     <div class="metric-item">
@@ -309,27 +430,27 @@
                         <strong id="stat-new-links" class="text-success">+0</strong>
                     </div>
                     <div class="metric-item">
-                        <span class="metric-label">अनुमानित कुल कड़ी घनत्व:</span>
+                        <span class="metric-label">कड़ी घनत्व:</span>
                         <strong id="stat-link-density">0.0%</strong>
                         <span class="density-rating badge-blue" id="density-rating">संतुलित</span>
                     </div>
                 </div>
             </div>
 
-            <!-- उन्नत छन्नी एवं फ़िल्टर पट्टी (Advanced Filter Toolbar) -->
+            <!-- उन्नत छन्नी पट्टी -->
             <div class="review-toolbar">
                 <div class="filter-row">
                     <div class="filter-group">
-                        <span class="filter-label">🏷️ स्थिति छन्नी:</span>
+                        <span class="filter-label">स्थिति छन्नी:</span>
                         <button type="button" class="btn btn-chip btn-sm filter-status-chip active-chip" data-status="all">सभी</button>
-                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="blue">🔵 केवल नीली</button>
-                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="redirect">🟢 केवल पुनर्निर्देशन</button>
-                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="disambig">⚠️ बहुविकल्पी</button>
-                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="red">🔴 लाल कड़ियाँ</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="blue">केवल नीली</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="redirect">केवल पुनर्निर्देशन</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="disambig">बहुविकल्पी</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="red">लाल कड़ियाँ</button>
                     </div>
 
                     <div class="filter-group">
-                        <span class="filter-label">🔤 प्रकार छन्नी:</span>
+                        <span class="filter-label">प्रकार छन्नी:</span>
                         <button type="button" class="btn btn-chip btn-sm filter-type-chip active-chip" data-type="all">सभी पद</button>
                         <button type="button" class="btn btn-chip btn-sm filter-type-chip" data-type="multi">बहु-शब्द (Phrases)</button>
                         <button type="button" class="btn btn-chip btn-sm filter-type-chip" data-type="single">एकल शब्द</button>
@@ -341,17 +462,17 @@
                         <span class="filter-label">त्वरित चयन:</span>
                         <button type="button" id="btn-select-all" class="btn btn-chip btn-sm">सभी चुनें</button>
                         <button type="button" id="btn-deselect-all" class="btn btn-chip btn-sm">सभी हटाएं</button>
-                        <button type="button" id="btn-select-blue-only" class="btn btn-chip btn-sm">केवल सत्यापित (Blue)</button>
+                        <button type="button" id="btn-select-blue-only" class="btn btn-chip btn-sm">केवल नीली (पुष्ट)</button>
                         <button type="button" id="btn-deselect-disambig" class="btn btn-chip btn-sm" title="बहुविकल्पी पृष्ठों को अचयनित करें">बहुविकल्पी हटाएं</button>
                     </div>
 
                     <div class="search-suggestions-wrap">
-                        <input type="text" id="suggestions-filter-input" class="form-control form-control-sm" placeholder="🔍 सुझाई गई कड़ियों में खोजें...">
+                        <input type="text" id="suggestions-filter-input" class="form-control form-control-sm" placeholder="सुझाई गई कड़ियों में खोजें...">
                     </div>
                 </div>
             </div>
 
-            <!-- सुझाई गई कड़ियों की संवादात्मक तालिका / सूची (Interactive Suggestions List) -->
+            <!-- सुझाई गई कड़ियों की संवादात्मक तालिका / सूची -->
             <div class="suggestions-table-container">
                 <table class="table suggestions-table">
                     <thead>
@@ -365,87 +486,86 @@
                         </tr>
                     </thead>
                     <tbody id="suggestions-tbody">
-                        <!-- डायनेमिक पंक्तियाँ यहाँ आएँगी -->
+                        <!-- पंक्तियाँ यहाँ आएँगी -->
                     </tbody>
                 </table>
             </div>
 
-            <!-- दृश्य मोड टैब (View Tabs: Diff, Rendered Preview, Raw Wikitext) -->
+            <!-- दृश्य मोड टैब (Diff, Preview, Raw Wikitext) -->
             <div class="tabs-nav result-tabs">
                 <button type="button" class="tab-btn active" data-tab="tab-view-diff">
-                    📝 डिफ़ दृश्य (Diff View - जोड़े गए बदलाव)
+                    डिफ़ दृश्य (विकिपीडिया मीडियाविकी डिफ़)
                 </button>
                 <button type="button" class="tab-btn" data-tab="tab-view-preview">
-                    👁️ पूर्वावलोकन (Rendered Article Preview)
+                    पूर्वावलोकन (Rendered Article Preview)
                 </button>
                 <button type="button" class="tab-btn" data-tab="tab-view-wikitext">
-                    📋 संशोधित विकिटेक्स्ट (Modified Wikitext)
+                    संशोधित विकिटेक्स्ट (Modified Wikitext)
                 </button>
             </div>
 
-            <!-- दृश्य 1: डिफ़ (Diff View) -->
+            <!-- दृश्य 1: विकिपीडिया मीडियाविकी डिफ़ दृश्य -->
             <div id="tab-view-diff" class="tab-content active">
+                <div class="diff-view-controls">
+                    <div class="diff-mode-toggle">
+                        <span class="diff-mode-label">डिफ़ प्रारूप:</span>
+                        <button type="button" id="btn-diff-side-by-side" class="btn btn-chip btn-sm active-chip">पार्श्व-दर-पार्श्व (Side-by-side)</button>
+                        <button type="button" id="btn-diff-unified" class="btn btn-chip btn-sm">एकीकृत (Unified)</button>
+                    </div>
+                    <div class="diff-legend">
+                        <span class="legend-item"><span class="legend-swatch swatch-del">−</span> हटाया गया पाठ</span>
+                        <span class="legend-item"><span class="legend-swatch swatch-add">+</span> जोड़ी गई कड़ी</span>
+                    </div>
+                </div>
                 <div class="diff-container" id="diff-container">
-                    <!-- डिफ़ यहाँ जनरेट होगा -->
+                    <!-- प्रामाणिक मीडियाविकी डिफ़ यहाँ जनरेट होगा -->
                 </div>
             </div>
 
-            <!-- दृश्य 2: पूर्वावलोकन (Preview View) -->
+            <!-- दृश्य 2: पूर्वावलोकन (Preview) -->
             <div id="tab-view-preview" class="tab-content">
                 <div class="rendered-article-preview wiki-article-body" id="article-preview-container">
                     <!-- रेंडर किया हुआ HTML पूर्वावलोकन -->
                 </div>
             </div>
 
-            <!-- दृश्य 3: संशोधित विकिटेक्स्ट (Wikitext View) -->
+            <!-- दृश्य 3: संशोधित विकिटेक्स्ट -->
             <div id="tab-view-wikitext" class="tab-content">
                 <div class="wikitext-editor-wrap">
                     <textarea id="final-wikitext-output" class="form-control monospace-input" rows="18" readonly></textarea>
                 </div>
             </div>
 
-            <!-- संपादन सारांश बॉक्स (Wikipedia Edit Summary Generator) -->
-            <div class="edit-summary-card">
-                <div class="edit-summary-header">
-                    <span class="edit-summary-title">📝 अनुशंसित विकिपीडिया संपादन सारांश (Edit Summary):</span>
-                    <button type="button" id="copy-summary-btn" class="btn btn-secondary btn-sm" title="संपादन सारांश क्लिपबोर्ड पर कॉपी करें">
-                        📋 सारांश कॉपी करें
-                    </button>
-                </div>
-                <input type="text" id="edit-summary-input" class="form-control form-control-sm" readonly>
-                <small class="form-hint">विकिपीडिया पर संपादन सुरक्षित करते समय इस सारांश को 'संपादन सारांश' बॉक्स में पेस्ट करें।</small>
-            </div>
-
-            <!-- अंतिम क्रिया पट्टी (Sticky / Final Action Bar) -->
+            <!-- अंतिम क्रिया पट्टी (Sticky Action Bar) -->
             <div class="final-action-bar">
                 <div class="action-info">
                     <span id="final-stats-text">कुल 0 कड़ियाँ शामिल की गईं</span>
                 </div>
                 <div class="action-buttons-group">
                     <button id="copy-wikitext-btn" class="btn btn-success btn-lg">
-                        <span class="btn-icon">📋</span> संशोधित विकिटेक्स्ट कॉपी करें
+                        संशोधित विकिटेक्स्ट कॉपी करें
                     </button>
                     <button id="open-wiki-edit-btn" class="btn btn-primary btn-lg">
-                        <span class="btn-icon">🚀</span> विकिपीडिया पर संपादन पृष्ठ खोलें ↗
+                        विकिपीडिया पर संपादन पृष्ठ खोलें
                     </button>
                     <button id="download-wiki-btn" class="btn btn-secondary btn-lg" title="विकिटेक्स्ट फ़ाइल डाउनलोड करें">
-                        <span>💾</span> .wiki फ़ाइल डाउनलोड
+                        .wiki फ़ाइल डाउनलोड
                     </button>
                     <button id="reset-tool-btn" class="btn btn-outline btn-lg" title="नया लेख विश्लेषण करें">
-                        <span>🔄</span> रीसेट
+                        रीसेट
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- विकिपीडिया संपादन सहायता मार्गदर्शन (Editing Guide Card) -->
+        <!-- विकिपीडिया संपादन सहायता मार्गदर्शन -->
         <section class="card guide-card">
             <div class="card-header">
-                <h3>📖 विकिपीडिया संपादन एवं कड़ियों के मानक (Wikimedia Manual of Style: Linking)</h3>
+                <h3>विकिपीडिया संपादन एवं कड़ियों के मानक (Wikimedia Manual of Style: Linking)</h3>
             </div>
             <div class="guide-grid">
                 <div class="guide-box">
-                    <h4>✅ क्या करें (तार्किक कड़ी नियम):</h4>
+                    <h4>क्या करें (तार्किक कड़ी नियम):</h4>
                     <ul>
                         <li>महत्वपूर्ण ऐतिहासिक घटनाओं, व्यक्तियों, स्थानों और तकनीकी शब्दों पर कड़ियाँ जोड़ें।</li>
                         <li>केवल <strong>प्रथम उल्लेख</strong> पर ही आंतरिक कड़ी जोड़ें ताकि लेख पठनीय रहे।</li>
@@ -453,7 +573,7 @@
                     </ul>
                 </div>
                 <div class="guide-box">
-                    <h4>❌ क्या न करें (अति-कड़ीकरण से बचें):</h4>
+                    <h4>क्या न करें (अति-कड़ीकरण से बचें):</h4>
                     <ul>
                         <li>बहुविकल्पी पृष्ठों (Disambiguation) की सीधी कड़ी न जोड़ें।</li>
                         <li>आम रोज़मर्रा के शब्द (उदा: पानी, दिन, घर, साल) पर अनावश्यक कड़ियाँ न बनाएँ।</li>
@@ -462,10 +582,10 @@
                     </ul>
                 </div>
                 <div class="guide-box">
-                    <h4>🚀 उपयोग की सरल विधि (3 चरण):</h4>
+                    <h4>उपयोग की सरल विधि (3 चरण):</h4>
                     <ol>
-                        <li>लेख का शीर्षक दर्ज करें और <strong>"तार्किक कड़ियाँ खोजें"</strong> दबाएँ।</li>
-                        <li>तालिका में सुझाई गई कड़ियों की समीक्षा कर इच्छित कड़ियाँ चुनें/हटाएँ।</li>
+                        <li>लेख लोड करें और <strong>"तार्किक कड़ियाँ खोजें"</strong> दबाएँ।</li>
+                        <li>तालिका और विकिपीडिया डिफ़ में जोड़ी गई कड़ियों की समीक्षा करें।</li>
                         <li><strong>"संशोधित विकिटेक्स्ट कॉपी करें"</strong> दबाकर विकिपीडिया संपादन पृष्ठ पर पेस्ट कर सुरक्षित करें।</li>
                     </ol>
                 </div>
@@ -477,7 +597,7 @@
     <div id="edit-target-modal" class="modal-backdrop" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>✏️ आंतरिक कड़ी लक्ष्य संशोधित करें</h3>
+                <h3>आंतरिक कड़ी लक्ष्य संशोधित करें</h3>
                 <button type="button" class="modal-close-btn" data-modal="edit-target-modal">&times;</button>
             </div>
             <div class="modal-body">
@@ -500,21 +620,21 @@
     <div id="duplicate-cleaner-modal" class="modal-backdrop" style="display: none;">
         <div class="modal-card modal-lg">
             <div class="modal-header">
-                <h3>🧹 डुप्लिकेट कड़ी शोधक (Overlink & Duplicate Cleaner)</h3>
+                <h3>डुप्लिकेट कड़ी शोधक (Overlink & Duplicate Cleaner)</h3>
                 <button type="button" class="modal-close-btn" data-modal="duplicate-cleaner-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <p class="modal-intro">
-                    विकिपीडिया नियमावली (WP:OVERLINKING) अनुसार एक ही लेख में एक ही कड़ी बार-बार नहीं होनी चाहिए। नीचे आपके वर्तमान लेख में पहले से मौजूद डुप्लिकेट कड़ियों की सूची है:
+                    विकिपीडिया नियमावली (WP:OVERLINKING) अनुसार एक ही लेख में एक ही कड़ी बार-बार नहीं होनी चाहिए। नीचे वर्तमान लेख में पहले से मौजूद डुप्लिकेट कड़ियों की सूची है:
                 </p>
                 <div id="duplicate-links-container" class="duplicate-list-wrap">
-                    <!-- डुप्लिकेट कड़ियाँ यहाँ सूचीवद्ध होंगी -->
+                    <!-- कड़ियाँ यहाँ सूचीवद्ध होंगी -->
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary modal-close-btn" data-modal="duplicate-cleaner-modal">बंद करें</button>
                 <button type="button" class="btn btn-success" id="btn-fix-duplicates">
-                    ✨ सभी डुप्लिकेट कड़ियाँ साफ करें (Clean Overlinks)
+                    सभी डुप्लिकेट कड़ियाँ साफ करें
                 </button>
             </div>
         </div>
@@ -524,7 +644,7 @@
     <div id="blacklist-modal" class="modal-backdrop" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>⚙️ कस्टम बहिष्कार शब्द प्रबंधक (Custom Blacklist)</h3>
+                <h3>कस्टम बहिष्कार शब्द प्रबंधक (Custom Blacklist)</h3>
                 <button type="button" class="modal-close-btn" data-modal="blacklist-modal">&times;</button>
             </div>
             <div class="modal-body">
@@ -550,14 +670,13 @@
     <div id="shortcuts-modal" class="modal-backdrop" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>⌨️ कीबोर्ड शॉर्टकट्स (Keyboard Shortcuts)</h3>
+                <h3>कीबोर्ड शॉर्टकट्स (Keyboard Shortcuts)</h3>
                 <button type="button" class="modal-close-btn" data-modal="shortcuts-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <table class="table shortcuts-table">
                     <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>तार्किक कड़ियाँ विश्लेषण आरंभ करें</td></tr>
                     <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td><td>संशोधित विकिटेक्स्ट कॉपी करें</td></tr>
-                    <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td><td>विकिपीडिया संपादन सारांश कॉपी करें</td></tr>
                     <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>विकिपीडिया पर संपादन पृष्ठ खोलें</td></tr>
                     <tr><td><kbd>Esc</kbd></td><td>कोई भी खुला मोडल अथवा पॉपअप बंद करें</td></tr>
                 </table>
@@ -568,10 +687,10 @@
         </div>
     </div>
 
-    <!-- 5. विकिपीडिया फ्लोटिंग सारांश पूर्वावलोकन कार्ड (Hover/Click Summary Card) -->
+    <!-- 5. विकिपीडिया फ्लोटिंग सारांश पूर्वावलोकन कार्ड -->
     <div id="wiki-summary-card" class="wiki-summary-card" style="display: none;">
         <div class="summary-card-header">
-            <span class="summary-card-badge">विकिपीडिया लेख पूर्वावलोकन</span>
+            <span class="summary-card-badge">विकिपीडिया लेख सारांश</span>
             <button type="button" class="summary-close-btn" id="summary-card-close">&times;</button>
         </div>
         <div class="summary-card-body">
@@ -582,23 +701,22 @@
             <p id="summary-extract" class="summary-extract">विवरण लोड हो रहा है...</p>
         </div>
         <div class="summary-card-footer">
-            <a id="summary-link" href="#" target="_blank" class="btn btn-chip btn-sm">पूरा लेख विकिपीडिया पर पढ़ें ↗</a>
+            <a id="summary-link" href="#" target="_blank" class="btn btn-chip btn-sm">पूरा लेख विकिपीडिया पर पढ़ें</a>
         </div>
     </div>
 
-    <!-- सूचना टोस्ट (Toast Notification) -->
+    <!-- सूचना टोस्ट -->
     <div id="toast" class="toast">कॉपीड!</div>
 
     <!-- पाद लेख (Footer) -->
     <footer class="app-footer">
         <div class="container footer-inner">
             <p>
-                <strong>विकीलिंक सहायक (WikiLink Assistant)</strong> — विकिपीडिया संपादकों हेतु खुला और स्वतंत्र उपकरण।
+                <strong>विकीलिंक सहायक (WikiLink Assistant)</strong> — विकिपीडिया संपादकों हेतु स्वतंत्र एवं खुला उपकरण।
             </p>
             <p class="footer-links">
                 लाइसेंस: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.hi" target="_blank">CC BY-SA 4.0</a> / <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> | 
-                निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a> | 
-                समान उपकरण: <a href="https://refill.toolforge.org/" target="_blank">reFill (Toolforge)</a>
+                निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a>
             </p>
         </div>
     </footer>

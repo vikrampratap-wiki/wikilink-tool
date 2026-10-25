@@ -1,5 +1,6 @@
 /* =====================================================================
-   विकीलिंक सहायक (WikiLink Assistant) - मुख्य स्टाइलशीट (CSS)
+   विकीलिंक सहायक (WikiLink Assistant - v2.0)
+   स्वच्छ विकिमीडिया डिज़ाइन सिस्टम, मीडियाविकी डिफ़ एवं रिस्पॉन्सिव लेआउट
    ===================================================================== */
 
 :root {
@@ -29,14 +30,19 @@
     --text-link: #3366cc;
     --text-link-hover: #2a4b8d;
 
-    --diff-add-bg: #e6ffed;
-    --diff-add-border: #acf2bd;
-    --diff-add-text: #155724;
-    --diff-add-highlight: #a8f5bc;
-
-    --diff-del-bg: #ffeef0;
-    --diff-del-border: #fdb8c0;
-    --diff-del-text: #721c24;
+    /* प्रामाणिक विकिपीडिया मीडियाविकी डिफ़ रंग (MediaWiki Diff Colors - Light) */
+    --diff-bg: #ffffff;
+    --diff-border: #a2a9b1;
+    --diff-lineno-bg: #eaecf0;
+    --diff-lineno-text: #54595d;
+    --diff-del-bg: #feeec8;
+    --diff-del-border: #ffe49c;
+    --diff-del-change: #ffe49c;
+    --diff-add-bg: #d8f0d8;
+    --diff-add-border: #85e085;
+    --diff-add-change: #a3f5a3;
+    --diff-marker-del: #b32424;
+    --diff-marker-add: #14866d;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -77,14 +83,19 @@
     --text-link: #6c99e8;
     --text-link-hover: #93c5fd;
 
-    --diff-add-bg: #063d23;
+    /* प्रामाणिक विकिपीडिया मीडियाविकी डिफ़ रंग (MediaWiki Diff Colors - Dark) */
+    --diff-bg: #1e293b;
+    --diff-border: #475569;
+    --diff-lineno-bg: #0f172a;
+    --diff-lineno-text: #94a3b8;
+    --diff-del-bg: #452a10;
+    --diff-del-border: #854d0e;
+    --diff-del-change: #78350f;
+    --diff-add-bg: #064e3b;
     --diff-add-border: #059669;
-    --diff-add-text: #a7f3d0;
-    --diff-add-highlight: #047857;
-
-    --diff-del-bg: #4c1117;
-    --diff-del-border: #dc2626;
-    --diff-del-text: #fecaca;
+    --diff-add-change: #047857;
+    --diff-marker-del: #f87171;
+    --diff-marker-add: #34d399;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -112,9 +123,9 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1240px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 16px;
 }
 
 a {
@@ -132,7 +143,7 @@ a:hover {
 .app-header {
     background-color: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
-    padding: 16px 0;
+    padding: 14px 0;
     box-shadow: var(--shadow-sm);
     position: sticky;
     top: 0;
@@ -143,36 +154,24 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .logo-area {
     display: flex;
     align-items: center;
-    gap: 14px;
-}
-
-.logo-icon {
-    font-size: 2.2rem;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--primary-light);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
 }
 
 .logo-title-wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
 .app-title {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
@@ -200,7 +199,7 @@ a:hover {
 }
 
 .app-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--text-secondary);
     margin-top: 2px;
 }
@@ -208,7 +207,8 @@ a:hover {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* ================== बटन शैलियाँ ================== */
@@ -218,7 +218,7 @@ a:hover {
     justify-content: center;
     gap: 6px;
     font-family: var(--font-sans);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
@@ -280,7 +280,7 @@ a:hover {
 
 .btn-sm {
     padding: 4px 10px;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
 .btn-lg {
@@ -290,7 +290,7 @@ a:hover {
 
 .btn-chip {
     padding: 4px 12px;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     background-color: var(--bg-alt);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
@@ -325,34 +325,39 @@ a:hover {
     color: var(--accent-red) !important;
 }
 
-/* ================== कार्ड्स एवं लेआउट ================== */
+.text-success {
+    color: var(--accent-green) !important;
+}
+
+/* ================== मुख्य कंटेनर एवं कार्ड्स ================== */
 .main-content {
     flex: 1;
-    padding: 24px 20px 60px;
+    padding: 20px 16px 60px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
 }
 
 .card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 24px;
+    padding: 20px 24px;
     box-shadow: var(--shadow-sm);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border-light);
 }
 
 .card-header h2, .card-header h3 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-primary);
 }
@@ -362,17 +367,15 @@ a:hover {
     font-weight: 600;
     color: var(--text-secondary);
     background: var(--bg-alt);
-    padding: 3px 10px;
+    padding: 2px 10px;
     border-radius: 999px;
     border: 1px solid var(--border-color);
 }
 
 /* ================== सूचना बैनर ================== */
 .banner {
-    display: flex;
-    gap: 16px;
-    padding: 16px 20px;
-    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
 }
@@ -388,34 +391,67 @@ a:hover {
     border-color: #1e40af;
 }
 
-.banner-icon {
-    font-size: 1.5rem;
-    line-height: 1;
+.banner-body {
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
-.banner-body {
-    font-size: 0.92rem;
-    line-height: 1.5;
+/* ================== कॉम्पैक्ट एक्टिव आर्टिकल बार (ऊपर से हटने पर) ================== */
+.compact-article-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--primary-color);
+    border-left: 5px solid var(--primary-color);
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    animation: slideDown 0.3s ease;
+}
+
+.compact-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+.compact-label {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+
+.compact-lang-badge {
+    background-color: var(--bg-alt);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
 /* ================== फॉर्म शैलियाँ ================== */
 .form-row {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
-.flex-1 { flex: 1; min-width: 280px; }
-.flex-2 { flex: 2; min-width: 320px; }
+.flex-1 { flex: 1; min-width: 260px; }
+.flex-2 { flex: 2; min-width: 300px; }
 
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .form-label {
     display: block;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     margin-bottom: 6px;
     color: var(--text-primary);
@@ -423,9 +459,9 @@ a:hover {
 
 .form-control {
     width: 100%;
-    padding: 10px 14px;
+    padding: 9px 12px;
     font-family: var(--font-sans);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     color: var(--text-primary);
     background-color: var(--bg-input);
     border: 1px solid var(--border-color);
@@ -440,13 +476,13 @@ a:hover {
 }
 
 .form-control-sm {
-    padding: 6px 10px;
-    font-size: 0.85rem;
+    padding: 5px 8px;
+    font-size: 0.82rem;
 }
 
 .monospace-input {
     font-family: var(--font-mono);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     line-height: 1.5;
     resize: vertical;
 }
@@ -455,26 +491,26 @@ a:hover {
     display: block;
     font-size: 0.82rem;
     color: var(--text-secondary);
-    margin-top: 6px;
+    margin-top: 5px;
 }
 
 .input-with-button {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
 .lang-selector-group {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
 .custom-lang-input {
-    width: 140px;
+    width: 130px;
 }
 
 .preset-buttons {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
@@ -483,8 +519,14 @@ a:hover {
     justify-content: space-between;
     align-items: center;
     margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.status-inline-text {
     font-size: 0.85rem;
     color: var(--text-secondary);
+    align-self: center;
 }
 
 /* ================== टैब्स ================== */
@@ -492,18 +534,18 @@ a:hover {
     display: flex;
     gap: 4px;
     border-bottom: 2px solid var(--border-light);
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     overflow-x: auto;
 }
 
 .tab-btn {
-    padding: 10px 18px;
+    padding: 8px 16px;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
     font-family: var(--font-sans);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-secondary);
     cursor: pointer;
@@ -526,19 +568,20 @@ a:hover {
 
 .tab-content.active {
     display: block;
+    animation: fadeIn 0.2s ease-in-out;
 }
 
 /* ================== सेटिंग्स अकॉर्डियन ================== */
 .settings-accordion {
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     background: var(--bg-alt);
     overflow: hidden;
 }
 
 .settings-header {
-    padding: 12px 18px;
+    padding: 10px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -553,7 +596,7 @@ a:hover {
 }
 
 .accordion-arrow {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     transition: transform 0.2s ease;
 }
 
@@ -566,7 +609,7 @@ a:hover {
 }
 
 .settings-body {
-    padding: 16px 18px;
+    padding: 14px 16px;
     background-color: var(--bg-card);
     border-top: 1px solid var(--border-light);
 }
@@ -574,33 +617,33 @@ a:hover {
 .settings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
+    gap: 14px;
 }
 
 .setting-item {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
 }
 
 .setting-item input[type="checkbox"] {
     margin-top: 4px;
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
     cursor: pointer;
     accent-color: var(--primary-color);
 }
 
 .setting-desc strong {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     color: var(--text-primary);
     display: block;
     line-height: 1.3;
 }
 
 .setting-desc p {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin-top: 2px;
     line-height: 1.4;
@@ -611,14 +654,144 @@ a:hover {
     align-items: center;
 }
 
-.setting-item-input input {
-    width: 70px;
+/* ================== सहायक उपकरण पटल एवं उपयोग विधि ================== */
+.aux-tools-card {
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+
+.aux-tools-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.aux-tools-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.aux-tools-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.aux-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.aux-tool-item {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.aux-tool-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.aux-tool-meta h4 {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.tool-desc-text {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.tool-guide-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    background-color: var(--bg-alt);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.aux-guide-details {
+    margin-top: 14px;
+    padding: 12px 16px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    animation: fadeIn 0.2s ease;
+}
+
+.aux-guide-details h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.aux-guide-details ol {
+    padding-left: 20px;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ================== कीबोर्ड शॉर्टकट्स त्वरित पट्टी ================== */
+.shortcuts-quick-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    font-size: 0.82rem;
+}
+
+.shortcuts-title {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.shortcut-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-secondary);
 }
 
 .action-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 /* ================== प्रगति पटल (Progress) ================== */
@@ -629,13 +802,13 @@ a:hover {
 .progress-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 14px;
+    gap: 14px;
+    margin-bottom: 12px;
 }
 
 .spinner {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border: 3px solid var(--border-color);
     border-top-color: var(--primary-color);
     border-radius: 50%;
@@ -647,17 +820,17 @@ a:hover {
 }
 
 .progress-info h3 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: var(--text-primary);
 }
 
 .progress-info p {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--text-secondary);
 }
 
 .progress-bar-wrap {
-    height: 8px;
+    height: 6px;
     background-color: var(--bg-alt);
     border-radius: 999px;
     overflow: hidden;
@@ -672,31 +845,35 @@ a:hover {
 
 .progress-log {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
     background-color: var(--bg-alt);
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: var(--radius-sm);
     max-height: 80px;
     overflow-y: auto;
 }
 
-/* ================== परिणाम पटल (Results) ================== */
+/* ================== परिणाम पटल (Results Section) ================== */
+.results-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
 .results-header {
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 14px;
 }
 
 .results-meta-badges {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .counter-badge {
-    padding: 4px 10px;
+    padding: 3px 9px;
     border-radius: 999px;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
 }
 
@@ -718,34 +895,88 @@ a:hover {
     border: 1px solid var(--accent-green);
 }
 
+.badge-disambig {
+    background-color: var(--accent-orange-bg);
+    color: var(--accent-orange);
+    border: 1px solid var(--accent-orange);
+}
+
 .badge-red {
     background-color: var(--accent-red-bg);
     color: var(--accent-red);
     border: 1px solid var(--accent-red);
 }
 
-.review-toolbar {
+/* कड़ी घनत्व पट्टी */
+.density-gauge-card {
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.density-metrics {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    gap: 16px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+}
+
+.metric-label {
+    color: var(--text-secondary);
+}
+
+.density-rating {
+    font-size: 0.75rem;
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: 4px;
+}
+
+/* ================== उन्नत छन्नी पट्टी (Filter Toolbar) ================== */
+.review-toolbar {
     background: var(--bg-alt);
     padding: 10px 14px;
     border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.filter-row-actions {
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
 }
 
 .filter-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .filter-label {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.82rem;
+    font-weight: 700;
     color: var(--text-secondary);
 }
 
@@ -755,17 +986,17 @@ a:hover {
 
 /* ================== कड़ियों की तालिका ================== */
 .suggestions-table-container {
-    max-height: 380px;
+    max-height: 360px;
     overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .suggestions-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     background-color: var(--bg-card);
 }
 
@@ -774,7 +1005,7 @@ a:hover {
     color: var(--text-secondary);
     font-weight: 600;
     text-align: left;
-    padding: 10px 14px;
+    padding: 9px 12px;
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
@@ -782,7 +1013,7 @@ a:hover {
 }
 
 .suggestions-table td {
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border-light);
     vertical-align: middle;
 }
@@ -806,15 +1037,16 @@ a:hover {
     align-items: center;
     gap: 4px;
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.84rem;
 }
 
 .status-pill {
     display: inline-block;
-    padding: 2px 8px;
-    font-size: 0.75rem;
+    padding: 2px 7px;
+    font-size: 0.72rem;
     font-weight: 600;
     border-radius: 999px;
+    white-space: nowrap;
 }
 
 .status-pill-blue {
@@ -827,6 +1059,18 @@ a:hover {
     background-color: var(--accent-green-bg);
     color: var(--accent-green);
     border: 1px solid var(--accent-green);
+}
+
+.status-pill-disambig {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+[data-theme="dark"] .status-pill-disambig {
+    background-color: #451a03;
+    color: #fde68a;
+    border-color: #b45309;
 }
 
 .status-pill-red {
@@ -845,80 +1089,185 @@ a:hover {
 }
 
 .context-highlight {
-    background-color: var(--diff-add-highlight);
-    color: var(--diff-add-text);
-    padding: 1px 4px;
+    background-color: #d8f0d8;
+    color: #155724;
+    padding: 1px 3px;
     border-radius: 2px;
     font-weight: 600;
 }
 
-/* ================== डिफ़ दृश्य (Diff View) ================== */
-.diff-container {
-    background-color: var(--bg-card);
+/* ================== प्रामाणिक विकिपीडिया मीडियाविकी डिफ़ दृश्य ================== */
+.diff-view-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background-color: var(--bg-alt);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-bottom: none;
+}
+
+.diff-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.diff-mode-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.diff-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    text-align: center;
+    line-height: 16px;
+    font-weight: bold;
+    font-family: var(--font-mono);
+    border-radius: 2px;
+    font-size: 0.75rem;
+}
+
+.swatch-del {
+    background-color: var(--diff-del-bg);
+    color: var(--diff-marker-del);
+    border: 1px solid var(--diff-del-border);
+}
+
+.swatch-add {
+    background-color: var(--diff-add-bg);
+    color: var(--diff-marker-add);
+    border: 1px solid var(--diff-add-border);
+}
+
+.diff-container {
+    background-color: var(--diff-bg);
+    border: 1px solid var(--diff-border);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 0.88rem;
-    max-height: 500px;
+    max-height: 520px;
     overflow: auto;
 }
 
-.diff-table {
+/* मीडियाविकी डिफ़ टेबल संरचना (Authentic MediaWiki Diff) */
+table.diff {
     width: 100%;
     border-collapse: collapse;
-}
-
-.diff-lineno {
-    width: 50px;
-    padding: 4px 10px;
-    text-align: right;
-    color: var(--text-muted);
-    user-select: none;
-    border-right: 1px solid var(--border-light);
-    background-color: var(--bg-alt);
-    font-size: 0.8rem;
-}
-
-.diff-marker {
-    width: 24px;
-    text-align: center;
-    user-select: none;
-    font-weight: bold;
-}
-
-.diff-content {
-    padding: 4px 12px;
+    background-color: var(--diff-bg);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-.diff-row-added {
+table.diff td {
+    padding: 4px 8px;
+    vertical-align: top;
+}
+
+.diff-title td {
+    background-color: var(--bg-alt);
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--diff-border);
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.diff-otitle {
+    border-right: 1px solid var(--diff-border);
+}
+
+.diff-lineno {
+    font-family: var(--font-sans);
+    font-weight: bold;
+    font-size: 0.82rem;
+    color: var(--diff-lineno-text);
+    background-color: var(--diff-lineno-bg);
+    padding: 4px 8px;
+    border-top: 1px solid var(--diff-border);
+    border-bottom: 1px solid var(--diff-border);
+    user-select: none;
+}
+
+.diff-marker {
+    width: 1.8em;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.95rem;
+    user-select: none;
+}
+
+.diff-deletedline {
+    background-color: var(--diff-del-bg);
+    color: var(--text-primary);
+    border-left: 3px solid #f29c9f;
+}
+
+.diff-deletedline .diff-marker {
+    color: var(--diff-marker-del);
+}
+
+.diff-addedline {
     background-color: var(--diff-add-bg);
-    color: var(--diff-add-text);
+    color: var(--text-primary);
+    border-left: 3px solid #85e085;
 }
 
-.diff-row-added .diff-marker {
-    color: var(--accent-green);
+.diff-addedline .diff-marker {
+    color: var(--diff-marker-add);
 }
 
-.diff-highlight-add {
-    background-color: var(--diff-add-highlight);
+.diff-context {
+    color: var(--text-secondary);
+    background-color: var(--diff-bg);
+}
+
+/* इंट्रा-लाइन शब्द स्तर परिवर्तन (MediaWiki diffchange) */
+ins.diffchange, ins.diffchange-inline {
+    background-color: var(--diff-add-change);
+    color: #155724;
+    text-decoration: none;
+    font-weight: 700;
     border-radius: 2px;
     padding: 1px 2px;
-    font-weight: 600;
 }
 
-.diff-row-deleted {
-    background-color: var(--diff-del-bg);
-    color: var(--diff-del-text);
+[data-theme="dark"] ins.diffchange, [data-theme="dark"] ins.diffchange-inline {
+    background-color: #047857;
+    color: #ecfdf5;
 }
 
-.diff-row-deleted .diff-marker {
-    color: var(--accent-red);
+del.diffchange, del.diffchange-inline {
+    background-color: var(--diff-del-change);
+    color: #721c24;
+    text-decoration: line-through;
+    font-weight: 700;
+    border-radius: 2px;
+    padding: 1px 2px;
 }
 
-.diff-row-context {
-    color: var(--text-secondary);
+[data-theme="dark"] del.diffchange, [data-theme="dark"] del.diffchange-inline {
+    background-color: #78350f;
+    color: #fef3c7;
 }
 
 .diff-empty-msg {
@@ -933,8 +1282,8 @@ a:hover {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    padding: 24px 30px;
-    max-height: 500px;
+    padding: 20px 24px;
+    max-height: 520px;
     overflow-y: auto;
     font-family: var(--font-sans);
     line-height: 1.8;
@@ -942,18 +1291,18 @@ a:hover {
 
 .wiki-article-body h2 {
     border-bottom: 1px solid var(--border-color);
-    margin: 20px 0 10px;
+    margin: 18px 0 8px;
     padding-bottom: 4px;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
 }
 
 .wiki-article-body h3 {
-    margin: 16px 0 8px;
-    font-size: 1.15rem;
+    margin: 14px 0 6px;
+    font-size: 1.1rem;
 }
 
 .wiki-article-body p {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .wiki-article-body a.wiki-link {
@@ -962,43 +1311,38 @@ a:hover {
     font-weight: 500;
 }
 
-.wiki-article-body a.wiki-link-red {
-    color: var(--accent-red);
-    text-decoration: underline;
-}
-
 .wiki-article-body a.wiki-link-new {
-    background-color: rgba(42, 75, 141, 0.12);
-    padding: 1px 4px;
-    border-radius: 3px;
+    background-color: rgba(42, 75, 141, 0.1);
+    padding: 1px 3px;
+    border-radius: 2px;
     border-bottom: 2px solid var(--accent-blue);
 }
 
-/* ================== अंतिम क्रिया पट्टी (Final Action Bar) ================== */
+/* ================== अंतिम क्रिया पट्टी (Sticky Action Bar) ================== */
 .final-action-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
-    margin-top: 24px;
-    padding-top: 20px;
+    gap: 14px;
+    margin-top: 20px;
+    padding-top: 16px;
     border-top: 2px solid var(--border-light);
 }
 
 .action-info {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-secondary);
 }
 
 .action-buttons-group {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
-/* ================== गाइड पटल (Guide) ================== */
+/* ================== गाइड पटल ================== */
 .guide-card {
     background-color: var(--bg-alt);
     border: 1px solid var(--border-light);
@@ -1006,36 +1350,36 @@ a:hover {
 
 .guide-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
 }
 
 .guide-box {
     background-color: var(--bg-card);
-    padding: 18px;
+    padding: 16px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
 }
 
 .guide-box h4 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: var(--text-primary);
 }
 
 .guide-box ul, .guide-box ol {
-    padding-left: 20px;
-    font-size: 0.88rem;
+    padding-left: 18px;
+    font-size: 0.85rem;
     color: var(--text-secondary);
     line-height: 1.6;
 }
 
 .guide-box li {
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
-/* ================== मोडल (Modal) ================== */
+/* ================== मोडल्स (Modals) ================== */
 .modal-backdrop {
     position: fixed;
     top: 0;
@@ -1048,6 +1392,7 @@ a:hover {
     justify-content: center;
     z-index: 200;
     backdrop-filter: blur(2px);
+    animation: fadeIn 0.15s ease-out;
 }
 
 .modal-card {
@@ -1060,223 +1405,106 @@ a:hover {
     overflow: hidden;
 }
 
+.modal-lg {
+    max-width: 680px;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    padding: 14px 18px;
     border-bottom: 1px solid var(--border-light);
 }
 
 .modal-header h3 {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     color: var(--text-primary);
 }
 
 .modal-close-btn {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: var(--text-secondary);
     cursor: pointer;
     line-height: 1;
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 18px;
 }
 
 .modal-footer {
-    padding: 14px 20px;
+    padding: 12px 18px;
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 8px;
     background-color: var(--bg-alt);
     border-top: 1px solid var(--border-light);
 }
 
-.verify-status-box {
-    margin-top: 10px;
-    font-size: 0.85rem;
+.duplicate-list-wrap {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    margin: 10px 0;
+}
+
+.duplicate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    display: none;
-}
-
-/* ================== टोस्ट (Toast) ================== */
-.toast {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background-color: #202122;
-    color: #ffffff;
-    padding: 12px 24px;
-    border-radius: var(--radius-md);
-    font-size: 0.95rem;
-    font-weight: 600;
-    box-shadow: var(--shadow-lg);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    z-index: 300;
-    pointer-events: none;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* ================== पाद लेख (Footer) ================== */
-.app-footer {
-    background-color: var(--bg-card);
-    border-top: 1px solid var(--border-color);
-    padding: 20px 0;
+    border-bottom: 1px solid var(--border-light);
     font-size: 0.88rem;
-    color: var(--text-secondary);
-    margin-top: auto;
 }
 
-.footer-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
+.duplicate-item:last-child {
+    border-bottom: none;
 }
 
-/* ================== रिस्पॉन्सिव (Responsive) ================== */
-@media (max-width: 768px) {
-    .header-inner {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .header-actions {
-        width: 100%;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-    }
-
-    .form-row {
-        flex-direction: column;
-    }
-
-    .final-action-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .action-buttons-group {
-        flex-direction: column;
-    }
-
-    .action-buttons-group .btn {
-        width: 100%;
-    }
-}
-
-/* =====================================================================
-   v1.2 नए तार्किक नियम, उन्नत छन्नी एवं सहायक उपकरण शैलियाँ
-   ===================================================================== */
-
-/* बहुविकल्पी बैज एवं पिल */
-.badge-disambig {
-    background-color: var(--accent-orange-bg);
-    color: var(--accent-orange);
-    border: 1px solid var(--accent-orange);
-}
-
-.status-pill-disambig {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #f59e0b;
-}
-
-[data-theme="dark"] .status-pill-disambig {
-    background-color: #451a03;
-    color: #fde68a;
-    border-color: #b45309;
-}
-
-/* सहायक उपकरण बैनर */
-.aux-tools-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    background-color: var(--bg-alt);
-    padding: 10px 16px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 20px;
-    border: 1px dashed var(--border-color);
-}
-
-.aux-tools-title {
-    font-size: 0.9rem;
+.duplicate-count {
+    background-color: var(--accent-red-bg);
+    color: var(--accent-red);
     font-weight: 700;
-    color: var(--text-primary);
-}
-
-.aux-tools-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-/* कड़ी घनत्व पट्टी */
-.density-gauge-card {
-    background-color: var(--bg-alt);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    margin-bottom: 16px;
-}
-
-.density-metrics {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.metric-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
-}
-
-.metric-label {
-    color: var(--text-secondary);
-}
-
-.density-rating {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     padding: 2px 8px;
     border-radius: 999px;
-    margin-left: 4px;
 }
 
-/* उन्नत छन्नी (Filters Layout) */
-.filter-row {
+/* ब्लैकलिस्ट चिप्स */
+.blacklist-tags-wrap {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
     flex-wrap: wrap;
-    width: 100%;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: var(--bg-alt);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
 }
 
-.filter-row-actions {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-light);
+.blacklist-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 0.82rem;
 }
 
-/* फ्लोटिंग विकिपीडिया सारांश कार्ड (Summary Hover Card) */
+.blacklist-remove-btn {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--accent-red);
+}
+
+/* फ्लोटिंग सारांश कार्ड */
 .wiki-summary-card {
     position: fixed;
     z-index: 250;
@@ -1287,11 +1515,6 @@ a:hover {
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     animation: fadeIn 0.15s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 .summary-card-header {
@@ -1355,98 +1578,12 @@ a:hover {
     text-align: right;
 }
 
-/* संपादन सारांश कार्ड */
-.edit-summary-card {
-    background-color: var(--bg-alt);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    margin-top: 16px;
-}
-
-.edit-summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.edit-summary-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-/* डुप्लिकेट क्लीनर तालिका */
-.modal-lg {
-    max-width: 680px;
-}
-
-.duplicate-list-wrap {
-    max-height: 320px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    margin: 12px 0;
-}
-
-.duplicate-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 14px;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.duplicate-item:last-child {
-    border-bottom: none;
-}
-
-.duplicate-count {
-    background-color: var(--accent-red-bg);
-    color: var(--accent-red);
-    font-weight: 700;
-    font-size: 0.8rem;
-    padding: 2px 8px;
-    border-radius: 999px;
-}
-
-/* कस्टम ब्लैकलिस्ट टैग्स */
-.blacklist-tags-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    max-height: 220px;
-    overflow-y: auto;
-    padding: 10px;
-    background-color: var(--bg-alt);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-light);
-}
-
-.blacklist-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    padding: 4px 10px;
-    font-size: 0.85rem;
-}
-
-.blacklist-remove-btn {
-    cursor: pointer;
-    font-weight: bold;
-    color: var(--accent-red);
-}
-
 /* कीबोर्ड शॉर्टकट्स */
 kbd {
     display: inline-block;
     padding: 2px 6px;
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-primary);
     background-color: var(--bg-alt);
     border: 1px solid var(--border-color);
@@ -1455,5 +1592,130 @@ kbd {
 }
 
 .shortcuts-table td {
-    padding: 8px 12px;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+}
+
+/* ================== टोस्ट (Toast) ================== */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background-color: #202122;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 300;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ================== एनीमेशन्स (Animations) ================== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================== पाद लेख (Footer) ================== */
+.app-footer {
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    padding: 16px 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: auto;
+}
+
+.footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ================== रिस्पॉन्सिव अनुकूलन (Mobile, Tablet, Laptop) ================== */
+
+/* टैबलेट (Tablet: 768px - 1024px) */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 14px;
+    }
+
+    .diff-container {
+        max-height: 420px;
+    }
+}
+
+/* मोबाइल (Mobile: < 768px) */
+@media (max-width: 768px) {
+    .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .aux-tools-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .review-toolbar {
+        padding: 8px 10px;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .search-suggestions-wrap input {
+        width: 100%;
+    }
+
+    .final-action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .action-buttons-group {
+        flex-direction: column;
+    }
+
+    .action-buttons-group .btn {
+        width: 100%;
+    }
+
+    /* मोबाइल पर डिफ़ को हॉरिजॉन्टल स्क्रॉल या यूनिफाइड सपोर्ट */
+    table.diff {
+        min-width: 600px;
+    }
+
+    .diff-view-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }

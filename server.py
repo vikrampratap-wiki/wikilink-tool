@@ -101,16 +101,16 @@ def start_server(port: int = DEFAULT_PORT, auto_open: bool = True):
         with socketserver.TCPServer(("", port), handler) as httpd:
             url = f"http://localhost:{port}/index.html"
             print("=" * 72)
-            print("  🔗 विकीलिंक सहायक वेबसाइट (WikiLink Assistant - v1.0)")
-            print("  विकिपीडिया तार्किक आंतरिक कड़ी योजक उपकरण (reFill शैली)")
+            print("  विकीलिंक सहायक वेबसाइट (WikiLink Assistant - v2.0)")
+            print("  विकिपीडिया तार्किक आंतरिक कड़ी योजक उपकरण")
             print("=" * 72)
-            print(f"  🌐 सर्वर सक्रिय है: {url}")
-            print(f"  📂 रूट डायरेक्टरी: {web_dir}")
-            print("  🛑 सर्वर बंद करने हेतु Ctrl+C दबाएँ।")
+            print(f"  सर्वर सक्रिय है: {url}")
+            print(f"  रूट डायरेक्टरी: {web_dir}")
+            print("  सर्वर बंद करने हेतु Ctrl+C दबाएँ।")
             print("=" * 72)
 
             if auto_open:
-                print("  🚀 आपके डिफ़ॉल्ट वेब ब्राउज़र में टूल खोला जा रहा है...")
+                print("  डिफ़ॉल्ट वेब ब्राउज़र में टूल खोला जा रहा है...")
                 webbrowser.open(url)
 
             httpd.serve_forever()
