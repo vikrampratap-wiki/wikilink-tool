@@ -1,0 +1,1177 @@
+/* =====================================================================
+   विकीलिंक सहायक (WikiLink Assistant) - मुख्य स्टाइलशीट (CSS)
+   ===================================================================== */
+
+:root {
+    --primary-color: #2a4b8d;
+    --primary-hover: #1f3665;
+    --primary-light: #eaf3ff;
+    --accent-blue: #3366cc;
+    --accent-green: #14866d;
+    --accent-green-bg: #e6f9f3;
+    --accent-orange: #d46b08;
+    --accent-orange-bg: #fff7e6;
+    --accent-red: #d33;
+    --accent-red-bg: #ffeef0;
+
+    --bg-main: #f8f9fa;
+    --bg-card: #ffffff;
+    --bg-alt: #f1f3f5;
+    --bg-input: #ffffff;
+
+    --border-color: #c8ccd1;
+    --border-light: #eaecf0;
+    --border-dark: #a2a9b1;
+
+    --text-primary: #202122;
+    --text-secondary: #54595d;
+    --text-muted: #72777d;
+    --text-link: #3366cc;
+    --text-link-hover: #2a4b8d;
+
+    --diff-add-bg: #e6ffed;
+    --diff-add-border: #acf2bd;
+    --diff-add-text: #155724;
+    --diff-add-highlight: #a8f5bc;
+
+    --diff-del-bg: #ffeef0;
+    --diff-del-border: #fdb8c0;
+    --diff-del-text: #721c24;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    --font-sans: 'Mukta', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', Consolas, "Courier New", monospace;
+}
+
+[data-theme="dark"] {
+    --primary-color: #6c99e8;
+    --primary-hover: #8db5f8;
+    --primary-light: #1e293b;
+    --accent-blue: #6c99e8;
+    --accent-green: #34d399;
+    --accent-green-bg: #064e3b;
+    --accent-orange: #fbbf24;
+    --accent-orange-bg: #451a03;
+    --accent-red: #f87171;
+    --accent-red-bg: #450a0a;
+
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-alt: #172033;
+    --bg-input: #0f172a;
+
+    --border-color: #334155;
+    --border-light: #1e293b;
+    --border-dark: #475569;
+
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-link: #6c99e8;
+    --text-link-hover: #93c5fd;
+
+    --diff-add-bg: #063d23;
+    --diff-add-border: #059669;
+    --diff-add-text: #a7f3d0;
+    --diff-add-highlight: #047857;
+
+    --diff-del-bg: #4c1117;
+    --diff-del-border: #dc2626;
+    --diff-del-text: #fecaca;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ================== सामान्य रीसेट एवं लेआउट ================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+a {
+    color: var(--text-link);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+a:hover {
+    color: var(--text-link-hover);
+    text-decoration: underline;
+}
+
+/* ================== शीर्ष पट्टी (Header) ================== */
+.app-header {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 0;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-icon {
+    font-size: 2.2rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.logo-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.app-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    line-height: 1.4;
+}
+
+.badge-tool {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.badge-version {
+    background-color: var(--bg-alt);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.app-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ================== बटन शैलियाँ ================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background-color: var(--bg-alt);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.btn-success {
+    background-color: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+}
+
+.btn-success:hover {
+    background-color: #0f6c57;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.btn-outline:hover {
+    background-color: var(--bg-alt);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1.05rem;
+}
+
+.btn-chip {
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    background-color: var(--bg-alt);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+}
+
+.btn-chip:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-chip.active-chip {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--text-link);
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.btn-text:hover {
+    text-decoration: underline;
+}
+
+.text-danger {
+    color: var(--accent-red) !important;
+}
+
+/* ================== कार्ड्स एवं लेआउट ================== */
+.main-content {
+    flex: 1;
+    padding: 24px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.card-header h2, .card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.step-badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-alt);
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+}
+
+/* ================== सूचना बैनर ================== */
+.banner {
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.banner-info {
+    background-color: var(--primary-light);
+    border-color: #b3d1ff;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .banner-info {
+    background-color: #172554;
+    border-color: #1e40af;
+}
+
+.banner-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.banner-body {
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+/* ================== फॉर्म शैलियाँ ================== */
+.form-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.flex-1 { flex: 1; min-width: 280px; }
+.flex-2 { flex: 2; min-width: 320px; }
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(42, 75, 141, 0.2);
+}
+
+.form-control-sm {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+.monospace-input {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 10px;
+}
+
+.lang-selector-group {
+    display: flex;
+    gap: 10px;
+}
+
+.custom-lang-input {
+    width: 140px;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.raw-tools {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* ================== टैब्स ================== */
+.tabs-nav {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--border-light);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    padding: 10px 18px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ================== सेटिंग्स अकॉर्डियन ================== */
+.settings-accordion {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+    background: var(--bg-alt);
+    overflow: hidden;
+}
+
+.settings-header {
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-primary);
+}
+
+.settings-header:hover {
+    background-color: var(--border-light);
+}
+
+.accordion-arrow {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.settings-accordion.collapsed .accordion-arrow {
+    transform: rotate(-90deg);
+}
+
+.settings-accordion.collapsed .settings-body {
+    display: none;
+}
+
+.settings-body {
+    padding: 16px 18px;
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-light);
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.setting-item input[type="checkbox"] {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.setting-desc strong {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    display: block;
+    line-height: 1.3;
+}
+
+.setting-desc p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    line-height: 1.4;
+}
+
+.setting-item-input {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-item-input input {
+    width: 70px;
+}
+
+.action-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+/* ================== प्रगति पटल (Progress) ================== */
+.progress-card {
+    border-left: 4px solid var(--primary-color);
+}
+
+.progress-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.progress-info h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.progress-info p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.progress-bar-wrap {
+    height: 8px;
+    background-color: var(--bg-alt);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.progress-log {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-alt);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+/* ================== परिणाम पटल (Results) ================== */
+.results-header {
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.results-meta-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.counter-badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-total {
+    background-color: var(--bg-alt);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.badge-blue {
+    background-color: var(--primary-light);
+    color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
+}
+
+.badge-redirect {
+    background-color: var(--accent-green-bg);
+    color: var(--accent-green);
+    border: 1px solid var(--accent-green);
+}
+
+.badge-red {
+    background-color: var(--accent-red-bg);
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+}
+
+.review-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    background: var(--bg-alt);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.search-suggestions-wrap input {
+    width: 220px;
+}
+
+/* ================== कड़ियों की तालिका ================== */
+.suggestions-table-container {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    margin-bottom: 24px;
+}
+
+.suggestions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    background-color: var(--bg-card);
+}
+
+.suggestions-table th {
+    background-color: var(--bg-alt);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.suggestions-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+}
+
+.suggestions-table tr:hover {
+    background-color: var(--primary-light);
+}
+
+.suggestions-table tr.row-deselected {
+    opacity: 0.55;
+    background-color: var(--bg-alt);
+}
+
+.term-tag {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.target-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+}
+
+.status-pill-blue {
+    background-color: var(--primary-light);
+    color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
+}
+
+.status-pill-redirect {
+    background-color: var(--accent-green-bg);
+    color: var(--accent-green);
+    border: 1px solid var(--accent-green);
+}
+
+.status-pill-red {
+    background-color: var(--accent-red-bg);
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+}
+
+.context-snippet {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.context-highlight {
+    background-color: var(--diff-add-highlight);
+    color: var(--diff-add-text);
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+/* ================== डिफ़ दृश्य (Diff View) ================== */
+.diff-container {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    max-height: 500px;
+    overflow: auto;
+}
+
+.diff-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.diff-lineno {
+    width: 50px;
+    padding: 4px 10px;
+    text-align: right;
+    color: var(--text-muted);
+    user-select: none;
+    border-right: 1px solid var(--border-light);
+    background-color: var(--bg-alt);
+    font-size: 0.8rem;
+}
+
+.diff-marker {
+    width: 24px;
+    text-align: center;
+    user-select: none;
+    font-weight: bold;
+}
+
+.diff-content {
+    padding: 4px 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.diff-row-added {
+    background-color: var(--diff-add-bg);
+    color: var(--diff-add-text);
+}
+
+.diff-row-added .diff-marker {
+    color: var(--accent-green);
+}
+
+.diff-highlight-add {
+    background-color: var(--diff-add-highlight);
+    border-radius: 2px;
+    padding: 1px 2px;
+    font-weight: 600;
+}
+
+.diff-row-deleted {
+    background-color: var(--diff-del-bg);
+    color: var(--diff-del-text);
+}
+
+.diff-row-deleted .diff-marker {
+    color: var(--accent-red);
+}
+
+.diff-row-context {
+    color: var(--text-secondary);
+}
+
+.diff-empty-msg {
+    padding: 30px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ================== पूर्वावलोकन (Preview) ================== */
+.rendered-article-preview {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 24px 30px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: var(--font-sans);
+    line-height: 1.8;
+}
+
+.wiki-article-body h2 {
+    border-bottom: 1px solid var(--border-color);
+    margin: 20px 0 10px;
+    padding-bottom: 4px;
+    font-size: 1.3rem;
+}
+
+.wiki-article-body h3 {
+    margin: 16px 0 8px;
+    font-size: 1.15rem;
+}
+
+.wiki-article-body p {
+    margin-bottom: 14px;
+}
+
+.wiki-article-body a.wiki-link {
+    color: var(--accent-blue);
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.wiki-article-body a.wiki-link-red {
+    color: var(--accent-red);
+    text-decoration: underline;
+}
+
+.wiki-article-body a.wiki-link-new {
+    background-color: rgba(42, 75, 141, 0.12);
+    padding: 1px 4px;
+    border-radius: 3px;
+    border-bottom: 2px solid var(--accent-blue);
+}
+
+/* ================== अंतिम क्रिया पट्टी (Final Action Bar) ================== */
+.final-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border-light);
+}
+
+.action-info {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.action-buttons-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ================== गाइड पटल (Guide) ================== */
+.guide-card {
+    background-color: var(--bg-alt);
+    border: 1px solid var(--border-light);
+}
+
+.guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.guide-box {
+    background-color: var(--bg-card);
+    padding: 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.guide-box h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.guide-box ul, .guide-box ol {
+    padding-left: 20px;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.guide-box li {
+    margin-bottom: 6px;
+}
+
+/* ================== मोडल (Modal) ================== */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(2px);
+}
+
+.modal-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    width: 90%;
+    max-width: 520px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal-header h3 {
+    font-size: 1.15rem;
+    color: var(--text-primary);
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 14px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background-color: var(--bg-alt);
+    border-top: 1px solid var(--border-light);
+}
+
+.verify-status-box {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    display: none;
+}
+
+/* ================== टोस्ट (Toast) ================== */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #202122;
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 300;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ================== पाद लेख (Footer) ================== */
+.app-footer {
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    padding: 20px 0;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin-top: auto;
+}
+
+.footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* ================== रिस्पॉन्सिव (Responsive) ================== */
+@media (max-width: 768px) {
+    .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .final-action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .action-buttons-group {
+        flex-direction: column;
+    }
+
+    .action-buttons-group .btn {
+        width: 100%;
+    }
+}
