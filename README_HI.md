@@ -1,6 +1,8 @@
 # विकीलिंक सहायक (WikiLink Assistant - v1.0)
 ### विकिपीडिया तार्किक आंतरिक कड़ी योजक उपकरण (Logical Wikilinker Tool for Wikipedia)
 
+🌐 **लाइव टूल वेबसाइट लिंक**: [https://vikrampratap-wiki.github.io/wikilink-tool/](https://vikrampratap-wiki.github.io/wikilink-tool/)
+
 यह एक स्वतंत्र, मुक्त-स्रोत उपकरण वेबसाइट है जो किसी भी चुनी हुई भाषा के विकिपीडिया लेख में **तार्किक आंतरिक कड़ियाँ (Wikilinks)** स्वतः पहचानने, जोड़ने और उनकी संवादात्मक समीक्षा करने की सुविधा प्रदान करती है। यह उपकरण लोकप्रिय विकिमीडिया टूल **[reFill](https://refill.toolforge.org/)** की शैली में विकसित किया गया है।
 
 ---

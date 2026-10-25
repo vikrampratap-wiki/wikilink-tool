@@ -1,12 +1,15 @@
 # विकीलिंक सहायक (WikiLink Assistant)
 ### विकिपीडिया तार्किक आंतरिक कड़ी योजक उपकरण (Logical Wikilinker Tool for Wikipedia)
 
+[![Live Website](https://img.shields.io/badge/Website-Live_Demo-success.svg)](https://vikrampratap-wiki.github.io/wikilink-tool/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC_BY--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 [![Wikipedia: Linking](https://img.shields.io/badge/Wikipedia-WP%3ALINK-green.svg)](https://hi.wikipedia.org/wiki/विकिपीडिया:कड़ियां)
 [![Zero Login](https://img.shields.io/badge/Login-Zero_Login_Privacy-brightgreen.svg)](#बिना-लॉगिन-संरचना)
 
-**विकीलिंक सहायक (WikiLink Assistant)** एक स्वतंत्र, मुक्त-स्रोत उपकरण वेबसाइट है जो किसी भी चुनी हुई भाषा के विकिपीडिया लेख में **तार्किक आंतरिक कड़ियाँ (Wikilinks)** स्वतः पहचानने, जोड़ने और उनकी समीक्षा करने की सुविधा प्रदान करती है। यह उपकरण लोकप्रिय विकिमीडिया टूल **[reFill](https://refill.toolforge.org/)** की शैली में डिज़ाइन किया गया है।
+**विकीलिंक सहायक (WikiLink Assistant)** एक स्वतंत्र, मुक्त-स्रोत उपकरण वेबसाइट है जो किसी भी चुनी हुई भाषा के विकिपीडिया लेख में **तार्किक आंतरिक कड़ियाँ (Wikilinks)** स्वतः पहचानने, जोड़ने और उनकी समीक्षा करने की सुविधा प्रदान करती है। यह उपकरण लोकप्रिय विकिमीडिया टूल **[reFill](https://refill.toolforge.org/)** की शैली में विकसित किया गया है।
+
+🔗 **लाइव वेबसाइट लिंक**: [https://vikrampratap-wiki.github.io/wikilink-tool/](https://vikrampratap-wiki.github.io/wikilink-tool/)
 
 ---
 
