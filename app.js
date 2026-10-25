@@ -1,20 +1,63 @@
 /**
- * विकीलिंक सहायक (WikiLink Assistant - v2.0)
+ * विकीलिंक सहायक (WikiLink Assistant - v2.1)
  * =====================================================================
  * लेखक: सदस्य:विक्रम प्रताप (hi.wikipedia.org)
  * लाइसेंस: MIT / CC BY-SA 4.0
  * 
  * विशेषताएँ:
- * 1. प्रामाणिक मीडियाविकी डिफ़ जनरेटर (MediaWiki 4-Column Side-by-side एवं Unified Diff)
- * 2. अतिरिक्त लेख लोडिंग विकल्प: यादृच्छिक लेख, श्रेणी सदस्य, फ़ाइल अपलोड (.wiki/.txt)
- * 3. स्वचालित इनपुट पटल संकुचन (विश्लेषण के बाद स्वतः सिमटना)
- * 4. बहु-आयामी छन्नी, ओवरलिंक क्लीनर, विकिपीडिया सारांश कार्ड
- * 5. पूर्णतः इमोजी-मुक्त, स्वच्छ विकिमीडिया टूल डिज़ाइन
+ * 1. दोहरे कार्यपटल (Dual-Box Workbench):
+ *    - बॉक्स 1: मूल लेख एवं तार्किक छन्नी (Input Article & Filters)
+ *    - बॉक्स 2: दूषित लेख एवं तार्किक निदान (Contaminated Article & Logic Arguments)
+ * 2. तर्कों का प्रयोग (Wikipedia Policy Arguments Engine):
+ *    - अति-कड़ीकरण (WP:OVERLINKING)
+ *    - बहुविकल्पी पृष्ठ (WP:DISAMBIG)
+ *    - सामान्य वर्ष व तिथियाँ (WP:DATELINK)
+ *    - माप व मात्रक (Units of Measure)
+ *    - व्यर्थ पाइप सिंटेक्स शुद्धि
+ * 3. तार्किक शुद्धिकरण बटन (Sanitize & Fix Contaminated Wikitext)
+ * 4. प्रामाणिक मीडियाविकी डिफ़ जनरेटर (4-Column Side-by-side एवं Unified Diff)
+ * 5. पूर्णतः सुरक्षित DOM पहुँच (Null-Safe Architecture)
+ * 6. पूर्णतः इमोजी-मुक्त, स्वच्छ विकिमीडिया टूल डिज़ाइन
  * =====================================================================
  */
 
 (function () {
     'use strict';
+
+    // ================== सुरक्षित DOM सहायक फ़ंक्शंस ==================
+    function $(id) {
+        return document.getElementById(id);
+    }
+
+    function safeSetText(idOrEl, text) {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        if (el) el.textContent = (text !== null && text !== undefined) ? String(text) : '';
+    }
+
+    function safeSetHTML(idOrEl, html) {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        if (el) el.innerHTML = (html !== null && html !== undefined) ? String(html) : '';
+    }
+
+    function safeSetValue(idOrEl, val) {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        if (el) el.value = (val !== null && val !== undefined) ? String(val) : '';
+    }
+
+    function safeGetValue(idOrEl, fallback = '') {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        return el ? el.value : fallback;
+    }
+
+    function safeSetDisplay(idOrEl, displayVal) {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        if (el) el.style.display = displayVal;
+    }
+
+    function safeAddListener(idOrEl, event, handler) {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        if (el) el.addEventListener(event, handler);
+    }
 
     // ================== भाषा-विशिष्ट आम स्टॉपवर्ड्स ==================
     const STOPWORDS = {
@@ -74,6 +117,8 @@
         lang: 'hi',
         pageTitle: '',
         originalWikitext: '',
+        contaminatedWikitext: '',
+        sanitizedWikitext: '',
         processedWikitext: '',
         existingLinks: new Set(),
         suggestions: [],
@@ -86,147 +131,179 @@
         // छन्नी
         filterStatus: 'all',
         filterType: 'all',
-        searchQuery: ''
+        searchQuery: '',
+
+        // दूषित लेख रिपोर्ट
+        contaminations: {
+            total: 0,
+            overlinks: [],
+            disambigs: [],
+            redLinks: [],
+            syntaxIssues: [],
+            dateUnitIssues: [],
+            arguments: []
+        }
     };
 
-    // ================== DOM तत्व संदर्भ ==================
-    const DOM = {
-        langSelect: document.getElementById('lang-select'),
-        customLangWrap: document.getElementById('custom-lang-wrap'),
-        customLangInput: document.getElementById('custom-lang-input'),
-        inputControlCard: document.getElementById('input-control-card'),
-        compactActiveBar: document.getElementById('compact-active-article-bar'),
-        compactTitleText: document.getElementById('compact-title-text'),
-        compactLangText: document.getElementById('compact-lang-text'),
-        btnToggleInputCard: document.getElementById('btn-toggle-input-card'),
+    // DOM संदर्भ ऑब्जेक्ट (initDOM में सुरक्षित रूप से भरा जाएगा)
+    const DOM = {};
+
+    function initDOM() {
+        DOM.langSelect = $('lang-select');
+        DOM.customLangWrap = $('custom-lang-wrap');
+        DOM.customLangInput = $('custom-lang-input');
+        DOM.inputControlCard = $('input-control-card');
+        DOM.compactActiveBar = $('compact-active-article-bar');
+        DOM.compactTitleText = $('compact-title-text');
+        DOM.compactLangText = $('compact-lang-text');
+        DOM.btnToggleInputCard = $('btn-toggle-input-card');
+
+        // बॉक्स 2 (दूषित लेख एवं तार्किक निदान)
+        DOM.contaminatedBoxCard = $('contaminated-box-card');
+        DOM.box2StatusBadge = $('box2-status-badge');
+        DOM.statTotalContaminations = $('stat-total-contaminations');
+        DOM.statOverlinks = $('stat-overlinks');
+        DOM.statDisambigs = $('stat-disambigs');
+        DOM.statRedLinks = $('stat-red-links');
+        DOM.statSyntaxIssues = $('stat-syntax-issues');
+        DOM.contaminatedWikitextOutput = $('contaminated-wikitext-output');
+        DOM.btnCopyContaminated = $('btn-copy-contaminated');
+        DOM.btnSanitizeContaminated = $('btn-sanitize-contaminated');
+        DOM.contaminationArgumentsContainer = $('contamination-arguments-container');
+        DOM.logicRuleCount = $('logic-rule-count');
 
         // लोडिंग विकल्प
-        pageInput: document.getElementById('page-input'),
-        loadPageBtn: document.getElementById('load-page-btn'),
-        loadRandomBtn: document.getElementById('load-random-btn'),
-        randomLoadingStatus: document.getElementById('random-loading-status'),
-        categoryInput: document.getElementById('category-input'),
-        loadCategoryBtn: document.getElementById('load-category-btn'),
-        categoryPagesWrap: document.getElementById('category-pages-wrap'),
-        categoryPagesSelect: document.getElementById('category-pages-select'),
-        loadSelectedCatPageBtn: document.getElementById('load-selected-cat-page-btn'),
-        fileUploadInput: document.getElementById('file-upload-input'),
-        rawWikitextInput: document.getElementById('raw-wikitext-input'),
-        rawCharCount: document.getElementById('raw-char-count'),
-        loadSampleBtn: document.getElementById('load-sample-btn'),
-        clearRawBtn: document.getElementById('clear-raw-btn'),
-        analyzeBtn: document.getElementById('analyze-btn'),
-        themeToggleBtn: document.getElementById('theme-toggle-btn'),
-        shortcutsBtn: document.getElementById('shortcuts-btn'),
+        DOM.pageInput = $('page-input');
+        DOM.loadPageBtn = $('load-page-btn');
+        DOM.loadRandomBtn = $('load-random-btn');
+        DOM.randomLoadingStatus = $('random-loading-status');
+        DOM.categoryInput = $('category-input');
+        DOM.loadCategoryBtn = $('load-category-btn');
+        DOM.categoryPagesWrap = $('category-pages-wrap');
+        DOM.categoryPagesSelect = $('category-pages-select');
+        DOM.loadSelectedCatPageBtn = $('load-selected-cat-page-btn');
+        DOM.fileUploadInput = $('file-upload-input');
+        DOM.rawWikitextInput = $('raw-wikitext-input');
+        DOM.rawCharCount = $('raw-char-count');
+        DOM.loadSampleBtn = $('load-sample-btn');
+        DOM.clearRawBtn = $('clear-raw-btn');
+        DOM.analyzeBtn = $('analyze-btn');
+        DOM.themeToggleBtn = $('theme-toggle-btn');
+        DOM.shortcutsBtn = $('shortcuts-btn');
 
         // सेटिंग्स
-        toggleSettingsBtn: document.getElementById('toggle-settings-btn'),
-        settingsAccordion: document.querySelector('.settings-accordion'),
-        optFirstOnly: document.getElementById('opt-first-only'),
-        optBlueOnly: document.getElementById('opt-blue-only'),
-        optSkipDisambig: document.getElementById('opt-skip-disambig'),
-        optSkipDates: document.getElementById('opt-skip-dates'),
-        optSkipUnits: document.getElementById('opt-skip-units'),
-        optResolveRedirects: document.getElementById('opt-resolve-redirects'),
-        optCleanPipes: document.getElementById('opt-clean-pipes'),
-        optProtectStructures: document.getElementById('opt-protect-structures'),
-        optFilterStopwords: document.getElementById('opt-filter-stopwords'),
-        optLinkScope: document.getElementById('opt-link-scope'),
-        optMinLength: document.getElementById('opt-min-length'),
+        DOM.toggleSettingsBtn = $('toggle-settings-btn');
+        DOM.settingsAccordion = document.querySelector('.settings-accordion');
+        DOM.optFirstOnly = $('opt-first-only');
+        DOM.optBlueOnly = $('opt-blue-only');
+        DOM.optSkipDisambig = $('opt-skip-disambig');
+        DOM.optSkipDates = $('opt-skip-dates');
+        DOM.optSkipUnits = $('opt-skip-units');
+        DOM.optResolveRedirects = $('opt-resolve-redirects');
+        DOM.optCleanPipes = $('opt-clean-pipes');
+        DOM.optProtectStructures = $('opt-protect-structures');
+        DOM.optFilterStopwords = $('opt-filter-stopwords');
+        DOM.optLinkScope = $('opt-link-scope');
+        DOM.optMinLength = $('opt-min-length');
 
         // सहायक उपकरण
-        btnOpenDuplicateCleaner: document.getElementById('btn-open-duplicate-cleaner'),
-        btnOpenBlacklistMgr: document.getElementById('btn-open-blacklist-mgr'),
-        btnDownloadStandaloneHtml: document.getElementById('btn-download-standalone-html'),
-        btnToggleAuxGuide: document.getElementById('btn-toggle-aux-guide'),
-        auxGuideDetails: document.getElementById('aux-guide-details'),
-        btnShowAllShortcuts: document.getElementById('btn-show-all-shortcuts'),
+        DOM.btnOpenDuplicateCleaner = $('btn-open-duplicate-cleaner');
+        DOM.btnOpenBlacklistMgr = $('btn-open-blacklist-mgr');
+        DOM.btnDownloadStandaloneHtml = $('btn-download-standalone-html');
+        DOM.btnToggleAuxGuide = $('btn-toggle-aux-guide');
+        DOM.auxGuideDetails = $('aux-guide-details');
+        DOM.btnShowAllShortcuts = $('btn-show-all-shortcuts');
 
         // प्रगति
-        progressCard: document.getElementById('progress-card'),
-        progressTitle: document.getElementById('progress-title'),
-        progressDetail: document.getElementById('progress-detail'),
-        progressBarFill: document.getElementById('progress-bar-fill'),
-        progressLog: document.getElementById('progress-log'),
+        DOM.progressCard = $('progress-card');
+        DOM.progressTitle = $('progress-title');
+        DOM.progressDetail = $('progress-detail');
+        DOM.progressBarFill = $('progress-bar-fill');
+        DOM.progressLog = $('progress-log');
 
         // परिणाम व सांख्यिकी
-        resultsCard: document.getElementById('results-card'),
-        resultsSummaryText: document.getElementById('results-summary-text'),
-        badgeTotal: document.getElementById('badge-total'),
-        badgeBlue: document.getElementById('badge-blue'),
-        badgeRedirect: document.getElementById('badge-redirect'),
-        badgeDisambig: document.getElementById('badge-disambig'),
-        badgeRed: document.getElementById('badge-red'),
-        statTotalWords: document.getElementById('stat-total-words'),
-        statExistingLinks: document.getElementById('stat-existing-links'),
-        statNewLinks: document.getElementById('stat-new-links'),
-        statLinkDensity: document.getElementById('stat-link-density'),
-        densityRating: document.getElementById('density-rating'),
+        DOM.resultsCard = $('results-card');
+        DOM.resultsSummaryText = $('results-summary-text');
+        DOM.badgeTotal = $('badge-total');
+        DOM.badgeBlue = $('badge-blue');
+        DOM.badgeRedirect = $('badge-redirect');
+        DOM.badgeDisambig = $('badge-disambig');
+        DOM.badgeRed = $('badge-red');
+        DOM.statTotalWords = $('stat-total-words');
+        DOM.statExistingLinks = $('stat-existing-links');
+        DOM.statNewLinks = $('stat-new-links');
+        DOM.statLinkDensity = $('stat-link-density');
+        DOM.densityRating = $('density-rating');
 
         // छन्नी
-        statusFilterChips: document.querySelectorAll('.filter-status-chip'),
-        typeFilterChips: document.querySelectorAll('.filter-type-chip'),
-        suggestionsTbody: document.getElementById('suggestions-tbody'),
-        masterCheckbox: document.getElementById('master-suggestion-checkbox'),
-        suggestionsFilterInput: document.getElementById('suggestions-filter-input'),
-        btnSelectAll: document.getElementById('btn-select-all'),
-        btnDeselectAll: document.getElementById('btn-deselect-all'),
-        btnSelectBlueOnly: document.getElementById('btn-select-blue-only'),
-        btnDeselectDisambig: document.getElementById('btn-deselect-disambig'),
+        DOM.statusFilterChips = document.querySelectorAll('.filter-status-chip');
+        DOM.typeFilterChips = document.querySelectorAll('.filter-type-chip');
+        DOM.suggestionsTbody = $('suggestions-tbody');
+        DOM.masterCheckbox = $('master-suggestion-checkbox');
+        DOM.suggestionsFilterInput = $('suggestions-filter-input');
+        DOM.btnSelectAll = $('btn-select-all');
+        DOM.btnDeselectAll = $('btn-deselect-all');
+        DOM.btnSelectBlueOnly = $('btn-select-blue-only');
+        DOM.btnDeselectDisambig = $('btn-deselect-disambig');
 
         // डिफ़ नियंत्रण
-        btnDiffSideBySide: document.getElementById('btn-diff-side-by-side'),
-        btnDiffUnified: document.getElementById('btn-diff-unified'),
-        diffContainer: document.getElementById('diff-container'),
-        articlePreviewContainer: document.getElementById('article-preview-container'),
-        finalWikitextOutput: document.getElementById('final-wikitext-output'),
-        finalStatsText: document.getElementById('final-stats-text'),
+        DOM.btnDiffSideBySide = $('btn-diff-side-by-side');
+        DOM.btnDiffUnified = $('btn-diff-unified');
+        DOM.diffContainer = $('diff-container');
+        DOM.articlePreviewContainer = $('article-preview-container');
+        DOM.finalWikitextOutput = $('final-wikitext-output');
+        DOM.finalStatsText = $('final-stats-text');
 
         // बॉटम एक्शन
-        copyWikitextBtn: document.getElementById('copy-wikitext-btn'),
-        openWikiEditBtn: document.getElementById('open-wiki-edit-btn'),
-        downloadWikiBtn: document.getElementById('download-wiki-btn'),
-        resetToolBtn: document.getElementById('reset-tool-btn'),
+        DOM.copyWikitextBtn = $('copy-wikitext-btn');
+        DOM.openWikiEditBtn = $('open-wiki-edit-btn');
+        DOM.downloadWikiBtn = $('download-wiki-btn');
+        DOM.resetToolBtn = $('reset-tool-btn');
 
         // मोडल्स
-        editTargetModal: document.getElementById('edit-target-modal'),
-        modalTermText: document.getElementById('modal-term-text'),
-        modalTargetInput: document.getElementById('modal-target-input'),
-        modalVerifyStatus: document.getElementById('modal-verify-status'),
-        modalCancelBtn: document.getElementById('modal-cancel-btn'),
-        modalSaveBtn: document.getElementById('modal-save-btn'),
+        DOM.editTargetModal = $('edit-target-modal');
+        DOM.modalTermText = $('modal-term-text');
+        DOM.modalTargetInput = $('modal-target-input');
+        DOM.modalVerifyStatus = $('modal-verify-status');
+        DOM.modalCancelBtn = $('modal-cancel-btn');
+        DOM.modalSaveBtn = $('modal-save-btn');
 
-        duplicateCleanerModal: document.getElementById('duplicate-cleaner-modal'),
-        duplicateLinksContainer: document.getElementById('duplicate-links-container'),
-        btnFixDuplicates: document.getElementById('btn-fix-duplicates'),
+        DOM.duplicateCleanerModal = $('duplicate-cleaner-modal');
+        DOM.duplicateLinksContainer = $('duplicate-links-container');
+        DOM.btnFixDuplicates = $('btn-fix-duplicates');
 
-        blacklistModal: document.getElementById('blacklist-modal'),
-        blacklistNewInput: document.getElementById('blacklist-new-input'),
-        blacklistAddBtn: document.getElementById('blacklist-add-btn'),
-        blacklistTagsContainer: document.getElementById('blacklist-tags-container'),
-        blacklistClearBtn: document.getElementById('blacklist-clear-btn'),
+        DOM.blacklistModal = $('blacklist-modal');
+        DOM.blacklistNewInput = $('blacklist-new-input');
+        DOM.blacklistAddBtn = $('blacklist-add-btn');
+        DOM.blacklistTagsContainer = $('blacklist-tags-container');
+        DOM.blacklistClearBtn = $('blacklist-clear-btn');
 
-        shortcutsModal: document.getElementById('shortcuts-modal'),
+        DOM.shortcutsModal = $('shortcuts-modal');
 
         // फ्लोटिंग सारांश
-        wikiSummaryCard: document.getElementById('wiki-summary-card'),
-        summaryCardClose: document.getElementById('summary-card-close'),
-        summaryImgWrap: document.getElementById('summary-img-wrap'),
-        summaryImg: document.getElementById('summary-img'),
-        summaryTitle: document.getElementById('summary-title'),
-        summaryExtract: document.getElementById('summary-extract'),
-        summaryLink: document.getElementById('summary-link'),
+        DOM.wikiSummaryCard = $('wiki-summary-card');
+        DOM.summaryCardClose = $('summary-card-close');
+        DOM.summaryImgWrap = $('summary-img-wrap');
+        DOM.summaryImg = $('summary-img');
+        DOM.summaryTitle = $('summary-title');
+        DOM.summaryExtract = $('summary-extract');
+        DOM.summaryLink = $('summary-link');
 
-        toast: document.getElementById('toast')
-    };
+        DOM.toast = $('toast');
+    }
 
     // ================== इनिशियलाइज़ेशन ==================
     function init() {
-        setupTheme();
-        loadSavedBlacklist();
-        bindEvents();
-        updateCharCount();
-        updateDiffModeButtons();
+        try {
+            initDOM();
+            setupTheme();
+            loadSavedBlacklist();
+            bindEvents();
+            updateCharCount();
+            updateDiffModeButtons();
+        } catch (err) {
+            console.error('Initialization error:', err);
+        }
     }
 
     function setupTheme() {
@@ -234,7 +311,7 @@
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', savedTheme);
 
-        DOM.themeToggleBtn.addEventListener('click', () => {
+        safeAddListener(DOM.themeToggleBtn, 'click', () => {
             const current = document.documentElement.getAttribute('data-theme');
             const next = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', next);
@@ -258,17 +335,17 @@
     // ================== घटना श्रोता (Event Listeners) ==================
     function bindEvents() {
         // भाषा चयन
-        DOM.langSelect.addEventListener('change', () => {
-            if (DOM.langSelect.value === 'custom') {
-                DOM.customLangWrap.style.display = 'block';
-                DOM.customLangInput.focus();
+        safeAddListener(DOM.langSelect, 'change', () => {
+            if (DOM.langSelect && DOM.langSelect.value === 'custom') {
+                safeSetDisplay(DOM.customLangWrap, 'block');
+                if (DOM.customLangInput) DOM.customLangInput.focus();
             } else {
-                DOM.customLangWrap.style.display = 'none';
+                safeSetDisplay(DOM.customLangWrap, 'none');
             }
             state.lang = getSelectedLanguage();
         });
 
-        DOM.customLangInput.addEventListener('input', () => {
+        safeAddListener(DOM.customLangInput, 'input', () => {
             state.lang = getSelectedLanguage();
         });
 
@@ -277,12 +354,12 @@
             btn.addEventListener('click', (e) => {
                 const lang = e.target.dataset.lang;
                 const title = e.target.dataset.title;
-                DOM.langSelect.value = lang;
-                DOM.customLangWrap.style.display = 'none';
+                if (DOM.langSelect) DOM.langSelect.value = lang;
+                safeSetDisplay(DOM.customLangWrap, 'none');
                 state.lang = lang;
-                DOM.pageInput.value = title;
+                safeSetValue(DOM.pageInput, title);
                 switchTab('tab-input-wiki');
-                DOM.loadPageBtn.click();
+                if (DOM.loadPageBtn) DOM.loadPageBtn.click();
             });
         });
 
@@ -297,37 +374,41 @@
         });
 
         // कॉम्पैक्ट बार टॉगल
-        DOM.btnToggleInputCard.addEventListener('click', toggleInputControlCard);
+        safeAddListener(DOM.btnToggleInputCard, 'click', toggleInputControlCard);
 
         // यादृच्छिक लेख लोडर
-        DOM.loadRandomBtn.addEventListener('click', handleLoadRandomArticle);
+        safeAddListener(DOM.loadRandomBtn, 'click', handleLoadRandomArticle);
 
         // श्रेणी लोडर
-        DOM.loadCategoryBtn.addEventListener('click', handleSearchCategory);
-        DOM.loadSelectedCatPageBtn.addEventListener('click', handleLoadSelectedCatPage);
+        safeAddListener(DOM.loadCategoryBtn, 'click', handleSearchCategory);
+        safeAddListener(DOM.loadSelectedCatPageBtn, 'click', handleLoadSelectedCatPage);
 
         // फ़ाइल अपलोड
-        DOM.fileUploadInput.addEventListener('change', handleFileUpload);
+        safeAddListener(DOM.fileUploadInput, 'change', handleFileUpload);
 
         // सेटिंग्स टॉगल
-        DOM.toggleSettingsBtn.addEventListener('click', () => {
-            DOM.settingsAccordion.classList.toggle('collapsed');
+        safeAddListener(DOM.toggleSettingsBtn, 'click', () => {
+            if (DOM.settingsAccordion) DOM.settingsAccordion.classList.toggle('collapsed');
         });
 
         // विकिटेक्स्ट इनपुट काउंट
-        DOM.rawWikitextInput.addEventListener('input', updateCharCount);
-        DOM.loadSampleBtn.addEventListener('click', loadSampleText);
-        DOM.clearRawBtn.addEventListener('click', () => {
-            DOM.rawWikitextInput.value = '';
+        safeAddListener(DOM.rawWikitextInput, 'input', updateCharCount);
+        safeAddListener(DOM.loadSampleBtn, 'click', loadSampleText);
+        safeAddListener(DOM.clearRawBtn, 'click', () => {
+            safeSetValue(DOM.rawWikitextInput, '');
             updateCharCount();
         });
 
         // लोड एवं विश्लेषण
-        DOM.loadPageBtn.addEventListener('click', handleLoadArticle);
-        DOM.analyzeBtn.addEventListener('click', handleAnalyze);
+        safeAddListener(DOM.loadPageBtn, 'click', handleLoadArticle);
+        safeAddListener(DOM.analyzeBtn, 'click', handleAnalyze);
+
+        // बॉक्स 2 क्रियाएँ (दूषित लेख)
+        safeAddListener(DOM.btnCopyContaminated, 'click', copyContaminatedWikitext);
+        safeAddListener(DOM.btnSanitizeContaminated, 'click', handleSanitizeContaminatedArticle);
 
         // मास्टर चेकबॉक्स
-        DOM.masterCheckbox.addEventListener('change', (e) => {
+        safeAddListener(DOM.masterCheckbox, 'change', (e) => {
             const checked = e.target.checked;
             const visible = getFilteredSuggestions();
             visible.forEach(s => s.checked = checked);
@@ -336,80 +417,83 @@
         });
 
         // त्वरित चयन बटन
-        DOM.btnSelectAll.addEventListener('click', () => {
+        safeAddListener(DOM.btnSelectAll, 'click', () => {
             state.suggestions.forEach(s => s.checked = true);
             renderSuggestionsTable();
             recalculateModifiedWikitext();
         });
 
-        DOM.btnDeselectAll.addEventListener('click', () => {
+        safeAddListener(DOM.btnDeselectAll, 'click', () => {
             state.suggestions.forEach(s => s.checked = false);
             renderSuggestionsTable();
             recalculateModifiedWikitext();
         });
 
-        DOM.btnSelectBlueOnly.addEventListener('click', () => {
+        safeAddListener(DOM.btnSelectBlueOnly, 'click', () => {
             state.suggestions.forEach(s => s.checked = (s.status === 'blue' && !s.isDisambig));
             renderSuggestionsTable();
             recalculateModifiedWikitext();
         });
 
-        DOM.btnDeselectDisambig.addEventListener('click', () => {
+        safeAddListener(DOM.btnDeselectDisambig, 'click', () => {
             state.suggestions.forEach(s => {
                 if (s.isDisambig || s.status === 'disambig') s.checked = false;
             });
             renderSuggestionsTable();
             recalculateModifiedWikitext();
-            showToast('बहुविकल्पी कड़ियाँ हटाई गईं');
+            showToast('बहुविकल्पी कड़ियाँ अचयनित की गईं');
         });
 
         // छन्नी चिप्स
-        DOM.statusFilterChips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                DOM.statusFilterChips.forEach(c => c.classList.remove('active-chip'));
-                chip.classList.add('active-chip');
-                state.filterStatus = chip.dataset.status;
-                renderSuggestionsTable();
+        if (DOM.statusFilterChips) {
+            DOM.statusFilterChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    DOM.statusFilterChips.forEach(c => c.classList.remove('active-chip'));
+                    chip.classList.add('active-chip');
+                    state.filterStatus = chip.dataset.status;
+                    renderSuggestionsTable();
+                });
             });
-        });
+        }
 
-        DOM.typeFilterChips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                DOM.typeFilterChips.forEach(c => c.classList.remove('active-chip'));
-                chip.classList.add('active-chip');
-                state.filterType = chip.dataset.type;
-                renderSuggestionsTable();
+        if (DOM.typeFilterChips) {
+            DOM.typeFilterChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    DOM.typeFilterChips.forEach(c => c.classList.remove('active-chip'));
+                    chip.classList.add('active-chip');
+                    state.filterType = chip.dataset.type;
+                    renderSuggestionsTable();
+                });
             });
-        });
+        }
 
         // खोज
-        DOM.suggestionsFilterInput.addEventListener('input', (e) => {
+        safeAddListener(DOM.suggestionsFilterInput, 'input', (e) => {
             state.searchQuery = e.target.value.toLowerCase().trim();
             renderSuggestionsTable();
         });
 
         // डिफ़ मोड टॉगल
-        DOM.btnDiffSideBySide.addEventListener('click', () => {
+        safeAddListener(DOM.btnDiffSideBySide, 'click', () => {
             state.diffMode = 'side-by-side';
             updateDiffModeButtons();
             recalculateModifiedWikitext();
         });
 
-        DOM.btnDiffUnified.addEventListener('click', () => {
+        safeAddListener(DOM.btnDiffUnified, 'click', () => {
             state.diffMode = 'unified';
             updateDiffModeButtons();
             recalculateModifiedWikitext();
         });
 
         // सहायक उपकरण
-        DOM.btnOpenDuplicateCleaner.addEventListener('click', openDuplicateCleanerModal);
-        DOM.btnFixDuplicates.addEventListener('click', fixDuplicateLinks);
-        DOM.btnOpenBlacklistMgr.addEventListener('click', openBlacklistModal);
-        DOM.btnDownloadStandaloneHtml.addEventListener('click', generateStandaloneHtml);
-        DOM.shortcutsBtn.addEventListener('click', () => openModal('shortcuts-modal'));
-        if (DOM.btnShowAllShortcuts) {
-            DOM.btnShowAllShortcuts.addEventListener('click', () => openModal('shortcuts-modal'));
-        }
+        safeAddListener(DOM.btnOpenDuplicateCleaner, 'click', openDuplicateCleanerModal);
+        safeAddListener(DOM.btnFixDuplicates, 'click', fixDuplicateLinks);
+        safeAddListener(DOM.btnOpenBlacklistMgr, 'click', openBlacklistModal);
+        safeAddListener(DOM.btnDownloadStandaloneHtml, 'click', generateStandaloneHtml);
+        safeAddListener(DOM.shortcutsBtn, 'click', () => openModal('shortcuts-modal'));
+        safeAddListener(DOM.btnShowAllShortcuts, 'click', () => openModal('shortcuts-modal'));
+
         if (DOM.btnToggleAuxGuide && DOM.auxGuideDetails) {
             DOM.btnToggleAuxGuide.addEventListener('click', () => {
                 const isHidden = DOM.auxGuideDetails.style.display === 'none';
@@ -418,38 +502,39 @@
             });
         }
 
-        DOM.blacklistAddBtn.addEventListener('click', addBlacklistWord);
-        DOM.blacklistNewInput.addEventListener('keypress', (e) => {
+        safeAddListener(DOM.blacklistAddBtn, 'click', addBlacklistWord);
+        safeAddListener(DOM.blacklistNewInput, 'keypress', (e) => {
             if (e.key === 'Enter') addBlacklistWord();
         });
-        DOM.blacklistClearBtn.addEventListener('click', clearBlacklist);
+        safeAddListener(DOM.blacklistClearBtn, 'click', clearBlacklist);
 
         // बॉटम बार
-        DOM.copyWikitextBtn.addEventListener('click', copyModifiedWikitext);
-        DOM.openWikiEditBtn.addEventListener('click', openWikipediaEditPage);
-        DOM.downloadWikiBtn.addEventListener('click', downloadWikiFile);
-        DOM.resetToolBtn.addEventListener('click', resetTool);
+        safeAddListener(DOM.copyWikitextBtn, 'click', copyModifiedWikitext);
+        safeAddListener(DOM.openWikiEditBtn, 'click', openWikipediaEditPage);
+        safeAddListener(DOM.downloadWikiBtn, 'click', downloadWikiFile);
+        safeAddListener(DOM.resetToolBtn, 'click', resetTool);
 
         // मोडल
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.addEventListener('click', () => closeModal(btn.dataset.modal));
         });
-        DOM.modalCancelBtn.addEventListener('click', () => closeModal('edit-target-modal'));
-        DOM.modalSaveBtn.addEventListener('click', saveModalEdit);
-        DOM.summaryCardClose.addEventListener('click', closeSummaryCard);
+        safeAddListener(DOM.modalCancelBtn, 'click', () => closeModal('edit-target-modal'));
+        safeAddListener(DOM.modalSaveBtn, 'click', saveModalEdit);
+        safeAddListener(DOM.summaryCardClose, 'click', closeSummaryCard);
 
         document.addEventListener('keydown', handleGlobalKeydown);
     }
 
     function updateDiffModeButtons() {
-        DOM.btnDiffSideBySide.classList.toggle('active-chip', state.diffMode === 'side-by-side');
-        DOM.btnDiffUnified.classList.toggle('active-chip', state.diffMode === 'unified');
+        if (DOM.btnDiffSideBySide) DOM.btnDiffSideBySide.classList.toggle('active-chip', state.diffMode === 'side-by-side');
+        if (DOM.btnDiffUnified) DOM.btnDiffUnified.classList.toggle('active-chip', state.diffMode === 'unified');
     }
 
     function toggleInputControlCard() {
+        if (!DOM.inputControlCard) return;
         const isHidden = DOM.inputControlCard.style.display === 'none';
-        DOM.inputControlCard.style.display = isHidden ? 'block' : 'none';
-        DOM.btnToggleInputCard.textContent = isHidden ? 'इनपुट पटल छिपाएं' : 'इनपुट और सेटिंग्स बदलें';
+        DOM.inputControlCard.style.display = isHidden ? 'flex' : 'none';
+        safeSetText(DOM.btnToggleInputCard, isHidden ? 'इनपुट पटल छिपाएं' : 'इनपुट और सेटिंग्स बदलें');
         if (isHidden) {
             DOM.inputControlCard.scrollIntoView({ behavior: 'smooth' });
         }
@@ -464,7 +549,7 @@
 
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
-            DOM.analyzeBtn.click();
+            if (DOM.analyzeBtn) DOM.analyzeBtn.click();
         } else if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
             e.preventDefault();
             copyModifiedWikitext();
@@ -479,9 +564,10 @@
 
     // ================== सहायक फ़ंक्शंस ==================
     function getSelectedLanguage() {
+        if (!DOM.langSelect) return 'hi';
         const val = DOM.langSelect.value;
         if (val === 'custom') {
-            return DOM.customLangInput.value.trim().toLowerCase() || 'hi';
+            return safeGetValue(DOM.customLangInput).trim().toLowerCase() || 'hi';
         }
         return val;
     }
@@ -507,9 +593,12 @@
     }
 
     function showToast(message) {
+        if (!DOM.toast) return;
         DOM.toast.textContent = message;
         DOM.toast.classList.add('show');
-        setTimeout(() => DOM.toast.classList.remove('show'), 2600);
+        setTimeout(() => {
+            if (DOM.toast) DOM.toast.classList.remove('show');
+        }, 2600);
     }
 
     function openModal(modalId) {
@@ -524,13 +613,14 @@
     }
 
     function updateCharCount() {
-        const text = DOM.rawWikitextInput.value;
+        const text = safeGetValue(DOM.rawWikitextInput);
         const charCount = text.length;
         const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        DOM.rawCharCount.textContent = `${charCount.toLocaleString('hi-IN')} अक्षर | ${words.toLocaleString('hi-IN')} शब्द`;
+        safeSetText(DOM.rawCharCount, `${charCount.toLocaleString('hi-IN')} अक्षर | ${words.toLocaleString('hi-IN')} शब्द`);
     }
 
     function cleanWikiTitleFromInput(input) {
+        if (!input) return '';
         let title = input.trim();
         if (title.startsWith('http://') || title.startsWith('https://')) {
             try {
@@ -547,44 +637,39 @@
     }
 
     function loadSampleText() {
-        DOM.rawWikitextInput.value = `'''तुलसीदास''' (१५३२ - १६२३) हिन्दी साहित्य के महान कवि और सन्त थे। उनका जन्म राजापुर में हुआ था। उन्हें आदि काव्य रामायण के रचयिता महर्षि वाल्मीकि का अवतार माना जाता है।
-
-श्रीरामचरितमानस तुलसीदास जी की सबसे प्रसिद्ध रचना है। उन्होंने विनय पत्रिका, दोहावली, कवितावली और हनुमान चालीसा की भी रचना की। गोस्वामी जी का जीवन वाराणसी और चित्रकूट में बीता। 
-
-मुगल काल में सम्राट अकबर और अब्दुल रहीम खान-ए-खाना उनके समकालीन थे। काशी के अस्सी घाट पर उन्होंने अपना शरीर त्याग दिया।`;
+        const sample = `'''तुलसीदास''' (१५३२ - १६२३) हिन्दी साहित्य के महान कवि और सन्त थे। उनका जन्म [[राजापुर]] में हुआ था। उन्हें आदि काव्य [[रामायण]] के रचयिता महर्षि वाल्मीकि का अवतार माना जाता है। तुलसीदास ने अनेक ग्रन्थों की रचना की जिनमें [[रामचरितमानस]] सर्वोपरि है। [[राजापुर]] एक ऐतिहासिक स्थल है जहाँ तुलसीदास का जन्म हुआ था। तुलसीदास का विवाह रत्नावली से हुआ था। उन्होंने [[1947]] में कुछ नहीं किया क्योंकि वे उस समय नहीं थे। वे लगभग 50 [[किमी]] पैदल चले। [[भारत|भारत]] एक महान राष्ट्र है।`;
+        safeSetValue(DOM.rawWikitextInput, sample);
         updateCharCount();
-        showToast('नमूना पाठ लोड किया गया');
+        showToast('नमूना लेख लोड हुआ');
     }
 
-    // ================== फ़ाइल अपलोड हैंडलर ==================
     function handleFileUpload(e) {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function (evt) {
-            const content = evt.target.result;
-            DOM.rawWikitextInput.value = content;
-            state.originalWikitext = content;
-            state.pageTitle = file.name.replace(/\.[^/.]+$/, '');
+        reader.onload = (event) => {
+            const content = event.target.result;
+            safeSetValue(DOM.rawWikitextInput, content);
+            safeSetValue(DOM.pageInput, file.name.replace(/\.[^/.]+$/, ''));
             updateCharCount();
-            switchTab('tab-input-raw');
-            showToast(`फ़ाइल '${file.name}' सफलतापूर्वक लोड हुई`);
+            switchTab('tab-input-wiki');
+            showToast(`'${file.name}' लोड हुई`);
         };
-        reader.onerror = function () {
-            alert('फ़ाइल पढ़ने में त्रुटि हुई।');
-        };
-        reader.readAsText(file, 'UTF-8');
+        reader.onerror = () => alert('फ़ाइल पढ़ने में त्रुटि हुई।');
+        reader.readAsText(file);
     }
 
     // ================== यादृच्छिक लेख (Random Article) ==================
     async function handleLoadRandomArticle() {
         state.lang = getSelectedLanguage();
-        DOM.randomLoadingStatus.textContent = 'यादृच्छिक लेख खोजा जा रहा है...';
+        safeSetText(DOM.randomLoadingStatus, 'यादृच्छिक लेख खोजा जा रहा है...');
 
         try {
             const endpoint = `https://${state.lang}.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=1&format=json&origin=*`;
-            const resp = await fetch(endpoint);
+            const resp = await fetch(endpoint, {
+                headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
+            });
             const data = await resp.json();
             const randomPage = data.query?.random?.[0];
 
@@ -592,19 +677,19 @@
                 throw new Error('कोई यादृच्छिक लेख प्राप्त नहीं हो सका।');
             }
 
-            DOM.randomLoadingStatus.textContent = `प्राप्त लेख: ${randomPage.title}। लोड हो रहा है...`;
-            DOM.pageInput.value = randomPage.title;
+            safeSetText(DOM.randomLoadingStatus, `प्राप्त लेख: ${randomPage.title}। लोड हो रहा है...`);
+            safeSetValue(DOM.pageInput, randomPage.title);
             await handleLoadArticle();
-            DOM.randomLoadingStatus.textContent = '';
+            safeSetText(DOM.randomLoadingStatus, '');
         } catch (err) {
-            DOM.randomLoadingStatus.textContent = '';
+            safeSetText(DOM.randomLoadingStatus, '');
             alert('त्रुटि: ' + err.message);
         }
     }
 
     // ================== श्रेणी से लेख खोज (Category Members) ==================
     async function handleSearchCategory() {
-        const cat = DOM.categoryInput.value.trim();
+        const cat = safeGetValue(DOM.categoryInput).trim();
         if (!cat) {
             alert('कृपया श्रेणी का नाम दर्ज करें।');
             return;
@@ -618,7 +703,9 @@
             const normCat = cat.startsWith('श्रेणी:') || cat.startsWith('Category:') ? cat : `श्रेणी:${cat}`;
             const endpoint = `https://${state.lang}.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=${encodeURIComponent(normCat)}&cmnamespace=0&cmlimit=30&format=json&origin=*`;
 
-            const resp = await fetch(endpoint);
+            const resp = await fetch(endpoint, {
+                headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
+            });
             const data = await resp.json();
             const members = data.query?.categorymembers || [];
 
@@ -628,15 +715,17 @@
                 return;
             }
 
-            DOM.categoryPagesSelect.innerHTML = '';
-            members.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.title;
-                opt.textContent = m.title;
-                DOM.categoryPagesSelect.appendChild(opt);
-            });
+            if (DOM.categoryPagesSelect) {
+                DOM.categoryPagesSelect.innerHTML = '';
+                members.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.title;
+                    opt.textContent = m.title;
+                    DOM.categoryPagesSelect.appendChild(opt);
+                });
+            }
 
-            DOM.categoryPagesWrap.style.display = 'block';
+            safeSetDisplay(DOM.categoryPagesWrap, 'block');
             showProgress(false);
             showToast(`${members.length} लेख श्रेणी में प्राप्त हुए`);
         } catch (err) {
@@ -646,27 +735,27 @@
     }
 
     async function handleLoadSelectedCatPage() {
-        const selected = DOM.categoryPagesSelect.value;
+        const selected = safeGetValue(DOM.categoryPagesSelect);
         if (!selected) return;
-        DOM.pageInput.value = selected;
+        safeSetValue(DOM.pageInput, selected);
         switchTab('tab-input-wiki');
         await handleLoadArticle();
     }
 
-    // ================== प्रगति बार ==================
-    function showProgress(show = true) {
-        DOM.progressCard.style.display = show ? 'block' : 'none';
+    // ================== प्रगति पटल नियंत्रण ==================
+    function showProgress(show) {
+        safeSetDisplay(DOM.progressCard, show ? 'block' : 'none');
         if (show) {
-            DOM.progressLog.innerHTML = '';
-            DOM.progressBarFill.style.width = '10%';
+            safeSetHTML(DOM.progressLog, '');
+            if (DOM.progressBarFill) DOM.progressBarFill.style.width = '10%';
         }
     }
 
     function updateProgress(title, detail, percent, logMsg = null) {
-        DOM.progressTitle.textContent = title;
-        DOM.progressDetail.textContent = detail;
-        DOM.progressBarFill.style.width = `${percent}%`;
-        if (logMsg) {
+        safeSetText(DOM.progressTitle, title);
+        safeSetText(DOM.progressDetail, detail);
+        if (DOM.progressBarFill) DOM.progressBarFill.style.width = `${percent}%`;
+        if (logMsg && DOM.progressLog) {
             const p = document.createElement('div');
             p.textContent = `[${new Date().toLocaleTimeString()}] ${logMsg}`;
             DOM.progressLog.appendChild(p);
@@ -767,10 +856,12 @@
 
     // ================== फ्लोटिंग सारांश पूर्वावलोकन कार्ड ==================
     async function showArticleSummaryCard(targetTitle, x, y) {
-        DOM.summaryTitle.textContent = targetTitle;
-        DOM.summaryExtract.textContent = 'विकिपीडिया से सारांश लोड हो रहा है...';
-        DOM.summaryImgWrap.style.display = 'none';
-        DOM.summaryLink.href = `https://${state.lang}.wikipedia.org/wiki/${encodeURIComponent(targetTitle)}`;
+        if (!DOM.wikiSummaryCard) return;
+
+        safeSetText(DOM.summaryTitle, targetTitle);
+        safeSetText(DOM.summaryExtract, 'विकिपीडिया से सारांश लोड हो रहा है...');
+        safeSetDisplay(DOM.summaryImgWrap, 'none');
+        if (DOM.summaryLink) DOM.summaryLink.href = `https://${state.lang}.wikipedia.org/wiki/${encodeURIComponent(targetTitle)}`;
         
         DOM.wikiSummaryCard.style.left = `${Math.min(window.innerWidth - 340, Math.max(10, x - 160))}px`;
         DOM.wikiSummaryCard.style.top = `${Math.min(window.innerHeight - 300, y + 20)}px`;
@@ -782,25 +873,25 @@
             if (!res.ok) throw new Error('Summary fetch failed');
             const data = await res.json();
 
-            DOM.summaryTitle.textContent = data.title || targetTitle;
-            DOM.summaryExtract.textContent = data.extract || 'कोई संक्षिप्त विवरण उपलब्ध नहीं है।';
+            safeSetText(DOM.summaryTitle, data.title || targetTitle);
+            safeSetText(DOM.summaryExtract, data.extract || 'कोई संक्षिप्त विवरण उपलब्ध नहीं है।');
 
-            if (data.thumbnail && data.thumbnail.source) {
+            if (data.thumbnail && data.thumbnail.source && DOM.summaryImg) {
                 DOM.summaryImg.src = data.thumbnail.source;
-                DOM.summaryImgWrap.style.display = 'block';
+                safeSetDisplay(DOM.summaryImgWrap, 'block');
             }
         } catch (e) {
-            DOM.summaryExtract.textContent = 'इस लेख का सारांश प्राप्त नहीं हो सका।';
+            safeSetText(DOM.summaryExtract, 'इस लेख का सारांश प्राप्त नहीं हो सका।');
         }
     }
 
     function closeSummaryCard() {
-        DOM.wikiSummaryCard.style.display = 'none';
+        safeSetDisplay(DOM.wikiSummaryCard, 'none');
     }
 
     // ================== लेख लोडिंग हैंडलर ==================
     async function handleLoadArticle() {
-        const rawInput = DOM.pageInput.value.trim();
+        const rawInput = safeGetValue(DOM.pageInput).trim();
         if (!rawInput) {
             alert('कृपया विकिपीडिया लेख का शीर्षक अथवा URL दर्ज करें।');
             return;
@@ -817,9 +908,11 @@
             const article = await fetchArticleWikitext(state.lang, title);
             state.pageTitle = article.title;
             state.originalWikitext = article.wikitext;
+            state.contaminatedWikitext = article.wikitext;
 
-            DOM.pageInput.value = article.title;
-            DOM.rawWikitextInput.value = article.wikitext;
+            safeSetValue(DOM.pageInput, article.title);
+            safeSetValue(DOM.rawWikitextInput, article.wikitext);
+            safeSetValue(DOM.contaminatedWikitextOutput, article.wikitext);
             updateCharCount();
 
             updateProgress('लेख सफलतापूर्वक लोड हुआ!', `${article.wikitext.length.toLocaleString('hi-IN')} अक्षर प्राप्त हुए`, 100, `शीर्षक: ${article.title}`);
@@ -835,13 +928,13 @@
     async function handleAnalyze() {
         let wikitext = '';
         if (state.activeTab === 'tab-input-wiki') {
-            wikitext = DOM.rawWikitextInput.value.trim() || state.originalWikitext.trim();
-            if (!wikitext && DOM.pageInput.value.trim()) {
+            wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
+            if (!wikitext && safeGetValue(DOM.pageInput).trim()) {
                 await handleLoadArticle();
                 wikitext = state.originalWikitext.trim();
             }
         } else {
-            wikitext = DOM.rawWikitextInput.value.trim();
+            wikitext = safeGetValue(DOM.rawWikitextInput).trim();
         }
 
         if (!wikitext) {
@@ -850,11 +943,12 @@
         }
 
         state.originalWikitext = wikitext;
+        state.contaminatedWikitext = wikitext;
         state.lang = getSelectedLanguage();
-        state.pageTitle = cleanWikiTitleFromInput(DOM.pageInput.value) || 'अशीर्षक लेख';
+        state.pageTitle = cleanWikiTitleFromInput(safeGetValue(DOM.pageInput)) || 'अशीर्षक लेख';
 
         showProgress(true);
-        DOM.resultsCard.style.display = 'none';
+        safeSetDisplay(DOM.resultsCard, 'none');
 
         try {
             // चरण 1: संरचनात्मक सुरक्षा
@@ -874,28 +968,299 @@
             updateProgress('चरण 4/4: तार्किक कड़ियाँ एवं विकिपीडिया डिफ़ तैयार किया जा रहा है...', 'सुझाव तालिका और डिफ़ का निर्माण...', 90, 'फ़िल्टर एवं सत्यापन पूर्ण');
             buildSuggestions(cleanText, candidateMap);
 
+            // बॉक्स 2: दूषित लेख विश्लेषण एवं तर्कों का प्रस्तुतीकरण
+            const contaminationReport = analyzeContaminations(wikitext, state.lang, candidateMap);
+            renderContaminationWorkbench(contaminationReport, wikitext);
+
             // परिणाम प्रदर्शित करना
-            DOM.resultsCard.style.display = 'block';
+            safeSetDisplay(DOM.resultsCard, 'block');
             renderSuggestionsTable();
             recalculateModifiedWikitext();
 
-            // उपयोगकर्ता की आवश्यकता: विश्लेषण के बाद इनपुट सेक्शन स्वतः सिमट/हट जाए
-            DOM.inputControlCard.style.display = 'none';
-            DOM.compactTitleText.textContent = state.pageTitle;
-            DOM.compactLangText.textContent = state.lang;
-            DOM.compactActiveBar.style.display = 'flex';
-            DOM.btnToggleInputCard.textContent = 'इनपुट और सेटिंग्स बदलें';
+            // कॉम्पैक्ट बार सूचना अद्यतन (हटाए बिना)
+            safeSetText(DOM.compactTitleText, state.pageTitle);
+            safeSetText(DOM.compactLangText, state.lang);
 
             updateProgress('विश्लेषण पूर्ण हुआ!', 'परिणाम नीचे प्रदर्शित हैं।', 100, `कुल सुझाई गई कड़ियाँ: ${state.suggestions.length}`);
             setTimeout(() => {
                 showProgress(false);
-                DOM.resultsCard.scrollIntoView({ behavior: 'smooth' });
+                if (DOM.resultsCard) DOM.resultsCard.scrollIntoView({ behavior: 'smooth' });
             }, 400);
 
         } catch (err) {
-            console.error(err);
+            console.error('Analysis error:', err);
             alert(`विश्लेषण में त्रुटि: ${err.message}`);
             showProgress(false);
+        }
+    }
+
+    // ================== दूषित लेख एवं तार्किक निदान इंजन (Box 2) ==================
+    function analyzeContaminations(wikitext, lang, candidateMap) {
+        const result = {
+            total: 0,
+            overlinks: [],
+            disambigs: [],
+            redLinks: [],
+            syntaxIssues: [],
+            dateUnitIssues: [],
+            arguments: []
+        };
+
+        const linkRegex = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g;
+        const counts = new Map();
+        const existingLinksList = [];
+        let match;
+
+        while ((match = linkRegex.exec(wikitext)) !== null) {
+            const rawTarget = match[1].trim().replace(/_/g, ' ');
+            const displayText = match[2] ? match[2].trim() : '';
+
+            if (/^(category|श्रेणी|file|image|चित्र|फ़ाइल):/i.test(rawTarget)) continue;
+
+            const canonical = rawTarget.charAt(0).toUpperCase() + rawTarget.slice(1);
+            existingLinksList.push({ target: rawTarget, canonical: canonical, text: displayText, fullMatch: match[0] });
+            counts.set(canonical, (counts.get(canonical) || 0) + 1);
+        }
+
+        // 1. तर्क: अति-कड़ीकरण (WP:OVERLINKING)
+        const duplicateTerms = [];
+        counts.forEach((count, canonical) => {
+            if (count > 1) {
+                duplicateTerms.push({ canonical, count });
+                result.overlinks.push({ canonical, count });
+                result.total += (count - 1);
+            }
+        });
+
+        if (duplicateTerms.length > 0) {
+            result.arguments.push({
+                type: 'overlink',
+                title: 'तर्क 1: अति-कड़ीकरण (WP:OVERLINKING)',
+                desc: `विकिपीडिया नीति अनुसार पाठक के सुगम अध्ययन हेतु किसी भी पद को केवल उसके प्रथम उल्लेख पर लिंक किया जाना चाहिए। इस लेख में ${duplicateTerms.length} पद बार-बार दोहराए गए हैं (उदा: ${duplicateTerms.slice(0, 3).map(d => `[[${d.canonical}]] (${d.count} बार)`).join(', ')})। अतिरिक्त कड़ियों को हटाकर केवल पहले उल्लेख को रखा जाना चाहिए।`
+            });
+        }
+
+        // 2. तर्क: व्यर्थ पाइप सिंटेक्स (Redundant Pipes)
+        const redundantPipes = [];
+        existingLinksList.forEach(item => {
+            if (item.text && item.target.toLowerCase() === item.text.toLowerCase()) {
+                redundantPipes.push(item);
+                result.syntaxIssues.push(item);
+                result.total++;
+            }
+        });
+
+        if (redundantPipes.length > 0) {
+            result.arguments.push({
+                type: 'syntax',
+                title: 'तर्क 2: व्यर्थ पाइप सिंटेक्स (Redundant Pipes)',
+                desc: `जब लक्ष्य पृष्ठ और प्रदर्शित शब्द समरूप हों (उदा: [[${redundantPipes[0].target}|${redundantPipes[0].text}]]), तो पाइप सिंटेक्स अनावश्यक भार बढ़ाता है। इसे स्वच्छ सिंटेक्स [[${redundantPipes[0].target}]] में बदलना तार्किक है।`
+            });
+        }
+
+        // 3. तर्क: सामान्य वर्ष एवं मात्रक (WP:DATELINK & Units)
+        const dateUnitIssues = [];
+        existingLinksList.forEach(item => {
+            if (/^\d{4}$/.test(item.target) || /^[०-९]{4}$/.test(item.target)) {
+                dateUnitIssues.push({ target: item.target, reason: 'सामान्य वर्ष' });
+                result.dateUnitIssues.push(item);
+                result.total++;
+            } else if (UNITS_OF_MEASURE.has(item.target.toLowerCase())) {
+                dateUnitIssues.push({ target: item.target, reason: 'माप की इकाई' });
+                result.dateUnitIssues.push(item);
+                result.total++;
+            }
+        });
+
+        if (dateUnitIssues.length > 0) {
+            result.arguments.push({
+                type: 'date-unit',
+                title: 'तर्क 3: सामान्य वर्ष व मात्रक (WP:DATELINK)',
+                desc: `विकिपीडिया नियमावली अनुसार अकेले 4-अंकीय वर्ष (उदा: 1947, 2024) या माप की इकाइयों (किमी, मीटर, किग्रा) को सामान्यतः आंतरिक कड़ी नहीं बनाना चाहिए जब तक कि वे किसी विशिष्ट प्रसंग से न जुड़े हों।`
+            });
+        }
+
+        // 4. तर्क: बहुविकल्पी पृष्ठ (WP:DISAMBIG)
+        const disambigIssues = [];
+        if (candidateMap) {
+            candidateMap.forEach((info, term) => {
+                if (info.isDisambig) {
+                    disambigIssues.push(term);
+                    result.disambigs.push({ term, target: info.target });
+                    result.total++;
+                }
+            });
+        }
+
+        if (disambigIssues.length > 0) {
+            result.arguments.push({
+                type: 'disambig',
+                title: 'तर्क 4: बहुविकल्पी कड़ियाँ (WP:DISAMBIG)',
+                desc: `बहुविकल्पी पृष्ठ (उदा: ${disambigIssues.slice(0, 3).map(d => `[[${d}]]`).join(', ')}) सीधे लिंक होने से पाठक विशिष्ट लेख के बजाय विकल्पों की सूची पर पहुँचता है। ऐसे पदों को अचयनित करना अथवा विशिष्ट लक्ष्य से बदलना चाहिए।`
+            });
+        }
+
+        // 5. तर्क: अस्तित्वहीन लाल कड़ियाँ (Red Links)
+        const redLinkIssues = [];
+        if (candidateMap) {
+            candidateMap.forEach((info, term) => {
+                if (!info.exists) {
+                    redLinkIssues.push(term);
+                    result.redLinks.push({ term, target: info.target });
+                    result.total++;
+                }
+            });
+        }
+
+        if (redLinkIssues.length > 0) {
+            result.arguments.push({
+                type: 'redlink',
+                title: 'तर्क 5: अस्तित्वहीन लाल कड़ियाँ (Red Links)',
+                desc: `विश्लेषण में ${redLinkIssues.length} शब्द विकिपीडिया पर अनुपलब्ध पाए गए हैं (उदा: ${redLinkIssues.slice(0, 3).map(r => `[[${r}]]`).join(', ')})। अस्तित्वहीन लाल कड़ियों को तब तक शामिल नहीं किया जाना चाहिए जब तक कि वे भविष्य के महत्वपूर्ण लेख न हों।`
+            });
+        }
+
+        if (result.arguments.length === 0) {
+            result.arguments.push({
+                type: 'clean',
+                title: 'तार्किक निष्कर्ष: कोई गंभीर दोष नहीं',
+                desc: 'वर्तमान विकिटेक्स्ट में कोई अति-कड़ीकरण, व्यर्थ पाइप अथवा सामान्य वर्ष दोष नहीं मिले। लेख स्वच्छ अवस्था में है।'
+            });
+        }
+
+        return result;
+    }
+
+    function renderContaminationWorkbench(report, wikitext) {
+        state.contaminations = report;
+        safeSetValue('contaminated-wikitext-output', wikitext);
+
+        safeSetText('stat-total-contaminations', report.total);
+        safeSetText('stat-overlinks', report.overlinks.length);
+        safeSetText('stat-disambigs', report.disambigs.length);
+        safeSetText('stat-red-links', report.redLinks.length);
+        safeSetText('stat-syntax-issues', report.syntaxIssues.length + report.dateUnitIssues.length);
+        safeSetText('logic-rule-count', `${report.arguments.length} तार्किक नियम सक्रिय`);
+
+        const badge = $('box2-status-badge');
+        if (badge) {
+            badge.className = 'workbench-badge ' + (report.total > 0 ? 'badge-contaminated' : 'badge-sanitized');
+            badge.textContent = report.total > 0 ? `${report.total} दूषित तत्व चिह्नित` : 'स्वच्छ लेख';
+        }
+
+        const sanitizeBtn = $('btn-sanitize-contaminated');
+        if (sanitizeBtn) {
+            sanitizeBtn.disabled = (report.total === 0);
+            sanitizeBtn.textContent = report.total > 0 ? `तार्किक रूप से दूषित लेख शुद्ध करें (${report.total} सुधार)` : 'लेख पूर्व से ही शुद्ध है';
+        }
+
+        const container = $('contamination-arguments-container');
+        if (container) {
+            container.innerHTML = report.arguments.map(arg => `
+                <div class="logic-argument-item logic-${arg.type}">
+                    <div class="logic-argument-title">${escapeHtml(arg.title)}</div>
+                    <div class="logic-argument-desc">${escapeHtml(arg.desc)}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function sanitizeContaminatedWikitext(rawText, contaminations) {
+        let text = rawText;
+
+        // 1. दोहराई गई कड़ियाँ साफ करें (WP:OVERLINKING)
+        const seenTargets = new Set();
+        text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
+            if (/^(category|श्रेणी|file|image|चित्र|फ़ाइल):/i.test(target)) return match;
+            const norm = target.trim().replace(/_/g, ' ');
+            const canonical = norm.charAt(0).toUpperCase() + norm.slice(1);
+
+            if (seenTargets.has(canonical)) {
+                return display || target;
+            } else {
+                seenTargets.add(canonical);
+                return match;
+            }
+        });
+
+        // 2. व्यर्थ पाइप हटाएं [[X|X]] -> [[X]]
+        text = text.replace(/\[\[([^\]|#]+)\|([^\]]+)\]\]/g, (match, target, display) => {
+            if (target.trim().toLowerCase() === display.trim().toLowerCase()) {
+                return `[[${display.trim()}]]`;
+            }
+            return match;
+        });
+
+        // 3. अकेले 4-अंकीय वर्ष हटाएं [[1947]] -> 1947
+        text = text.replace(/\[\[([0-9]{4}|[०-९]{4})\]\]/g, '$1');
+
+        // 4. मात्रक कड़ियाँ हटाएं [[किमी]] -> किमी
+        UNITS_OF_MEASURE.forEach(unit => {
+            const escaped = escapeRegex(unit);
+            const regex = new RegExp(`\\[\\[(${escaped})\\]\\]`, 'gi');
+            text = text.replace(regex, '$1');
+        });
+
+        return text;
+    }
+
+    function handleSanitizeContaminatedArticle() {
+        const rawText = safeGetValue('contaminated-wikitext-output') || state.originalWikitext;
+        if (!rawText) return;
+
+        const cleanedText = sanitizeContaminatedWikitext(rawText, state.contaminations);
+        state.sanitizedWikitext = cleanedText;
+        state.originalWikitext = cleanedText;
+
+        // बॉक्स 1 अद्यतन
+        safeSetValue(DOM.rawWikitextInput, cleanedText);
+        updateCharCount();
+
+        // बॉक्स 2 स्थिति अद्यतन
+        const badge = $('box2-status-badge');
+        if (badge) {
+            badge.className = 'workbench-badge badge-sanitized';
+            badge.textContent = 'तार्किक शुद्धिकरण पूर्ण';
+        }
+
+        const sanitizeBtn = $('btn-sanitize-contaminated');
+        if (sanitizeBtn) {
+            sanitizeBtn.disabled = true;
+            sanitizeBtn.textContent = 'तार्किक शुद्धिकरण पूर्ण हुआ';
+        }
+
+        safeSetText('stat-total-contaminations', '0');
+        safeSetText('stat-overlinks', '0');
+        safeSetText('stat-syntax-issues', '0');
+
+        const container = $('contamination-arguments-container');
+        if (container) {
+            const successNote = document.createElement('div');
+            successNote.className = 'logic-argument-item';
+            successNote.style.borderLeftColor = 'var(--accent-green)';
+            successNote.innerHTML = `
+                <div class="logic-argument-title" style="color: var(--accent-green);">तार्किक शुद्धिकरण सफलतापूर्वक लागू हुआ</div>
+                <div class="logic-argument-desc">अति-कड़ीकरण (WP:OVERLINKING), व्यर्थ पाइप सिंटेक्स तथा मात्रक कड़ियाँ तार्किक नियमों अनुसार शुद्ध कर दी गई हैं। नीचे मीडियाविकी डिफ़ में परिवर्तन देखें।</div>
+            `;
+            container.prepend(successNote);
+        }
+
+        recalculateModifiedWikitext();
+        showToast('दूषित लेख तार्किक नियमों द्वारा शुद्ध कर दिया गया');
+    }
+
+    function copyContaminatedWikitext() {
+        const text = safeGetValue('contaminated-wikitext-output');
+        if (!text) {
+            alert('कॉपी करने हेतु कोई दूषित विकिटेक्स्ट उपलब्ध नहीं है।');
+            return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('दूषित विकिटेक्स्ट कॉपी हुआ');
+            }).catch(() => fallbackCopy(text));
+        } else {
+            fallbackCopy(text);
         }
     }
 
@@ -920,131 +1285,106 @@
         text = text.replace(/<(nowiki|code|pre|syntaxhighlight|math|gallery)[\s\S]*?<\/\1>/gi, saveToken);
 
         // संदर्भ
-        text = text.replace(/<ref[^>]*\/>/gi, saveToken);
         text = text.replace(/<ref[\s\S]*?<\/ref>/gi, saveToken);
+        text = text.replace(/<ref[^>]*\/>/gi, saveToken);
 
-        // सामान्य HTML
-        text = text.replace(/<[^>]+>/g, saveToken);
+        // टेम्पलेट्स {{ ... }}
+        text = text.replace(/\{\{[^{}]*\}\}/g, saveToken);
+        text = text.replace(/\{\{[^{}]*\}\}/g, saveToken);
+
+        // अनुभाग शीर्षक
+        text = text.replace(/^==+[^=]+==+\s*$/gm, saveToken);
 
         // श्रेणियाँ व चित्र
-        text = text.replace(/\[\[(Category|श्रेणी|चित्र|फ़ाइल|File|Image):[^\]]+\]\]/gi, saveToken);
+        text = text.replace(/\[\[(Category|श्रेणी|File|Image|चित्र|फ़ाइल):[^\]]+\]\]/gi, saveToken);
 
-        // मौजूदा कड़ियाँ
-        text = text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
-            const cleanTarget = target.trim().replace(/_/g, ' ');
-            existingLinks.add(cleanTarget.toLowerCase());
-            if (display) existingLinks.add(display.trim().toLowerCase());
+        // पूर्व-मौजूदा आंतरिक कड़ियाँ
+        text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target) => {
+            const norm = target.trim().replace(/_/g, ' ');
+            existingLinks.add(norm.charAt(0).toUpperCase() + norm.slice(1));
             return saveToken(match);
         });
 
-        // टेम्पलेट्स
-        let prev;
-        do {
-            prev = text;
-            text = text.replace(/\{\{[^{}]*\}\}/g, saveToken);
-        } while (text !== prev);
-
-        // शीर्षक
-        text = text.replace(/^(=+)[^\n]+?\1\s*$/gm, saveToken);
-
-        // URL
-        text = text.replace(/\[https?:\/\/[^\s\]]+(?:\s+[^\]]+)?\]/gi, saveToken);
-        text = text.replace(/https?:\/\/[^\s"'<>]+/gi, saveToken);
-
-        // टेबल्स
-        text = text.replace(/\{\|[\s\S]*?\|\}/g, saveToken);
+        // URL लिंक्स
+        text = text.replace(/https?:\/\/[^\s\]]+/g, saveToken);
 
         return { cleanText: text, protectedTokens, existingLinks };
     }
 
-    // ================== उम्मीदवार पद निष्कासन ==================
+    // ================== उम्मीदवार निष्कासन ==================
     function extractCandidates(cleanText, lang) {
-        const minLength = parseInt(DOM.optMinLength.value, 10) || 3;
-        const stopwords = STOPWORDS[lang] || STOPWORDS['hi'];
-        const isStopwordFilter = DOM.optFilterStopwords.checked;
-        const isSkipDates = DOM.optSkipDates.checked;
-        const isSkipUnits = DOM.optSkipUnits.checked;
+        const minLength = DOM.optMinLength ? parseInt(DOM.optMinLength.value, 10) || 3 : 3;
+        const skipDates = DOM.optSkipDates ? DOM.optSkipDates.checked : true;
+        const skipUnits = DOM.optSkipUnits ? DOM.optSkipUnits.checked : true;
+        const filterStopwords = DOM.optFilterStopwords ? DOM.optFilterStopwords.checked : true;
 
+        const stopwordSet = STOPWORDS[lang] || STOPWORDS.hi;
         const textWithoutTokens = cleanText.replace(/\x01PROTECTED_\d+\x02/g, ' ');
-        const wordRegex = /[\p{L}\p{M}\d]+/gu;
-        const matches = textWithoutTokens.match(wordRegex) || [];
 
-        const candidateCounts = new Map();
+        const words = [];
+        const wordRegex = /[\p{L}\p{M}\d_]+/gu;
+        let m;
+        while ((m = wordRegex.exec(textWithoutTokens)) !== null) {
+            words.push(m[0]);
+        }
 
-        for (let i = 0; i < matches.length; i++) {
-            // 3-ग्राम
-            if (i + 2 < matches.length) {
-                const phrase3 = `${matches[i]} ${matches[i + 1]} ${matches[i + 2]}`;
-                if (isValidCandidate(phrase3, minLength, stopwords, isStopwordFilter, isSkipDates, isSkipUnits)) {
-                    candidateCounts.set(phrase3, (candidateCounts.get(phrase3) || 0) + 1);
+        const candidates = new Set();
+
+        // N-grams (1, 2, 3 शब्द)
+        for (let i = 0; i < words.length; i++) {
+            for (let n = 3; n >= 1; n--) {
+                if (i + n <= words.length) {
+                    const phrase = words.slice(i, i + n).join(' ').trim();
+                    if (isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet)) {
+                        candidates.add(phrase);
+                    }
                 }
-            }
-            // 2-ग्राम
-            if (i + 1 < matches.length) {
-                const phrase2 = `${matches[i]} ${matches[i + 1]}`;
-                if (isValidCandidate(phrase2, minLength, stopwords, isStopwordFilter, isSkipDates, isSkipUnits)) {
-                    candidateCounts.set(phrase2, (candidateCounts.get(phrase2) || 0) + 1);
-                }
-            }
-            // 1-ग्राम
-            const word = matches[i];
-            if (isValidCandidate(word, minLength, stopwords, isStopwordFilter, isSkipDates, isSkipUnits)) {
-                candidateCounts.set(word, (candidateCounts.get(word) || 0) + 1);
             }
         }
 
-        const currentTitleLower = (state.pageTitle || '').toLowerCase();
-
-        const filtered = Array.from(candidateCounts.keys()).filter(term => {
-            const termLower = term.toLowerCase();
-            if (termLower === currentTitleLower) return false;
-            if (state.existingLinks.has(termLower)) return false;
-            if (state.customBlacklist.has(termLower)) return false;
-            return true;
-        });
-
-        filtered.sort((a, b) => b.length - a.length);
-        return filtered.slice(0, 180);
+        return Array.from(candidates);
     }
 
-    function isValidCandidate(term, minLength, stopwords, isStopwordFilter, isSkipDates, isSkipUnits) {
-        if (!term || term.length < minLength) return false;
-        if (/^[\d\s.,:;।\-_]+$/.test(term)) return false;
+    function isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet) {
+        if (!phrase || phrase.length < minLength) return false;
+        if (/^\d+$/.test(phrase)) return false;
 
-        const lower = term.toLowerCase().trim();
+        const lower = phrase.toLowerCase();
 
-        if (state.customBlacklist.has(lower)) return false;
-        if (isStopwordFilter && stopwords.has(lower)) return false;
-        if (isSkipUnits && UNITS_OF_MEASURE.has(lower)) return false;
+        if (state.customBlacklist && state.customBlacklist.has(lower)) return false;
+        if (skipDates && (DATE_WORDS.has(lower) || /^\d{4}$/.test(phrase) || /^[०-९]{4}$/.test(phrase))) return false;
+        if (skipUnits && UNITS_OF_MEASURE.has(lower)) return false;
 
-        if (isSkipDates) {
-            if (/^(?:1[0-9]{3}|20[0-9]{2}|१[०-९]{3}|२०[०-९]{2})$/.test(term)) return false;
-            if (DATE_WORDS.has(lower)) return false;
-            if (/^(?:\d{1,2}|[०-९]{1,2})\s+(?:जनवरी|फ़रवरी|फरवरी|मार्च|अप्रैल|मई|जून|जुलाई|अगस्त|सितंबर|अक्टूबर|नवंबर|दिसंबर)$/i.test(term)) return false;
+        if (filterStopwords) {
+            if (stopwordSet.has(lower)) return false;
+            const parts = lower.split(' ');
+            if (parts.length > 1 && parts.every(p => stopwordSet.has(p))) return false;
         }
 
         return true;
     }
 
-    // ================== सुझाव सूची निर्माण ==================
+    // ================== सुझाव तालिका निर्माण ==================
     function buildSuggestions(cleanText, candidateMap) {
         const suggestions = [];
-        const skipRed = DOM.optBlueOnly.checked;
-        const skipDisambig = DOM.optSkipDisambig.checked;
-        const resolveRedirects = DOM.optResolveRedirects.checked;
         const seenTerms = new Set();
         let idCounter = 1;
 
-        const sortedCandidates = Array.from(candidateMap.keys()).sort((a, b) => b.length - a.length);
+        const skipDisambig = DOM.optSkipDisambig ? DOM.optSkipDisambig.checked : true;
+        const skipRed = DOM.optBlueOnly ? DOM.optBlueOnly.checked : true;
+        const resolveRedirects = DOM.optResolveRedirects ? DOM.optResolveRedirects.checked : true;
 
-        for (const term of sortedCandidates) {
+        const candidateArray = Array.from(candidateMap.keys());
+        candidateArray.sort((a, b) => b.length - a.length);
+
+        for (const term of candidateArray) {
             const info = candidateMap.get(term);
             if (!info) continue;
 
             const exists = info.exists;
             const isRedirect = info.isRedirect;
             const isDisambig = info.isDisambig;
-            const target = resolveRedirects ? info.target : term;
+            let target = resolveRedirects && isRedirect ? info.target : term;
 
             let status = 'blue';
             if (!exists) {
@@ -1115,6 +1455,7 @@
     }
 
     function renderSuggestionsTable() {
+        if (!DOM.suggestionsTbody) return;
         DOM.suggestionsTbody.innerHTML = '';
         const visibleList = getFilteredSuggestions();
 
@@ -1180,29 +1521,38 @@
             `;
 
             const cb = tr.querySelector('.suggestion-checkbox');
-            cb.addEventListener('change', () => {
-                s.checked = cb.checked;
-                tr.classList.toggle('row-deselected', !s.checked);
-                recalculateModifiedWikitext();
-            });
-
-            tr.querySelector('.edit-target-btn').addEventListener('click', () => openEditModal(s.id));
-
-            tr.querySelector('.blacklist-term-btn').addEventListener('click', () => {
-                if (confirm(`क्या आप '${s.term}' को हमेशा के लिए बहिष्कार सूची (Blacklist) में जोड़ना चाहते हैं?`)) {
-                    state.customBlacklist.add(s.term.toLowerCase());
-                    saveBlacklist();
-                    state.suggestions = state.suggestions.filter(item => item.id !== s.id);
-                    renderSuggestionsTable();
+            if (cb) {
+                cb.addEventListener('change', () => {
+                    s.checked = cb.checked;
+                    tr.classList.toggle('row-deselected', !s.checked);
                     recalculateModifiedWikitext();
-                    showToast(`'${s.term}' बहिष्कार सूची में जोड़ा गया`);
-                }
-            });
+                });
+            }
 
-            tr.querySelector('.preview-target-btn').addEventListener('click', (e) => {
-                const rect = e.target.getBoundingClientRect();
-                showArticleSummaryCard(s.target, rect.left, rect.top);
-            });
+            const editBtn = tr.querySelector('.edit-target-btn');
+            if (editBtn) editBtn.addEventListener('click', () => openEditModal(s.id));
+
+            const blBtn = tr.querySelector('.blacklist-term-btn');
+            if (blBtn) {
+                blBtn.addEventListener('click', () => {
+                    if (confirm(`क्या आप '${s.term}' को हमेशा के लिए बहिष्कार सूची (Blacklist) में जोड़ना चाहते हैं?`)) {
+                        state.customBlacklist.add(s.term.toLowerCase());
+                        saveBlacklist();
+                        state.suggestions = state.suggestions.filter(item => item.id !== s.id);
+                        renderSuggestionsTable();
+                        recalculateModifiedWikitext();
+                        showToast(`'${s.term}' बहिष्कार सूची में जोड़ा गया`);
+                    }
+                });
+            }
+
+            const prevBtn = tr.querySelector('.preview-target-btn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (e) => {
+                    const rect = e.target.getBoundingClientRect();
+                    showArticleSummaryCard(s.target, rect.left, rect.top);
+                });
+            }
 
             DOM.suggestionsTbody.appendChild(tr);
         });
@@ -1218,43 +1568,45 @@
         const red = state.suggestions.filter(s => s.status === 'red').length;
         const activeCount = state.suggestions.filter(s => s.checked).length;
 
-        DOM.badgeTotal.textContent = `${total} उम्मीदवार`;
-        DOM.badgeBlue.textContent = `${blue} नीली कड़ियाँ`;
-        DOM.badgeRedirect.textContent = `${redirect} पुनर्निर्देशन`;
-        DOM.badgeDisambig.textContent = `${disambig} बहुविकल्पी`;
-        DOM.badgeRed.textContent = `${red} लाल कड़ियाँ`;
+        safeSetText(DOM.badgeTotal, `${total} उम्मीदवार`);
+        safeSetText(DOM.badgeBlue, `${blue} नीली कड़ियाँ`);
+        safeSetText(DOM.badgeRedirect, `${redirect} पुनर्निर्देशन`);
+        safeSetText(DOM.badgeDisambig, `${disambig} बहुविकल्पी`);
+        safeSetText(DOM.badgeRed, `${red} लाल कड़ियाँ`);
 
-        DOM.resultsSummaryText.textContent = `कुल ${total} उम्मीदवारों में से ${activeCount} कड़ियाँ शामिल की जा रही हैं।`;
-        DOM.finalStatsText.textContent = `कुल ${activeCount} तार्किक कड़ियाँ चुनी गईं (कुल सुझाव: ${total})`;
+        safeSetText(DOM.resultsSummaryText, `कुल ${total} उम्मीदवारों में से ${activeCount} कड़ियाँ शामिल की जा रही हैं।`);
+        safeSetText(DOM.finalStatsText, `कुल ${activeCount} तार्किक कड़ियाँ चुनी गईं (कुल सुझाव: ${total})`);
 
         const words = state.originalWikitext.trim() ? state.originalWikitext.trim().split(/\s+/).length : 0;
         const existingCount = state.existingLinks.size;
         const totalLinks = existingCount + activeCount;
         const density = words > 0 ? ((totalLinks / words) * 100).toFixed(1) : '0.0';
 
-        DOM.statTotalWords.textContent = words.toLocaleString('hi-IN');
-        DOM.statExistingLinks.textContent = existingCount.toLocaleString('hi-IN');
-        DOM.statNewLinks.textContent = `+${activeCount}`;
-        DOM.statLinkDensity.textContent = `${density}%`;
+        safeSetText(DOM.statTotalWords, words.toLocaleString('hi-IN'));
+        safeSetText(DOM.statExistingLinks, existingCount.toLocaleString('hi-IN'));
+        safeSetText(DOM.statNewLinks, `+${activeCount}`);
+        safeSetText(DOM.statLinkDensity, `${density}%`);
 
-        if (density < 1.5) {
-            DOM.densityRating.textContent = 'अपेक्षाकृत कम कड़ियाँ';
-            DOM.densityRating.className = 'density-rating badge-total';
-        } else if (density <= 5.5) {
-            DOM.densityRating.textContent = 'संतुलित घनत्व';
-            DOM.densityRating.className = 'density-rating badge-blue';
-        } else {
-            DOM.densityRating.textContent = 'अति-कड़ीकरण चेतावनी';
-            DOM.densityRating.className = 'density-rating badge-red';
+        if (DOM.densityRating) {
+            if (density < 1.5) {
+                DOM.densityRating.textContent = 'अपेक्षाकृत कम कड़ियाँ';
+                DOM.densityRating.className = 'density-rating badge-total';
+            } else if (density <= 5.5) {
+                DOM.densityRating.textContent = 'संतुलित घनत्व';
+                DOM.densityRating.className = 'density-rating badge-blue';
+            } else {
+                DOM.densityRating.textContent = 'अति-कड़ीकरण चेतावनी';
+                DOM.densityRating.className = 'density-rating badge-red';
+            }
         }
     }
 
     // ================== संशोधित विकिटेक्स्ट एवं डिफ़ का पुनः परिकलन ==================
     function recalculateModifiedWikitext() {
         const activeSuggestions = state.suggestions.filter(s => s.checked);
-        const firstOnly = DOM.optFirstOnly.checked;
-        const cleanPipes = DOM.optCleanPipes.checked;
-        const linkScope = DOM.optLinkScope.value;
+        const firstOnly = DOM.optFirstOnly ? DOM.optFirstOnly.checked : true;
+        const cleanPipes = DOM.optCleanPipes ? DOM.optCleanPipes.checked : true;
+        const linkScope = DOM.optLinkScope ? DOM.optLinkScope.value : 'article';
 
         const { cleanText, protectedTokens } = protectWikitextStructures(state.originalWikitext);
         let modifiedText = cleanText;
@@ -1286,7 +1638,7 @@
         });
 
         state.processedWikitext = modifiedText;
-        DOM.finalWikitextOutput.value = modifiedText;
+        safeSetValue(DOM.finalWikitextOutput, modifiedText);
 
         renderMediaWikiDiff(state.originalWikitext, modifiedText, state.diffMode);
         generateRenderedPreview(modifiedText);
@@ -1323,8 +1675,10 @@
 
     // ================== प्रामाणिक विकिपीडिया मीडियाविकी डिफ़ जनरेटर ==================
     function renderMediaWikiDiff(oldText, newText, mode = 'side-by-side') {
-        const oldLines = oldText.split('\n');
-        const newLines = newText.split('\n');
+        if (!DOM.diffContainer) return;
+
+        const oldLines = (oldText || '').split('\n');
+        const newLines = (newText || '').split('\n');
 
         if (oldText === newText) {
             DOM.diffContainer.innerHTML = '<div class="diff-empty-msg">कोई परिवर्तन नहीं हुआ। (मूल विकिटेक्स्ट और नया विकिटेक्स्ट समरूप हैं)</div>';
@@ -1391,8 +1745,8 @@
                 </colgroup>
                 <thead>
                     <tr class="diff-title">
-                        <td colspan="2" class="diff-otitle"><strong>मूल विकिटेक्स्ट</strong></td>
-                        <td colspan="2" class="diff-ntitle"><strong>संशोधित विकिटेक्स्ट (कड़ियों सहित)</strong></td>
+                        <td colspan="2" class="diff-otitle"><strong>मूल / दूषित विकिटेक्स्ट</strong></td>
+                        <td colspan="2" class="diff-ntitle"><strong>संशोधित विकिटेक्स्ट (तार्किक कड़ियों सहित)</strong></td>
                     </tr>
                 </thead>
                 <tbody>
@@ -1452,15 +1806,14 @@
         return false;
     }
 
-    // मीडियाविकी शैली शब्द/टोकन स्तर हाइलाइटिंग (diffchange inline)
     function highlightIntraLineAdded(oldLine, newLine) {
-        // विकिकड़ियों `[[...]]` को प्रामाणिक `<ins class="diffchange diffchange-inline">` में हाइलाइट करें
         let escapedNew = escapeHtml(newLine);
         return escapedNew.replace(/\[\[([^\]]+)\]\]/g, '<ins class="diffchange diffchange-inline">[[&nbsp;$1&nbsp;]]</ins>');
     }
 
     // ================== पूर्वावलोकन जनरेटर ==================
     function generateRenderedPreview(wikitext) {
+        if (!DOM.articlePreviewContainer) return;
         let html = escapeHtml(wikitext);
 
         html = html.replace(/^====([^=]+)====/gm, '<h4>$1</h4>');
@@ -1482,9 +1835,9 @@
         DOM.articlePreviewContainer.innerHTML = paragraphs.join('');
     }
 
-    // ================== डुप्लिकेट कड़ी शोधक (Overlink Cleaner) ==================
+    // ================== डुप्लिकेट कड़ी शोधक (Overlink Cleaner Modal) ==================
     function openDuplicateCleanerModal() {
-        const text = DOM.rawWikitextInput.value.trim() || state.originalWikitext.trim();
+        const text = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
         if (!text) {
             alert('कृपया पहले कोई लेख लोड करें अथवा विकिटेक्स्ट दर्ज करें।');
             return;
@@ -1504,10 +1857,10 @@
         const duplicates = Array.from(counts.entries()).filter(([t, count]) => count > 1);
 
         if (duplicates.length === 0) {
-            DOM.duplicateLinksContainer.innerHTML = '<div style="padding: 18px; text-align: center; color: var(--accent-green);">इस लेख में कोई भी डुप्लिकेट आंतरिक कड़ी नहीं पाई गई। (WP:OVERLINKING का पूरा पालन)</div>';
-            DOM.btnFixDuplicates.style.display = 'none';
+            safeSetHTML(DOM.duplicateLinksContainer, '<div style="padding: 18px; text-align: center; color: var(--accent-green);">इस लेख में कोई भी डुप्लिकेट आंतरिक कड़ी नहीं पाई गई। (WP:OVERLINKING का पूरा पालन)</div>');
+            safeSetDisplay(DOM.btnFixDuplicates, 'none');
         } else {
-            DOM.btnFixDuplicates.style.display = 'inline-block';
+            safeSetDisplay(DOM.btnFixDuplicates, 'inline-block');
             let listHtml = '';
             duplicates.sort((a, b) => b[1] - a[1]);
             duplicates.forEach(([title, count]) => {
@@ -1518,14 +1871,14 @@
                     </div>
                 `;
             });
-            DOM.duplicateLinksContainer.innerHTML = listHtml;
+            safeSetHTML(DOM.duplicateLinksContainer, listHtml);
         }
 
         openModal('duplicate-cleaner-modal');
     }
 
     function fixDuplicateLinks() {
-        let text = DOM.rawWikitextInput.value.trim() || state.originalWikitext.trim();
+        let text = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
         if (!text) return;
 
         const seenTargets = new Set();
@@ -1545,7 +1898,7 @@
             }
         });
 
-        DOM.rawWikitextInput.value = text;
+        safeSetValue(DOM.rawWikitextInput, text);
         state.originalWikitext = text;
         updateCharCount();
         closeModal('duplicate-cleaner-modal');
@@ -1560,6 +1913,7 @@
     }
 
     function renderBlacklistTags() {
+        if (!DOM.blacklistTagsContainer) return;
         DOM.blacklistTagsContainer.innerHTML = '';
         if (state.customBlacklist.size === 0) {
             DOM.blacklistTagsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">कोई शब्द बहिष्कृत नहीं है।</span>';
@@ -1580,11 +1934,11 @@
     }
 
     function addBlacklistWord() {
-        const val = DOM.blacklistNewInput.value.trim().toLowerCase();
+        const val = safeGetValue(DOM.blacklistNewInput).trim().toLowerCase();
         if (val) {
             state.customBlacklist.add(val);
             saveBlacklist();
-            DOM.blacklistNewInput.value = '';
+            safeSetValue(DOM.blacklistNewInput, '');
             renderBlacklistTags();
             showToast(`'${val}' जोड़ा गया`);
         }
@@ -1636,18 +1990,18 @@
         if (!item) return;
 
         state.editingSuggestionId = suggestionId;
-        DOM.modalTermText.textContent = item.term;
-        DOM.modalTargetInput.value = item.target;
-        DOM.modalVerifyStatus.style.display = 'none';
+        safeSetText(DOM.modalTermText, item.term);
+        safeSetValue(DOM.modalTargetInput, item.target);
+        safeSetDisplay(DOM.modalVerifyStatus, 'none');
         openModal('edit-target-modal');
-        DOM.modalTargetInput.focus();
+        if (DOM.modalTargetInput) DOM.modalTargetInput.focus();
     }
 
     async function saveModalEdit() {
         const item = state.suggestions.find(s => s.id === state.editingSuggestionId);
         if (!item) return;
 
-        const newTarget = DOM.modalTargetInput.value.trim();
+        const newTarget = safeGetValue(DOM.modalTargetInput).trim();
         if (!newTarget) {
             alert('कृपया वैध लक्ष्य पृष्ठ दर्ज करें।');
             return;
@@ -1673,7 +2027,7 @@
 
     // ================== बॉटम बार क्रियाएँ ==================
     function copyModifiedWikitext() {
-        const text = DOM.finalWikitextOutput.value;
+        const text = safeGetValue(DOM.finalWikitextOutput);
         if (!text) {
             alert('कॉपी करने हेतु कोई विकिटेक्स्ट उपलब्ध नहीं है।');
             return;
@@ -1699,7 +2053,7 @@
     }
 
     function openWikipediaEditPage() {
-        const title = state.pageTitle || cleanWikiTitleFromInput(DOM.pageInput.value);
+        const title = state.pageTitle || cleanWikiTitleFromInput(safeGetValue(DOM.pageInput));
         if (!title || title === 'अशीर्षक लेख') {
             alert('कृपया पहले किसी विकिपीडिया लेख का विश्लेषण करें।');
             return;
@@ -1710,14 +2064,14 @@
 
         const openWin = window.open(editUrl, '_blank');
         if (openWin) {
-            alert(`विकिपीडिया संपादन पृष्ठ खोला गया है।\nविकिटेक्स्ट क्लिपबोर्ड पर कॉपी हो चुका है, वहाँ पेस्ट कर सुरक्षित करें।`);
+            alert(`विकिपीडिया संपादन पृष्ठ खोला गया है।\nसंशोधित विकिटेक्स्ट क्लिपबोर्ड पर कॉपी हो चुका है, वहाँ पेस्ट कर सुरक्षित करें।`);
         } else {
             alert(`कृपया इस लिंक पर जाएँ: ${editUrl}`);
         }
     }
 
     function downloadWikiFile() {
-        const text = DOM.finalWikitextOutput.value;
+        const text = safeGetValue(DOM.finalWikitextOutput);
         if (!text) {
             alert('डाउनलोड हेतु कोई विकिटेक्स्ट उपलब्ध नहीं है।');
             return;
@@ -1738,12 +2092,32 @@
 
     function resetTool() {
         if (confirm('क्या आप नया विश्लेषण आरंभ करना चाहते हैं? वर्तमान परिणाम रीसेट हो जाएँगे।')) {
-            DOM.resultsCard.style.display = 'none';
-            DOM.compactActiveBar.style.display = 'none';
-            DOM.inputControlCard.style.display = 'block';
-            DOM.pageInput.value = '';
-            DOM.rawWikitextInput.value = '';
+            safeSetDisplay(DOM.resultsCard, 'none');
+            safeSetDisplay(DOM.compactActiveBar, 'none');
+            safeSetValue(DOM.pageInput, '');
+            safeSetValue(DOM.rawWikitextInput, '');
+            safeSetValue(DOM.contaminatedWikitextOutput, '');
+            safeSetText('stat-total-contaminations', '0');
+            safeSetText('stat-overlinks', '0');
+            safeSetText('stat-disambigs', '0');
+            safeSetText('stat-red-links', '0');
+            safeSetText('stat-syntax-issues', '0');
+
+            const badge = $('box2-status-badge');
+            if (badge) {
+                badge.className = 'workbench-badge badge-waiting';
+                badge.textContent = 'प्रतीक्षारत';
+            }
+
+            const sanitizeBtn = $('btn-sanitize-contaminated');
+            if (sanitizeBtn) {
+                sanitizeBtn.disabled = true;
+                sanitizeBtn.textContent = 'तार्किक रूप से दूषित लेख शुद्ध करें';
+            }
+
             state.originalWikitext = '';
+            state.contaminatedWikitext = '';
+            state.sanitizedWikitext = '';
             state.processedWikitext = '';
             state.suggestions = [];
             updateCharCount();
@@ -1765,6 +2139,11 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    document.addEventListener('DOMContentLoaded', init);
+    // सुरक्षित रूप से DOM लोड होने पर आरंभ करें
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 
 })();
