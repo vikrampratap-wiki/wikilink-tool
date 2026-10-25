@@ -19,12 +19,13 @@
                     <div class="logo-title-wrap">
                         <h1 class="app-title">विकीलिंक सहायक</h1>
                         <span class="badge badge-tool">WikiLink Assistant</span>
-                        <span class="badge badge-version">v1.0</span>
+                        <span class="badge badge-version">v1.2</span>
                     </div>
-                    <p class="app-subtitle">चुनी हुई भाषा के विकिपीडिया लेख में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने एवं समीक्षा का स्वतंत्र उपकरण</p>
+                    <p class="app-subtitle">चुनी हुई भाषा के विकिपीडिया लेख में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, छन्नी व समीक्षा का स्वतंत्र उपकरण</p>
                 </div>
             </div>
             <div class="header-actions">
+                <button id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स (Ctrl+/)">⌨️ शॉर्टकट्स</button>
                 <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="डार्क/लाइट थीम बदलें">🌓 थीम</button>
                 <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank" class="btn btn-outline btn-sm" title="विकिपीडिया सदस्य पृष्ठ">सदस्य:विक्रम प्रताप ↗</a>
                 <a href="https://github.com/vikrampratap-wiki/wikilink-tool" target="_blank" class="btn btn-outline btn-sm" title="गिटहब रिपॉजिटरी">GitHub ↗</a>
@@ -39,7 +40,7 @@
         <div class="banner banner-info">
             <div class="banner-icon">ℹ️</div>
             <div class="banner-body">
-                <strong>स्वतंत्र एवं सुरक्षित उपकरण (reFill की भाँति):</strong> यह टूल विकिपीडिया लेखों का विश्लेषण कर तार्किक कड़ियाँ स्वतः जोड़ता है। विकिपीडिया पर बाहरी टूल से सुरक्षित संपादन हेतु OAuth क्रेडेंशियल्स की आवश्यकता होती है, अतः किसी भी अप्रमाणित लॉगिन के स्थान पर यह टूल आपको <strong>लाइव डिफ़, पूर्वावलोकन और 1-क्लिक विकिटेक्स्ट कॉपी</strong> की सुविधा देता है, जिसे आप सीधे विकिपीडिया के संपादन पृष्ठ पर सुरक्षित रूप से पेस्ट कर सकते हैं।
+                <strong>स्वतंत्र एवं सुरक्षित उपकरण (reFill की भाँति):</strong> यह टूल विकिपीडिया लेखों का विश्लेषण कर तार्किक कड़ियाँ स्वतः जोड़ता है। विकिपीडिया पर बाहरी टूल से सुरक्षित संपादन हेतु OAuth क्रेडेंशियल्स की आवश्यकता होती है, अतः किसी भी अप्रमाणित लॉगिन के स्थान पर यह टूल आपको <strong>उन्नत छन्नी, लाइव डिफ़, सारांश पूर्वावलोकन और 1-क्लिक विकिटेक्स्ट कॉपी</strong> की सुविधा देता है, जिसे आप सीधे विकिपीडिया के संपादन पृष्ठ पर सुरक्षित रूप से पेस्ट कर सकते हैं।
             </div>
         </div>
 
@@ -137,7 +138,7 @@
             <!-- तार्किक कड़ियाँ सेटिंग्स (Logical Wikilinking Settings - Collapsible) -->
             <div class="settings-accordion">
                 <div class="settings-header" id="toggle-settings-btn">
-                    <span>⚙️ तार्किक आंतरिक कड़ी सेटिंग्स (Logical Wikilinking Rules)</span>
+                    <span>⚙️ तार्किक आंतरिक कड़ी नियम एवं सेटिंग्स (Logical Wikilinking Rules)</span>
                     <span class="accordion-arrow">▼</span>
                 </div>
                 <div class="settings-body" id="settings-body">
@@ -145,16 +146,40 @@
                         <label class="setting-item">
                             <input type="checkbox" id="opt-first-only" checked>
                             <div class="setting-desc">
-                                <strong>केवल प्रथम उल्लेख पर कड़ी बनाएं (First Occurrence Only)</strong>
-                                <p>विकिपीडिया नियमावली (WP:OVERLINKING) अनुसार लेख में एक ही शब्द/विषय की बार-बार कड़ियाँ नहीं दोहराई जाएँगी।</p>
+                                <strong>प्रथम उल्लेख नियम (First Occurrence Only - WP:OVERLINKING)</strong>
+                                <p>एक लेख में एक ही संकल्पना की बार-बार कड़ियाँ नहीं दोहराई जाएँगी।</p>
                             </div>
                         </label>
 
                         <label class="setting-item">
                             <input type="checkbox" id="opt-blue-only" checked>
                             <div class="setting-desc">
-                                <strong>केवल सत्यापित पृष्ठों (नीली कड़ियों) को जोड़ें (Skip Red Links)</strong>
-                                <p>केवल वही कड़ियाँ जोड़ें जो चुनी हुई भाषा के विकिपीडिया पर वास्तव में मौजूद हैं, अस्तित्वहीन लाल कड़ियाँ छोड़ें।</p>
+                                <strong>केवल सत्यापित पृष्ठ (नीली कड़ियाँ जोड़ें)</strong>
+                                <p>केवल वही कड़ियाँ जोड़ें जो विकिपीडिया पर वास्तव में मौजूद हैं, अस्तित्वहीन लाल कड़ियाँ छोड़ें।</p>
+                            </div>
+                        </label>
+
+                        <label class="setting-item">
+                            <input type="checkbox" id="opt-skip-disambig" checked>
+                            <div class="setting-desc">
+                                <strong>बहुविकल्पी पृष्ठ छोड़ें (Skip Disambiguation Pages - WP:DISAMBIG)</strong>
+                                <p>बहुविकल्पी पृष्ठों की सीधी कड़ी न जोड़ें; ऐसे पदों पर चेतावनी चिह्न दर्शाएं।</p>
+                            </div>
+                        </label>
+
+                        <label class="setting-item">
+                            <input type="checkbox" id="opt-skip-dates" checked>
+                            <div class="setting-desc">
+                                <strong>सामान्य तिथियाँ व वर्ष छोड़ें (Skip Generic Dates/Years - WP:DATELINK)</strong>
+                                <p>अकेले वर्ष (उदा: 1947, 2023) या साधारण तिथियों को बिना ऐतिहासिक प्रसंग लिंक न करें।</p>
+                            </div>
+                        </label>
+
+                        <label class="setting-item">
+                            <input type="checkbox" id="opt-skip-units" checked>
+                            <div class="setting-desc">
+                                <strong>माप व इकाइयाँ छोड़ें (Skip Units of Measure)</strong>
+                                <p>किमी, किग्रा, मीटर, सेमी, लीटर, सेकंड, मिनट आदि मात्रकों पर कड़ियाँ न बनाएं।</p>
                             </div>
                         </label>
 
@@ -162,7 +187,15 @@
                             <input type="checkbox" id="opt-resolve-redirects" checked>
                             <div class="setting-desc">
                                 <strong>पुनर्निर्देशन स्वतः ठीक करें (Auto-Resolve Redirects)</strong>
-                                <p>यदि कोई शब्द पुनर्निर्देशन (Redirect) है, तो उसे मूल प्रमाणित लक्ष्य लेख से जोड़ें (उदा: <code>[[महात्मा गांधी|महात्मा गाँधी]]</code>)।</p>
+                                <p>पुनर्निर्देशन को मूल प्रमाणित लक्ष्य लेख से जोड़ें (उदा: <code>[[महात्मा गांधी|महात्मा गाँधी]]</code>)।</p>
+                            </div>
+                        </label>
+
+                        <label class="setting-item">
+                            <input type="checkbox" id="opt-clean-pipes" checked>
+                            <div class="setting-desc">
+                                <strong>व्यर्थ पाइप सिंटेक्स हटाएं (Clean Redundant Pipes)</strong>
+                                <p><code>[[भारत|भारत]]</code> के स्थान पर स्वच्छ <code>[[भारत]]</code> सिंटेक्स उपयोग करें।</p>
                             </div>
                         </label>
 
@@ -170,17 +203,29 @@
                             <input type="checkbox" id="opt-protect-structures" checked>
                             <div class="setting-desc">
                                 <strong>संरचनाएँ सुरक्षित रखें (Protect Wiki Structures)</strong>
-                                <p>शीर्षक (== ==), संदर्भ (&lt;ref&gt;), टेम्पलेट ({{ }}), श्रेणियाँ, चित्र व कोड ब्लॉक्स के भीतर कड़ियाँ नहीं बनाई जाएँगी।</p>
+                                <p>शीर्षक (== ==), संदर्भ (&lt;ref&gt;), टेम्पलेट ({{ }}), श्रेणियाँ व चित्र सुरक्षित रहें।</p>
                             </div>
                         </label>
 
                         <label class="setting-item">
                             <input type="checkbox" id="opt-filter-stopwords" checked>
                             <div class="setting-desc">
-                                <strong>सामान्य शब्द व व्याकरणिक पद छोड़ें (Stopword Blacklist)</strong>
-                                <p>आम सर्वनाम, सहायक क्रियाएँ, समुच्चयबोधक (है, था, और, का, के, में, से आदि) को स्वतः बाहर रखा जाएगा।</p>
+                                <strong>सामान्य शब्द व व्याकरणिक पद छोड़ें (Stopwords Blacklist)</strong>
+                                <p>आम सर्वनाम, सहायक क्रियाएँ, समुच्चयबोधक (है, था, और, का, के, में आदि) बाहर रहेंगे।</p>
                             </div>
                         </label>
+
+                        <div class="setting-item setting-item-input">
+                            <div class="setting-desc">
+                                <strong>कड़ीकरण आवृत्ति (Linking Scope):</strong>
+                                <p>कड़ियों का भौगोलिक दायरा चुनें।</p>
+                            </div>
+                            <select id="opt-link-scope" class="form-control form-control-sm" style="width: 170px;">
+                                <option value="article" selected>संपूर्ण लेख में एक बार</option>
+                                <option value="section">प्रति अनुभाग एक बार</option>
+                                <option value="lead">केवल मुख्य भूमिका (Lead)</option>
+                            </select>
+                        </div>
 
                         <div class="setting-item setting-item-input">
                             <div class="setting-desc">
@@ -190,6 +235,22 @@
                             <input type="number" id="opt-min-length" class="form-control form-control-sm" value="3" min="2" max="10">
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- सहायक उपकरण त्वरित पट्टी (Auxiliary Tools Bar) -->
+            <div class="aux-tools-banner">
+                <span class="aux-tools-title">🧰 त्वरित सहायक उपकरण:</span>
+                <div class="aux-tools-actions">
+                    <button type="button" id="btn-open-duplicate-cleaner" class="btn btn-outline btn-sm" title="मूल लेख में पहले से मौजूद डुप्लिकेट कड़ियों की सफाई">
+                        🧹 डुप्लिकेट कड़ी शोधक (Overlink Cleaner)
+                    </button>
+                    <button type="button" id="btn-open-blacklist-mgr" class="btn btn-outline btn-sm" title="अपनी कस्टम बहिष्कार शब्द सूची प्रबंधित करें">
+                        ⚙️ शब्द बहिष्कार प्रबंधक (Blacklist)
+                    </button>
+                    <button type="button" id="btn-download-standalone-html" class="btn btn-outline btn-sm" title="ऑफलाइन चलाने हेतु सिंगल HTML फाइल डाउनलोड करें">
+                        💾 ऑफलाइन ऑल-इन-वन HTML
+                    </button>
                 </div>
             </div>
 
@@ -227,21 +288,66 @@
                     <span class="counter-badge badge-total" id="badge-total">0 उम्मीदवार</span>
                     <span class="counter-badge badge-blue" id="badge-blue">0 नीली कड़ियाँ</span>
                     <span class="counter-badge badge-redirect" id="badge-redirect">0 पुनर्निर्देशन</span>
+                    <span class="counter-badge badge-disambig" id="badge-disambig">0 बहुविकल्पी</span>
                     <span class="counter-badge badge-red" id="badge-red">0 लाल कड़ियाँ</span>
                 </div>
             </div>
 
-            <!-- त्वरित चयन पट्टी -->
-            <div class="review-toolbar">
-                <div class="filter-group">
-                    <span class="filter-label">फिल्टर / चयन:</span>
-                    <button type="button" id="btn-select-all" class="btn btn-chip btn-sm">सभी चुनें</button>
-                    <button type="button" id="btn-deselect-all" class="btn btn-chip btn-sm">सभी हटाएं</button>
-                    <button type="button" id="btn-select-blue-only" class="btn btn-chip btn-sm active-chip">केवल नीली (पुष्ट) कड़ियाँ</button>
-                    <button type="button" id="btn-select-redirects" class="btn btn-chip btn-sm">पुनर्निर्देशन सहित</button>
+            <!-- कड़ी घनत्व विश्लेषक पट्टी (Link Density Gauge Bar) -->
+            <div class="density-gauge-card" id="density-gauge-card">
+                <div class="density-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">कुल शब्द:</span>
+                        <strong id="stat-total-words">0</strong>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">पूर्व-मौजूदा कड़ियाँ:</span>
+                        <strong id="stat-existing-links">0</strong>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">जोड़ी जा रही नई कड़ियाँ:</span>
+                        <strong id="stat-new-links" class="text-success">+0</strong>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">अनुमानित कुल कड़ी घनत्व:</span>
+                        <strong id="stat-link-density">0.0%</strong>
+                        <span class="density-rating badge-blue" id="density-rating">संतुलित</span>
+                    </div>
                 </div>
-                <div class="search-suggestions-wrap">
-                    <input type="text" id="suggestions-filter-input" class="form-control form-control-sm" placeholder="🔍 सुझाई गई कड़ियों में खोजें...">
+            </div>
+
+            <!-- उन्नत छन्नी एवं फ़िल्टर पट्टी (Advanced Filter Toolbar) -->
+            <div class="review-toolbar">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <span class="filter-label">🏷️ स्थिति छन्नी:</span>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip active-chip" data-status="all">सभी</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="blue">🔵 केवल नीली</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="redirect">🟢 केवल पुनर्निर्देशन</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="disambig">⚠️ बहुविकल्पी</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="red">🔴 लाल कड़ियाँ</button>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-label">🔤 प्रकार छन्नी:</span>
+                        <button type="button" class="btn btn-chip btn-sm filter-type-chip active-chip" data-type="all">सभी पद</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-type-chip" data-type="multi">बहु-शब्द (Phrases)</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-type-chip" data-type="single">एकल शब्द</button>
+                    </div>
+                </div>
+
+                <div class="filter-row filter-row-actions">
+                    <div class="filter-group">
+                        <span class="filter-label">त्वरित चयन:</span>
+                        <button type="button" id="btn-select-all" class="btn btn-chip btn-sm">सभी चुनें</button>
+                        <button type="button" id="btn-deselect-all" class="btn btn-chip btn-sm">सभी हटाएं</button>
+                        <button type="button" id="btn-select-blue-only" class="btn btn-chip btn-sm">केवल सत्यापित (Blue)</button>
+                        <button type="button" id="btn-deselect-disambig" class="btn btn-chip btn-sm" title="बहुविकल्पी पृष्ठों को अचयनित करें">बहुविकल्पी हटाएं</button>
+                    </div>
+
+                    <div class="search-suggestions-wrap">
+                        <input type="text" id="suggestions-filter-input" class="form-control form-control-sm" placeholder="🔍 सुझाई गई कड़ियों में खोजें...">
+                    </div>
                 </div>
             </div>
 
@@ -250,12 +356,12 @@
                 <table class="table suggestions-table">
                     <thead>
                         <tr>
-                            <th width="50"><input type="checkbox" id="master-suggestion-checkbox" checked title="सभी टॉगल करें"></th>
+                            <th width="45"><input type="checkbox" id="master-suggestion-checkbox" checked title="सभी टॉगल करें"></th>
                             <th width="200">मूल शब्द (Original Text)</th>
-                            <th width="250">लक्ष्य विकिपीडिया पृष्ठ (Target Page)</th>
-                            <th width="140">स्थिति (Status)</th>
+                            <th width="260">लक्ष्य विकिपीडिया पृष्ठ (Target Page)</th>
+                            <th width="150">स्थिति (Status)</th>
                             <th>संदर्भ / वाक्य (Context)</th>
-                            <th width="100">क्रिया (Actions)</th>
+                            <th width="140">क्रियाएँ (Actions)</th>
                         </tr>
                     </thead>
                     <tbody id="suggestions-tbody">
@@ -298,6 +404,18 @@
                 </div>
             </div>
 
+            <!-- संपादन सारांश बॉक्स (Wikipedia Edit Summary Generator) -->
+            <div class="edit-summary-card">
+                <div class="edit-summary-header">
+                    <span class="edit-summary-title">📝 अनुशंसित विकिपीडिया संपादन सारांश (Edit Summary):</span>
+                    <button type="button" id="copy-summary-btn" class="btn btn-secondary btn-sm" title="संपादन सारांश क्लिपबोर्ड पर कॉपी करें">
+                        📋 सारांश कॉपी करें
+                    </button>
+                </div>
+                <input type="text" id="edit-summary-input" class="form-control form-control-sm" readonly>
+                <small class="form-hint">विकिपीडिया पर संपादन सुरक्षित करते समय इस सारांश को 'संपादन सारांश' बॉक्स में पेस्ट करें।</small>
+            </div>
+
             <!-- अंतिम क्रिया पट्टी (Sticky / Final Action Bar) -->
             <div class="final-action-bar">
                 <div class="action-info">
@@ -337,8 +455,9 @@
                 <div class="guide-box">
                     <h4>❌ क्या न करें (अति-कड़ीकरण से बचें):</h4>
                     <ul>
+                        <li>बहुविकल्पी पृष्ठों (Disambiguation) की सीधी कड़ी न जोड़ें।</li>
                         <li>आम रोज़मर्रा के शब्द (उदा: पानी, दिन, घर, साल) पर अनावश्यक कड़ियाँ न बनाएँ।</li>
-                        <li>सामान्य तिथियाँ व वर्ष (जब तक कि वे सीधे संदर्भ से न जुड़े हों) न जोड़ें।</li>
+                        <li>साधारण वर्ष या तिथियों को बिना ऐतिहासिक प्रसंग लिंक न करें (WP:DATELINK)।</li>
                         <li>एक ही अनुभाग में एक ही शब्द को बार-बार लिंक न करें (WP:OVERLINKING)।</li>
                     </ul>
                 </div>
@@ -354,12 +473,12 @@
         </section>
     </main>
 
-    <!-- लक्ष्य संपादन मोडल (Edit Target Modal) -->
+    <!-- 1. लक्ष्य संपादन मोडल (Edit Target Modal) -->
     <div id="edit-target-modal" class="modal-backdrop" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
                 <h3>✏️ आंतरिक कड़ी लक्ष्य संशोधित करें</h3>
-                <button type="button" class="modal-close-btn" id="modal-close-btn">&times;</button>
+                <button type="button" class="modal-close-btn" data-modal="edit-target-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <p>मूल शब्द: <strong id="modal-term-text">-</strong></p>
@@ -374,6 +493,96 @@
                 <button type="button" class="btn btn-secondary" id="modal-cancel-btn">रद्द करें</button>
                 <button type="button" class="btn btn-primary" id="modal-save-btn">परिवर्तन सुरक्षित करें</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 2. डुप्लिकेट कड़ी शोधक मोडल (Duplicate Overlink Cleaner Modal) -->
+    <div id="duplicate-cleaner-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3>🧹 डुप्लिकेट कड़ी शोधक (Overlink & Duplicate Cleaner)</h3>
+                <button type="button" class="modal-close-btn" data-modal="duplicate-cleaner-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-intro">
+                    विकिपीडिया नियमावली (WP:OVERLINKING) अनुसार एक ही लेख में एक ही कड़ी बार-बार नहीं होनी चाहिए। नीचे आपके वर्तमान लेख में पहले से मौजूद डुप्लिकेट कड़ियों की सूची है:
+                </p>
+                <div id="duplicate-links-container" class="duplicate-list-wrap">
+                    <!-- डुप्लिकेट कड़ियाँ यहाँ सूचीवद्ध होंगी -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn" data-modal="duplicate-cleaner-modal">बंद करें</button>
+                <button type="button" class="btn btn-success" id="btn-fix-duplicates">
+                    ✨ सभी डुप्लिकेट कड़ियाँ साफ करें (Clean Overlinks)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. कस्टम बहिष्कार शब्द प्रबंधक मोडल (Custom Blacklist Modal) -->
+    <div id="blacklist-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>⚙️ कस्टम बहिष्कार शब्द प्रबंधक (Custom Blacklist)</h3>
+                <button type="button" class="modal-close-btn" data-modal="blacklist-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>वे शब्द जिन्हें आप कभी भी कड़ी के रूप में नहीं जोड़ना चाहते:</p>
+                <div class="form-group">
+                    <div class="input-with-button">
+                        <input type="text" id="blacklist-new-input" class="form-control" placeholder="नया शब्द दर्ज करें...">
+                        <button type="button" id="blacklist-add-btn" class="btn btn-primary btn-sm">जोड़ें</button>
+                    </div>
+                </div>
+                <div class="blacklist-tags-wrap" id="blacklist-tags-container">
+                    <!-- चिप्स यहाँ आएँगे -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn" data-modal="blacklist-modal">बंद करें</button>
+                <button type="button" class="btn btn-outline text-danger" id="blacklist-clear-btn">पूरी सूची साफ़ करें</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. कीबोर्ड शॉर्टकट्स मोडल (Shortcuts Modal) -->
+    <div id="shortcuts-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>⌨️ कीबोर्ड शॉर्टकट्स (Keyboard Shortcuts)</h3>
+                <button type="button" class="modal-close-btn" data-modal="shortcuts-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="table shortcuts-table">
+                    <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>तार्किक कड़ियाँ विश्लेषण आरंभ करें</td></tr>
+                    <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td><td>संशोधित विकिटेक्स्ट कॉपी करें</td></tr>
+                    <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td><td>विकिपीडिया संपादन सारांश कॉपी करें</td></tr>
+                    <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>विकिपीडिया पर संपादन पृष्ठ खोलें</td></tr>
+                    <tr><td><kbd>Esc</kbd></td><td>कोई भी खुला मोडल अथवा पॉपअप बंद करें</td></tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modal-close-btn" data-modal="shortcuts-modal">समझ गया</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. विकिपीडिया फ्लोटिंग सारांश पूर्वावलोकन कार्ड (Hover/Click Summary Card) -->
+    <div id="wiki-summary-card" class="wiki-summary-card" style="display: none;">
+        <div class="summary-card-header">
+            <span class="summary-card-badge">विकिपीडिया लेख पूर्वावलोकन</span>
+            <button type="button" class="summary-close-btn" id="summary-card-close">&times;</button>
+        </div>
+        <div class="summary-card-body">
+            <div class="summary-image-wrap" id="summary-img-wrap" style="display: none;">
+                <img id="summary-img" src="" alt="Thumbnail">
+            </div>
+            <h4 id="summary-title">-</h4>
+            <p id="summary-extract" class="summary-extract">विवरण लोड हो रहा है...</p>
+        </div>
+        <div class="summary-card-footer">
+            <a id="summary-link" href="#" target="_blank" class="btn btn-chip btn-sm">पूरा लेख विकिपीडिया पर पढ़ें ↗</a>
         </div>
     </div>
 
