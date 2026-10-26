@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="hi" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>परिचय एवं विकिपीडिया संपादन मानक (About) - विकीलिंक सहायक</title>
+    <meta name="description" content="विकीलिंक सहायक टूल परिचय, कार्यप्रणाली एवं विकिपीडिया आंतरिक कड़ीकरण के मानक (Wikimedia Manual of Style: Linking)">
+    <meta property="og:title" content="परिचय एवं विकिपीडिया संपादन मानक (About) - विकीलिंक सहायक">
+    <meta property="og:description" content="विकीलिंक सहायक टूल परिचय, कार्यप्रणाली एवं विकिपीडिया आंतरिक कड़ीकरण के मानक (Wikimedia Manual of Style: Linking)">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"
+      }
+    }
+    </script>
+</head>
+<body data-skin="wikimedia-classic" data-card-style="flat">
+    <!-- तार्किक विकिपीडिया कड़ी जाल एवं एनीमे परिवेशी पृष्ठभूमि -->
+    <div class="logical-bg-backdrop" aria-hidden="true">
+        <div class="bg-aurora-orb orb-1"></div>
+        <div class="bg-aurora-orb orb-2"></div>
+        <div class="bg-aurora-orb orb-3"></div>
+        <div class="bg-logical-grid"></div>
+    </div>
+    <canvas id="anime-bg-canvas" class="anime-bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- शीर्ष पट्टी (App Header) -->
+    <header class="app-header">
+        <div class="header-inner container">
+            <div class="logo-area">
+                <a href="index.html" class="brand-home-link" title="मुख्य कार्यपटल पर जाएँ">
+                    <div class="anime-mascot-emblem-wrap" aria-hidden="true">
+                        <svg class="anime-header-mascot" viewBox="0 0 64 64" width="42" height="42">
+                            <defs>
+                                <linearGradient id="animeHairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--primary-color)" />
+                                    <stop offset="100%" stop-color="var(--accent-blue)" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="34" r="22" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M10 32 C10 14, 54 14, 54 32 C50 22, 42 18, 32 20 C22 18, 14 22, 10 32 Z" fill="url(#animeHairGrad)" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M12 26 L6 14 L20 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <path d="M52 26 L58 14 L44 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <g class="mascot-eyes">
+                                <ellipse cx="23" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="21.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="24.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                                <ellipse cx="41" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="39.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="42.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                            </g>
+                            <ellipse cx="17" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <ellipse cx="47" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <path d="M28 43 Q32 47 36 43" fill="none" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text-block">
+                        <div class="logo-title-wrap">
+                            <h1 class="app-title">विकीलिंक सहायक</h1>
+                            <span class="badge badge-tool">About & Wiki Standards</span>
+                        </div>
+                        <p class="app-subtitle">टूल परिचय, कार्यप्रणाली एवं विकिपीडिया संपादन व कड़ियों के मानक</p>
+                    </div>
+                </a>
+                <!-- केवल मोबाइल के लिए हैमबर्गर टॉगल मेन्यू बटन -->
+                <button type="button" id="mobile-menu-toggle-btn" class="mobile-menu-toggle-btn" aria-expanded="false" aria-controls="header-nav-actions" title="मोबाइल नेविगेशन मेन्यू खोलें/बंद करें">
+                    <span class="hamburger-icon" id="mobile-menu-icon">☰</span>
+                    <span class="hamburger-label">मेन्यू</span>
+                </button>
+            </div>
+            <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
+                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल (बॉक्स 1 व 2)">
+                    🛠️ कार्यपटल
+                </a>
+                <a href="logs.html" class="btn btn-outline btn-sm nav-page-btn" title="उपयोगकर्ता प्रोफ़ाइल, थीम स्टूडियो एवं गतिविधि लॉग पेज">
+                    👤 प्रोफ़ाइल व लॉग (<span id="header-log-count">0</span>)
+                </a>
+                <a href="about.html" class="btn btn-primary btn-sm nav-page-btn active" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
+                    ℹ️ परिचय व मानक
+                </a>
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें">
+                    <span class="auth-status-dot" id="auth-status-dot"></span>
+                    <span id="auth-btn-label">लॉगिन / साइन अप</span>
+                </a>
+                <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
+                    लॉगआउट ⏻
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content container" style="padding-top: 20px; padding-bottom: 40px;">
+        <div class="top-auth-top-bar" style="background: var(--bg-card); padding: 14px 18px; border-radius: 12px; border: 1.5px solid var(--border-color); margin-bottom: 18px;">
+            <div class="top-auth-title-group">
+                <span class="badge badge-tool">About & Wiki Standards</span>
+                <h2 class="top-auth-banner-title">टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक</h2>
+            </div>
+            <div class="top-auth-bar-actions">
+                <a href="logs.html#profile-theme-studio" class="btn btn-outline btn-sm">🎨 प्रोफ़ाइल में थीम/रंग बदलें</a>
+                <a href="index.html" class="btn btn-primary btn-sm">← मुख्य कार्यपटल (Workbench) खोलें</a>
+            </div>
+        </div>
+
+        <!-- 1. टूल परिचय एवं दोहरे कार्यपटल की कार्यप्रणाली -->
+        <section class="card guide-card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <h3>1. विकीलिंक सहायक (WikiLink Assistant v2.5) — परिचय एवं उद्देश्य</h3>
+            </div>
+            <div class="workbench-card-body">
+                <p style="margin-bottom: 14px; color: var(--text-primary); line-height: 1.6;">
+                    <strong>विकीलिंक सहायक (WikiLink Assistant)</strong> विकिपीडिया संपादकों, पुनरीक्षकों और लेखकों के लिए निर्मित एक स्वतंत्र तार्किक उपकरण है। इसका मुख्य उद्देश्य विकिपीडिया लेखों में <strong>अल्प-कड़ीकरण (WP:UNDERLINK)</strong> को दूर करना और <strong>अति-कड़ीकरण (WP:OVERLINK)</strong> या दूषित कड़ियों का सटीक निदान व शुद्धिकरण करना है।
+                </p>
+                <div class="guide-grid">
+                    <div class="guide-box">
+                        <h4>📦 बॉक्स 1: मूल लेख एवं तार्किक छन्नी</h4>
+                        <ul>
+                            <li>किसी भी भाषा (हिन्दी, अंग्रेज़ी, संस्कृत, मराठी, तमिल, बंगाली आदि) के विकिपीडिया से सीधा लेख लोड करें या कच्चा विकिटेक्स्ट पेस्ट करें।</li>
+                            <li><strong>7-नियम तार्किक छन्नी</strong> द्वारा सामान्य दैनिक शब्दों, संख्याओं, मात्रकों और तिथियों को स्वतः बाहर रखें।</li>
+                            <li>केवल <strong>प्रथम उल्लेख (First Occurrence Only)</strong> पर सार्थक आंतरिक कड़ियाँ जोड़ें।</li>
+                        </ul>
+                    </div>
+                    <div class="guide-box">
+                        <h4>🩺 बॉक्स 2: दूषित लेख एवं तार्किक निदान</h4>
+                        <ul>
+                            <li>लेख में पहले से मौजूद <strong>डुप्लिकेट कड़ियों (Overlinks)</strong> की पहचान और 1-क्लिक सफाई।</li>
+                            <li><strong>स्व-कड़ी (Self-links)</strong>, अनावश्यक पाइप कड़ियों (<code>[[भारत|भारत]]</code>) और खाली कड़ियों का स्वतः शोधन।</li>
+                            <li>दोनों बॉक्स की समेकित तुलना कर प्रामाणिक <strong>विकिपीडिया मीडियाविकी डिफ़ (Diff)</strong> तैयार करना।</li>
+                        </ul>
+                    </div>
+                    <div class="guide-box">
+                        <h4>☁️ प्रोफ़ाइल थीम स्टूडियो एवं क्लाउड लॉग</h4>
+                        <ul>
+                            <li>बिना किसी लॉगिन के 100% फीचर्स (विश्लेषण, डिफ़, 1-क्लिक विकिटेक्स्ट कॉपी) का उपयोग करें।</li>
+                            <li><a href="logs.html">प्रोफ़ाइल व लॉग पृष्ठ</a> के भीतर आप अपनी पसंदीदा थीम व रंग पैलेट चुन सकते हैं तथा विश्लेषित लेखों का इतिहास सहेज सकते हैं।</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. विकिपीडिया संपादन एवं कड़ियों के मानक (Wikimedia Manual of Style: Linking) -->
+        <section class="card guide-card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <h3>2. विकिपीडिया संपादन एवं कड़ियों के मानक (Wikimedia Manual of Style: Linking)</h3>
+            </div>
+            <div class="workbench-card-body">
+                <div class="guide-grid">
+                    <div class="guide-box">
+                        <h4>✅ क्या करें (तार्किक कड़ी नियम — WP:LINK):</h4>
+                        <ul>
+                            <li>महत्वपूर्ण ऐतिहासिक घटनाओं, व्यक्तियों, भौगोलिक स्थानों, वैज्ञानिक अवधारणाओं और तकनीकी शब्दों पर आंतरिक कड़ियाँ जोड़ें।</li>
+                            <li>केवल <strong>प्रथम उल्लेख (First Appearance)</strong> पर ही आंतरिक कड़ी जोड़ें ताकि लेख साफ़ और पठनीय रहे।</li>
+                            <li>विभक्ति या बहुवचन रूप आने पर <strong>पाइप कड़ी (Piped Link)</strong> का प्रयोग करें, जैसे: <code>[[भारत|भारतीय]]</code> या <code>[[नदी|नदियों]]</code>।</li>
+                            <li>पुनर्निर्देशन (Redirect) के स्थान पर सीधे मूल मानक लेख शीर्षक से कड़ी जोड़ने को प्राथमिकता दें।</li>
+                        </ul>
+                    </div>
+                    <div class="guide-box">
+                        <h4>❌ क्या न करें (अति-कड़ीकरण से बचें — WP:OVERLINK):</h4>
+                        <ul>
+                            <li>बहुविकल्पी पृष्ठों (Disambiguation pages) की सीधी कड़ी न जोड़ें (WP:DISAMBIG)।</li>
+                            <li>आम रोज़मर्रा के सामान्य शब्द (उदा: पानी, दिन, घर, साल, लोग, देश, भाषा) पर अनावश्यक कड़ियाँ न बनाएँ (WP:NOTLINKED)।</li>
+                            <li>साधारण वर्ष, महीनों या तिथियों (जैसे: 2024, 15 अगस्त) को बिना विशेष ऐतिहासिक प्रसंग के लिंक न करें (WP:DATELINK)।</li>
+                            <li>एक ही अनुभाग या अनुच्छेद में एक ही शब्द को बार-बार लिंक न करें और लेख के स्वयं के शीर्षक को उसी लेख में लिंक न करें (WP:CIRCULAR)।</li>
+                        </ul>
+                    </div>
+                    <div class="guide-box">
+                        <h4>🚀 उपयोग की सरल विधि (3 चरण):</h4>
+                        <ol>
+                            <li><strong>चरण 1:</strong> <a href="index.html">मुख्य कार्यपटल</a> के बॉक्स 1 में विकिपीडिया लेख का शीर्षक लिखकर लोड करें और <strong>"तार्किक विश्लेषण एवं दूषित तत्व पहचान"</strong> दबाएँ।</li>
+                            <li><strong>चरण 2:</strong> बॉक्स 2 के तार्किक दोष निदान, सुझाव तालिका और <strong>विकिपीडिया लाइव डिफ़</strong> में जोड़ी गई कड़ियों की समीक्षा करें।</li>
+                            <li><strong>चरण 3:</strong> <strong>"संशोधित विकिटेक्स्ट कॉपी करें"</strong> दबाकर विकिपीडिया के संपादन पृष्ठ पर पेस्ट करें और संपादन सारांश के साथ सहेजें।</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 7-नियम तार्किक नीति तालिका -->
+        <section class="card guide-card">
+            <div class="card-header">
+                <h3>3. इस उपकरण में अंतर्निर्मित 7 तार्किक विकिपीडिया नीति नियम</h3>
+            </div>
+            <div class="workbench-card-body">
+                <div class="table-responsive">
+                    <table class="table suggestions-table">
+                        <thead>
+                            <tr>
+                                <th width="160">नीति कोड (Policy)</th>
+                                <th width="220">नियम का नाम</th>
+                                <th>तार्किक विवरण एवं टूल की क्रिया</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>WP:OVERLINKING</code></td>
+                                <td><strong>अति-कड़ीकरण निवारण</strong></td>
+                                <td>एक ही लेख में एक ही लक्ष्य पृष्ठ की कड़ी केवल पहले सार्थक उल्लेख पर रखी जाती है; अतिरिक्त दोहराव को बॉक्स 2 में पहचान कर साफ़ किया जाता है।</td>
+                            </tr>
+                            <tr>
+                                <td><code>WP:NOTLINKED</code></td>
+                                <td><strong>सामान्य दैनिक शब्द वर्जन</strong></td>
+                                <td>5,000+ आम बोलचाल की संज्ञाओं, सर्वनामों, क्रियाओं व सामान्य विशेषणों (पानी, दिन, घर, लोग आदि) को स्वतः कड़ी बनने से रोका जाता है।</td>
+                            </tr>
+                            <tr>
+                                <td><code>WP:CIRCULAR</code></td>
+                                <td><strong>स्व-कड़ी (Self-Link) निषेध</strong></td>
+                                <td>लेख के स्वयं के शीर्षक को उसी लेख के भीतर लिंक करने से रोका जाता है और यदि पहले से मौजूद हो तो उसे साधारण पाठ में बदला जाता है।</td>
+                            </tr>
+                            <tr>
+                                <td><code>WP:DATELINK</code></td>
+                                <td><strong>साधारण वर्ष व तिथि निस्पंदन</strong></td>
+                                <td>स्वतंत्र संख्याओं, साधारण वर्षों (जैसे 1995, 2024) और महीनों के नामों पर अनावश्यक कड़ियाँ नहीं जोड़ी जातीं।</td>
+                            </tr>
+                            <tr>
+                                <td><code>WP:UNITS</code></td>
+                                <td><strong>माप व मात्रक निस्पंदन</strong></td>
+                                <td>सामान्य मापन इकाइयों (किमी, मीटर, किग्रा, सेकंड, प्रतिशत आदि) को अनावश्यक कड़ीकरण से मुक्त रखा जाता है।</td>
+                            </tr>
+                            <tr>
+                                <td><code>WP:DISAMBIG</code></td>
+                                <td><strong>बहुविकल्पी पृष्ठ पहचान</strong></td>
+                                <td>मीडियाविकी API के <code>pageprops.disambiguation</code> द्वारा बहुविकल्पी पृष्ठों की पहचान कर संपादक को चेतावनी दी जाती है।</td>
+                            </tr>
+                            <tr>
+                                <td><code>WP:PIPELINK</code></td>
+                                <td><strong>अनावश्यक पाइप सिंटेक्स शुद्धि</strong></td>
+                                <td><code>[[भारत|भारत]]</code> जैसे व्यर्थ दोहराव वाले पाइप सिंटेक्स को स्वतः स्वच्छ <code>[[भारत]]</code> रूप में बदला जाता है।</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- सूचना टोस्ट -->
+    <div id="toast" class="toast">संदेश</div>
+
+    <!-- तार्किक पाद लेख (Logical Footer with Compact Zero-Login Info & All Site Pages) -->
+    <footer class="app-footer">
+        <div class="container">
+            <div class="footer-zero-login-strip">
+                <span class="zero-login-badge">🔓 शून्य-लॉगिन स्वतंत्रता</span>
+                <p>
+                    <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। वैकल्पिक लॉगिन करने पर आपके लॉग व प्रोफ़ाइल थीम क्लाउड में सिंक रहते हैं।
+                </p>
+            </div>
+
+            <div class="footer-sitemap-grid">
+                <a href="index.html" class="footer-page-card">
+                    <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
+                    <span>बॉक्स 1 (मूल लेख), बॉक्स 2 (दूषित कड़ी निदान) व लाइव डिफ़</span>
+                </a>
+                <a href="logs.html" class="footer-page-card">
+                    <strong>👤 2. प्रोफ़ाइल, थीम व मेरा लॉग (Profile & Logs)</strong>
+                    <span>यूज़र डेटा, गतिविधि इतिहास एवं 1-टच रंग व थीम स्टूडियो</span>
+                </a>
+                <a href="about.html" class="footer-page-card active">
+                    <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
+                    <span>टूल उपयोग विधि एवं विकिपीडिया कड़ीकरण नीतियाँ (WP:LINK)</span>
+                </a>
+                <a href="login.html" class="footer-page-card">
+                    <strong>🔑 4. लॉगिन एवं साइन अप (Login / Sign Up)</strong>
+                    <span>इंटरैक्टिव एनिमेटेड खाता प्रवेश एवं क्लाउड सिंक</span>
+                </a>
+            </div>
+
+            <div class="footer-inner">
+                <p>
+                    <strong>विकीलिंक सहायक (WikiLink Assistant v2.5)</strong> — विकिपीडिया संपादकों हेतु स्वतंत्र एवं खुला उपकरण।
+                </p>
+                <p class="footer-links">
+                    लाइसेंस: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.hi" target="_blank">CC BY-SA 4.0</a> / <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> |
+                    निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a> |
+                    <a href="https://github.com/vikrampratap-wiki/wikilink-tool" target="_blank">GitHub</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="words_blacklist.js"></script>
+    <script type="module" src="firebase-client.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

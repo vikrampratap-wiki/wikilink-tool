@@ -100,7 +100,6 @@ async function ensureUserProfileInFirestore(user) {
   if (!db || !user || !user.uid) return null;
   const uid = sanitizeId(user.uid);
   const userPath = `users/${uid}`;
-  const privatePath = `users/${uid}/private/info`;
 
   const userRef = doc(db, 'users', uid);
   const privateRef = doc(db, 'users', uid, 'private', 'info');
@@ -177,9 +176,10 @@ function subscribeToUserActivityLogs(uid, onLogsUpdated) {
       const logs = [];
       snapshot.forEach((docSnap) => {
         const d = docSnap.data();
+        const idStr = String(d.logId || docSnap.id);
         logs.push({
-          id: d.logId || docSnap.id,
-          logId: d.logId || docSnap.id,
+          id: idStr,
+          logId: idStr,
           timestamp: d.timestampDisplay || new Date().toLocaleString('hi-IN'),
           action: d.action || 'तार्किक विश्लेषण',
           title: d.title || 'अशीर्षक लेख',
@@ -210,7 +210,7 @@ async function saveActivityLogToFirestore(entry) {
   if (!user.emailVerified) return false;
 
   const uid = sanitizeId(user.uid);
-  const logId = sanitizeId(entry.id || `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`);
+  const logId = sanitizeId(entry.logId || entry.id || `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`);
   const docPath = `users/${uid}/activityLogs/${logId}`;
 
   const payload = {
@@ -232,6 +232,23 @@ async function saveActivityLogToFirestore(entry) {
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, docPath);
+  }
+  return false;
+}
+
+async function deleteSingleActivityLogInFirestore(rawId) {
+  if (!db || !auth || !auth.currentUser || !rawId) return false;
+  const user = auth.currentUser;
+  if (!user.emailVerified) return false;
+
+  const uid = sanitizeId(user.uid);
+  const logId = sanitizeId(rawId);
+  const docPath = `users/${uid}/activityLogs/${logId}`;
+  try {
+    await deleteDoc(doc(db, 'users', uid, 'activityLogs', logId));
+    return true;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, docPath);
   }
   return false;
 }
@@ -352,6 +369,7 @@ async function bootFirebaseIntegration() {
       signInWithGooglePopup,
       signOutFirebaseUser,
       saveActivityLogToFirestore,
+      deleteSingleActivityLogInFirestore,
       clearUserActivityLogsInFirestore,
       updatePreferredSkinInFirestore,
       handleFirestoreError,

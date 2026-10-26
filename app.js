@@ -3679,42 +3679,49 @@
     }
 
     // ==========================================================================
-    // अध्याय 11: शीर्ष एनिमेटेड लॉगिन/साइन-अप एवं यूज़र गतिविधि लॉग (Top Section + Mobile Ready)
+    // अध्याय 11: पृथक पृष्ठ नेविगेशन, मोबाइल टॉगल मेन्यू, लॉगिन एवं यूज़र गतिविधि लॉग
     // ==========================================================================
     let currentUser = null;
     let userActivityLogs = [];
     let authMode = 'login';
     let isPasswordRevealed = false;
 
-    function openTopAuthSection(view = 'auth') {
-        const topSec = $('top-auth-page-section');
-        const authWrap = $('auth-modal');
-        const logsWrap = $('user-dashboard-modal');
-        const switchAuthBtn = $('top-section-switch-auth-btn');
-        const switchLogsBtn = $('top-section-switch-logs-btn');
-        if (!topSec) return;
+    function initMobileHeaderToggleMenu() {
+        const mobileToggleBtn = $('mobile-menu-toggle-btn');
+        const headerNav = $('header-nav-actions');
+        const mobileMenuIcon = $('mobile-menu-icon');
+        if (!mobileToggleBtn || !headerNav) return;
 
-        topSec.style.display = 'block';
-        if (authWrap && logsWrap) {
-            if (view === 'logs') {
-                authWrap.style.display = 'none';
-                logsWrap.style.display = 'block';
-                if (switchAuthBtn) switchAuthBtn.className = 'btn btn-outline btn-sm';
-                if (switchLogsBtn) switchLogsBtn.className = 'btn btn-secondary btn-sm';
-            } else {
-                authWrap.style.display = 'block';
-                logsWrap.style.display = 'none';
-                if (switchAuthBtn) switchAuthBtn.className = 'btn btn-secondary btn-sm';
-                if (switchLogsBtn) switchLogsBtn.className = 'btn btn-outline btn-sm';
+        mobileToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = headerNav.classList.toggle('mobile-menu-open');
+            mobileToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (mobileMenuIcon) {
+                mobileMenuIcon.textContent = isOpen ? '✕' : '☰';
             }
-        }
-        renderUserDashboard();
-        topSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+        });
 
-    function closeTopAuthSection() {
-        const topSec = $('top-auth-page-section');
-        if (topSec) topSec.style.display = 'none';
+        // मोबाइल मेन्यू के भीतर किसी विकल्प पर क्लिक होने पर मेन्यू बंद करें
+        headerNav.querySelectorAll('a, button').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    headerNav.classList.remove('mobile-menu-open');
+                    mobileToggleBtn.setAttribute('aria-expanded', 'false');
+                    if (mobileMenuIcon) mobileMenuIcon.textContent = '☰';
+                }
+            });
+        });
+
+        // बाहर क्लिक करने पर मोबाइल मेन्यू बंद करें
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && headerNav.classList.contains('mobile-menu-open')) {
+                if (!headerNav.contains(e.target) && !mobileToggleBtn.contains(e.target)) {
+                    headerNav.classList.remove('mobile-menu-open');
+                    mobileToggleBtn.setAttribute('aria-expanded', 'false');
+                    if (mobileMenuIcon) mobileMenuIcon.textContent = '☰';
+                }
+            }
+        });
     }
 
     async function performLogout() {
@@ -3763,24 +3770,15 @@
     }
 
     function initCuteAuthAndUserLogs() {
+        initMobileHeaderToggleMenu();
         loadUserAndLogsFromStorage();
         updateAuthHeaderUI();
         checkPendingRestoredArticle();
-
-        const authTriggerBtn = $('auth-trigger-btn');
-        const bannerAuthBtn = $('banner-auth-btn');
-        const userLogsBtn = $('user-logs-btn');
-        const closeTopBtn = $('close-top-auth-section-btn');
-        const guestContinueBtn = $('auth-continue-guest-btn');
-        const switchAuthBtn = $('top-section-switch-auth-btn');
-        const switchLogsBtn = $('top-section-switch-logs-btn');
-        const dashLoginBtn = $('user-dash-login-btn');
+        renderUserDashboard();
 
         // सभी लॉगआउट बटनों को जोड़ें
         const logoutBtns = [
             $('header-logout-btn'),
-            $('banner-logout-btn'),
-            $('top-section-logout-btn'),
             $('auth-form-logout-btn'),
             $('user-dash-logout-btn')
         ];
@@ -3788,66 +3786,7 @@
             if (btn) btn.addEventListener('click', performLogout);
         });
 
-        if (authTriggerBtn) {
-            authTriggerBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const topSec = $('top-auth-page-section');
-                const authWrap = $('auth-modal');
-                if (topSec && topSec.style.display === 'block' && authWrap && authWrap.style.display !== 'none') {
-                    closeTopAuthSection();
-                } else {
-                    openTopAuthSection('auth');
-                }
-            });
-        }
-
-        if (bannerAuthBtn) {
-            bannerAuthBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                openTopAuthSection('auth');
-            });
-        }
-
-        if (userLogsBtn) {
-            userLogsBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const topSec = $('top-auth-page-section');
-                const logsWrap = $('user-dashboard-modal');
-                if (topSec && topSec.style.display === 'block' && logsWrap && logsWrap.style.display !== 'none') {
-                    closeTopAuthSection();
-                } else {
-                    openTopAuthSection('logs');
-                }
-            });
-        }
-
-        if (switchAuthBtn) {
-            switchAuthBtn.addEventListener('click', () => openTopAuthSection('auth'));
-        }
-
-        if (switchLogsBtn) {
-            switchLogsBtn.addEventListener('click', () => openTopAuthSection('logs'));
-        }
-
-        if (dashLoginBtn) {
-            dashLoginBtn.addEventListener('click', () => {
-                openTopAuthSection('auth');
-            });
-        }
-
-        if (closeTopBtn) {
-            closeTopBtn.addEventListener('click', closeTopAuthSection);
-        }
-
-        if (guestContinueBtn) {
-            guestContinueBtn.addEventListener('click', () => {
-                closeTopAuthSection();
-                const wb = $('dual-workbench-container');
-                if (wb) wb.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        }
-
-        // 4-कैरेक्टर इंटरैक्शन और पासवर्ड आँख-बंद / आँख-खोल तर्क
+        // 4-कैरेक्टर इंटरैक्शन और पासवर्ड आँख-बंद / आँख-खोल तर्क (लॉगिन पेज पर)
         const stage = $('cute-characters-stage');
         const speech = $('stage-speech-bubble');
         const nameGroup = $('auth-name-group');
@@ -3861,8 +3800,6 @@
         const btnOpenEyes = $('btn-char-open-eyes');
         const btnCoverEyes = $('btn-char-cover-eyes');
         const btnHappyJump = $('btn-char-happy-jump');
-        const demoFillBtn = $('auth-demo-fill-btn');
-        const demoLoginBtn = $('auth-demo-login-btn');
         const authForm = $('cute-auth-form');
         const switchModeBtn = $('auth-switch-mode-btn');
 
@@ -3876,7 +3813,7 @@
                 stage.classList.add('is-covering-eyes');
                 if (eyeIcon) eyeIcon.textContent = '🙈';
                 if (eyeText) eyeText.textContent = 'छुपाएँ';
-                if (passHint) passHint.textContent = '🔓 पासवर्ड दिख रहा है → पात्रों ने आँखें बंद कर लीं 🙈';
+                if (passHint) passHint.textContent = '🔓 पासवर्ड दिख रहा है → आँखें बंद 🙈';
                 if (speech) speech.textContent = 'अरे! आपका पासवर्ड दिख रहा है, हमने आँखें बंद कर लीं! 🙈';
                 if (btnCoverEyes) btnCoverEyes.classList.add('active');
                 if (btnOpenEyes) btnOpenEyes.classList.remove('active');
@@ -3884,45 +3821,45 @@
                 stage.classList.remove('is-covering-eyes');
                 if (eyeIcon) eyeIcon.textContent = '👁';
                 if (eyeText) eyeText.textContent = 'दिखाएँ';
-                if (passHint) passHint.textContent = '🔒 पासवर्ड छुपा है → पात्रों की आँखें खुली हैं 👀';
+                if (passHint) passHint.textContent = '🔒 पासवर्ड छुपा है → आँखें खुली हैं 👀';
                 if (speech) speech.textContent = 'पासवर्ड छुपा है (•••), इसलिए हमारी आँखें खुली हैं! 👀';
                 if (btnOpenEyes) btnOpenEyes.classList.add('active');
                 if (btnCoverEyes) btnCoverEyes.classList.remove('active');
             }
         }
 
-        // डेस्कटॉप माउस व मोबाइल टच ट्रैकिंग
-        document.addEventListener('mousemove', (e) => {
-            trackCharactersToPoint(e.clientX, e.clientY);
-        }, { passive: true });
+        if (stage) {
+            document.addEventListener('mousemove', (e) => {
+                trackCharactersToPoint(e.clientX, e.clientY);
+            }, { passive: true });
 
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches && e.touches[0]) {
-                trackCharactersToPoint(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: true });
-
-        document.addEventListener('touchstart', (e) => {
-            if (e.touches && e.touches[0]) {
-                trackCharactersToPoint(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: true });
-
-        // मोबाइल व डेस्कटॉप पर किसी भी पात्र को छूने/क्लिक करने पर प्रतिक्रिया
-        document.querySelectorAll('#cute-characters-stage .cute-char').forEach(ch => {
-            ch.style.cursor = 'pointer';
-            ch.addEventListener('click', () => {
-                const cname = ch.dataset.charName || 'मित्र';
-                ch.classList.remove('char-tap-bounce');
-                void ch.offsetWidth;
-                ch.classList.add('char-tap-bounce');
-                if (speech) {
-                    speech.textContent = isPasswordRevealed
-                        ? `${cname}: पासवर्ड छुपाओ तभी आँखें खोलूँगा! 🙈`
-                        : `${cname}: नमस्ते! मैं आपकी मदद के लिए तैयार हूँ! ✨`;
+            document.addEventListener('touchmove', (e) => {
+                if (e.touches && e.touches[0]) {
+                    trackCharactersToPoint(e.touches[0].clientX, e.touches[0].clientY);
                 }
+            }, { passive: true });
+
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches[0]) {
+                    trackCharactersToPoint(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            document.querySelectorAll('#cute-characters-stage .cute-char').forEach(ch => {
+                ch.style.cursor = 'pointer';
+                ch.addEventListener('click', () => {
+                    const cname = ch.dataset.charName || 'मित्र';
+                    ch.classList.remove('char-tap-bounce');
+                    void ch.offsetWidth;
+                    ch.classList.add('char-tap-bounce');
+                    if (speech) {
+                        speech.textContent = isPasswordRevealed
+                            ? `${cname}: पासवर्ड छुपाओ तभी आँखें खोलूँगा! 🙈`
+                            : `${cname}: नमस्ते! मैं आपकी मदद के लिए तैयार हूँ! ✨`;
+                    }
+                });
             });
-        });
+        }
 
         if (btnOpenEyes) {
             btnOpenEyes.addEventListener('click', () => {
@@ -3958,7 +3895,7 @@
             if (mode === 'signup') {
                 if (nameGroup) nameGroup.style.display = 'flex';
                 safeSetText('auth-heading-title', 'Create Account!');
-                safeSetText('auth-heading-sub', 'नया खाता बनाएं और अपने विकिलिंक लॉग्स सुरक्षित रखें');
+                safeSetText('auth-heading-sub', 'नया खाता बनाएं और अपने विकिलिंक लॉग्स व थीम सुरक्षित रखें');
                 safeSetText('auth-submit-btn', 'साइन अप करें (Sign up)');
                 safeSetText('auth-switch-prompt', 'पहले से खाता है?');
                 if (switchModeBtn) switchModeBtn.textContent = 'लॉगिन करें (Log in)';
@@ -3966,7 +3903,7 @@
             } else {
                 if (nameGroup) nameGroup.style.display = 'none';
                 safeSetText('auth-heading-title', 'Welcome back!');
-                safeSetText('auth-heading-sub', 'कृपया अपना विवरण दर्ज करें (अथवा बिना लॉगिन सीधे उपयोग करें)');
+                safeSetText('auth-heading-sub', 'अपने खाते में लॉगिन करें अथवा बिना लॉगिन सीधे कार्यपटल चलाएँ');
                 safeSetText('auth-submit-btn', 'लॉगिन करें (Log in)');
                 safeSetText('auth-switch-prompt', 'खाता नहीं है?');
                 if (switchModeBtn) switchModeBtn.textContent = 'साइन अप करें (Sign up)';
@@ -4026,22 +3963,11 @@
             });
         }
 
-        if (demoFillBtn) {
-            demoFillBtn.addEventListener('click', () => {
-                if (nameInput) nameInput.value = 'विक्रम प्रताप (Wiki Editor)';
-                if (emailInput) emailInput.value = 'editor@hi.wikipedia.org';
-                if (passInput) passInput.value = 'WikiAnime2025!';
-                if (speech && !isPasswordRevealed) {
-                    speech.textContent = 'डेमो विवरण भर दिया गया! अब लॉगिन दबाएँ ✨';
-                }
-            });
-        }
-
         function completeUserLogin(userObj) {
             currentUser = {
                 name: userObj.name,
                 email: userObj.email,
-                role: userObj.role,
+                role: userObj.role || 'विकिपीडिया संपादक',
                 loginTime: new Date().toISOString()
             };
             localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
@@ -4064,16 +3990,6 @@
             updateAuthHeaderUI();
             renderUserDashboard();
             showToast(`स्वागत है, ${currentUser.name}! आपका प्रोफ़ाइल व लॉग सक्रिय हो गया।`);
-        }
-
-        if (demoLoginBtn) {
-            demoLoginBtn.addEventListener('click', () => {
-                completeUserLogin({
-                    name: 'विक्रम प्रताप (Demo Editor)',
-                    email: 'editor@hi.wikipedia.org',
-                    role: 'विकिपीडिया संपादक (Demo)'
-                });
-            });
         }
 
         const googleFirebaseBtn = $('auth-google-firebase-btn');
@@ -4121,7 +4037,19 @@
         window.addEventListener('wikilink:firebase-logs', (e) => {
             const cloudLogs = e.detail?.logs;
             if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
-                userActivityLogs = cloudLogs;
+                // क्लाउड लॉग्स और लोकल लॉग्स को बिना डेटा खोए मर्ज करें
+                const mergedMap = new Map();
+                cloudLogs.forEach(item => {
+                    const key = String(item.logId || item.id);
+                    mergedMap.set(key, item);
+                });
+                userActivityLogs.forEach(item => {
+                    const key = String(item.logId || item.id);
+                    if (!mergedMap.has(key)) {
+                        mergedMap.set(key, item);
+                    }
+                });
+                userActivityLogs = Array.from(mergedMap.values()).slice(0, 60);
                 saveLogsToStorage();
                 updateAuthHeaderUI();
                 renderUserDashboard();
@@ -4156,7 +4084,7 @@
 
         if (clearLogsBtn) {
             clearLogsBtn.addEventListener('click', async () => {
-                const logIds = userActivityLogs.map(l => l.logId || l.id).filter(Boolean);
+                const logIds = userActivityLogs.map(l => String(l.logId || l.id)).filter(Boolean);
                 userActivityLogs = [];
                 saveLogsToStorage();
                 if (window.WikiFirebase && window.WikiFirebase.clearUserActivityLogsInFirestore) {
@@ -4181,6 +4109,8 @@
         try {
             const raw = localStorage.getItem('wikilink_restore_article');
             if (!raw) return;
+            // केवल तभी लोड करें जब हम कार्यपटल (index.html) पर हों
+            if (!DOM.rawWikitextInput && !$('raw-wikitext-input')) return;
             localStorage.removeItem('wikilink_restore_article');
             const item = JSON.parse(raw);
             if (item && item.wikitext) {
@@ -4203,7 +4133,16 @@
     function loadUserAndLogsFromStorage() {
         try {
             const savedUser = localStorage.getItem('wikilink_current_user');
-            if (savedUser) currentUser = JSON.parse(savedUser);
+            if (savedUser) {
+                const parsed = JSON.parse(savedUser);
+                // यदि कोई पुराना Demo खाता सहेजा गया था तो उसे हटा दें
+                if (parsed && String(parsed.role || '').includes('Demo')) {
+                    localStorage.removeItem('wikilink_current_user');
+                    currentUser = null;
+                } else {
+                    currentUser = parsed;
+                }
+            }
         } catch (e) {
             currentUser = null;
         }
@@ -4215,7 +4154,8 @@
             } else {
                 userActivityLogs = [
                     {
-                        id: Date.now() - 3600000,
+                        id: 'log_sample_tulsidas',
+                        logId: 'log_sample_tulsidas',
                         timestamp: new Date(Date.now() - 3600000).toLocaleString('hi-IN'),
                         action: 'तार्किक विश्लेषण (उदाहरण)',
                         title: 'तुलसीदास',
@@ -4242,8 +4182,10 @@
     }
 
     function logUserActivity(actionType, details = {}) {
+        const strId = `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         const entry = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
+            id: strId,
+            logId: strId,
             timestamp: new Date().toLocaleString('hi-IN'),
             user: currentUser ? currentUser.email : 'guest',
             action: actionType,
@@ -4271,42 +4213,27 @@
         const authLabel = $('auth-btn-label');
         const authDot = $('auth-status-dot');
         const logCountEl = $('header-log-count');
-        const topTabLogCountEl = $('top-tab-log-count');
-        const bannerAuthBtn = $('banner-auth-btn');
         const headerLogoutBtn = $('header-logout-btn');
-        const bannerLogoutBtn = $('banner-logout-btn');
-        const topSectionLogoutBtn = $('top-section-logout-btn');
         const activeSessionBox = $('auth-active-session-box');
         const activeUserName = $('auth-active-user-name');
         const activeUserEmail = $('auth-active-user-email');
 
         if (logCountEl) logCountEl.textContent = String(userActivityLogs.length);
-        if (topTabLogCountEl) topTabLogCountEl.textContent = String(userActivityLogs.length);
 
         if (currentUser) {
             const firstName = currentUser.name.split(' ')[0];
-            if (authLabel) authLabel.textContent = `${firstName} (प्रोफ़ाइल व लॉग)`;
+            if (authLabel) authLabel.textContent = `${firstName} (खाता)`;
             if (authDot) authDot.classList.add('logged-in');
-            if (bannerAuthBtn) bannerAuthBtn.textContent = `${firstName} का लॉग देखें ▲`;
             if (headerLogoutBtn) headerLogoutBtn.style.display = 'inline-flex';
-            if (bannerLogoutBtn) bannerLogoutBtn.style.display = 'inline-flex';
-            if (topSectionLogoutBtn) topSectionLogoutBtn.style.display = 'inline-flex';
             if (activeSessionBox) activeSessionBox.style.display = 'flex';
             if (activeUserName) activeUserName.textContent = `${currentUser.name} (लॉगिन सक्रिय)`;
             if (activeUserEmail) activeUserEmail.textContent = currentUser.email;
         } else {
             if (authLabel) authLabel.textContent = 'लॉगिन / साइन अप';
             if (authDot) authDot.classList.remove('logged-in');
-            if (bannerAuthBtn) bannerAuthBtn.textContent = 'लॉगिन / मेरा लॉग देखें ▲';
             if (headerLogoutBtn) headerLogoutBtn.style.display = 'none';
-            if (bannerLogoutBtn) bannerLogoutBtn.style.display = 'none';
-            if (topSectionLogoutBtn) topSectionLogoutBtn.style.display = 'none';
             if (activeSessionBox) activeSessionBox.style.display = 'none';
         }
-    }
-
-    function openUserDashboardModal() {
-        openTopAuthSection('logs');
     }
 
     function renderUserDashboard(searchQuery = '') {
@@ -4320,22 +4247,22 @@
         if (currentUser) {
             if (avatarEl) avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
             if (nameEl) nameEl.textContent = currentUser.name;
-            if (emailEl) emailEl.textContent = `${currentUser.email} • ${currentUser.role}`;
+            if (emailEl) emailEl.textContent = `${currentUser.email} • ${currentUser.role || 'विकिपीडिया संपादक'}`;
             if (badgeEl) {
                 badgeEl.className = 'badge badge-success';
                 badgeEl.textContent = '✓ लॉगिन सक्रिय (डेटा सिंक)';
             }
-            if (loginBtn) loginBtn.textContent = 'खाता बदलें ▲';
+            if (loginBtn) loginBtn.textContent = '🔑 खाता बदलें';
             if (logoutBtn) logoutBtn.style.display = 'inline-flex';
         } else {
             if (avatarEl) avatarEl.textContent = 'वि';
             if (nameEl) nameEl.textContent = 'अतिथि संपादक (Guest Mode)';
-            if (emailEl) emailEl.textContent = 'बिना लॉगिन के स्थानीय सत्र सक्रिय • स्थायी प्रोफ़ाइल हेतु ऊपर लॉगिन करें';
+            if (emailEl) emailEl.textContent = 'बिना लॉगिन के स्थानीय सत्र सक्रिय • स्थायी क्लाउड प्रोफ़ाइल हेतु लॉगिन करें';
             if (badgeEl) {
                 badgeEl.className = 'badge badge-tool';
                 badgeEl.textContent = 'अतिथि सत्र (Guest Mode)';
             }
-            if (loginBtn) loginBtn.textContent = 'लॉगिन / साइन अप फॉर्म ▲';
+            if (loginBtn) loginBtn.textContent = '🔑 लॉगिन / साइन अप पेज खोलें';
             if (logoutBtn) logoutBtn.style.display = 'none';
         }
 
@@ -4369,52 +4296,98 @@
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">
-                        कोई गतिविधि लॉग नहीं मिला। जब आप लेखों का विश्लेषण करेंगे, तो उनका रिकॉर्ड यहाँ स्वतः सहेजा जाएगा।
+                        कोई गतिविधि लॉग नहीं मिला। जब आप कार्यपटल में लेखों का विश्लेषण करेंगे, तो उनका रिकॉर्ड यहाँ स्वतः सहेजा जाएगा।
                     </td>
                 </tr>
             `;
             return;
         }
 
-        tbody.innerHTML = filtered.map(log => `
+        tbody.innerHTML = filtered.map(log => {
+            const safeId = escapeHtml(String(log.logId || log.id));
+            return `
             <tr>
                 <td style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">${escapeHtml(log.timestamp)}</td>
                 <td><span class="badge badge-tool">${escapeHtml(log.action)}</span></td>
-                <td><strong>${escapeHtml(log.title)}</strong> <span class="compact-lang-badge">${escapeHtml(log.lang)}</span></td>
+                <td><strong>${escapeHtml(log.title)}</strong> <span class="compact-lang-badge">${escapeHtml(log.lang || 'hi')}</span></td>
                 <td style="font-size: 0.8rem;">
-                    ${log.newLinks > 0 ? `<span style="color: var(--accent-green); font-weight: 700;">+${log.newLinks} कड़ियाँ</span> ` : ''}
-                    ${log.contaminationsFixed > 0 ? `<span style="color: var(--accent-orange); font-weight: 600;">(${log.contaminationsFixed} दोष)</span> ` : ''}
+                    ${Number(log.newLinks) > 0 ? `<span style="color: var(--accent-green); font-weight: 700;">+${log.newLinks} कड़ियाँ</span> ` : ''}
+                    ${Number(log.contaminationsFixed) > 0 ? `<span style="color: var(--accent-orange); font-weight: 600;">(${log.contaminationsFixed} दोष शुद्ध)</span> ` : ''}
                     <span style="color: var(--text-muted);">${escapeHtml(log.note || '')}</span>
                 </td>
                 <td>
-                    ${log.wikitext ? `
-                        <button type="button" class="btn btn-outline btn-sm restore-log-btn" data-log-id="${log.id}">
-                            पुनः लोड करें
+                    <div class="log-row-actions">
+                        ${log.wikitext ? `
+                            <button type="button" class="btn btn-primary btn-sm restore-log-btn" data-log-id="${safeId}" title="इस लेख को मुख्य कार्यपटल में खोलें">
+                                कार्यपटल में खोलें
+                            </button>
+                            <button type="button" class="btn btn-outline btn-sm copy-log-btn" data-log-id="${safeId}" title="विकिटेक्स्ट क्लिपबोर्ड पर कॉपी करें">
+                                कॉपी
+                            </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-outline text-danger btn-sm delete-log-btn" data-log-id="${safeId}" title="यह लॉग प्रविष्टि हटाएँ">
+                            ✕
                         </button>
-                    ` : '<span style="color: var(--text-muted); font-size: 0.75rem;">-</span>'}
+                    </div>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
+        // 1. कार्यपटल में खोलें (String-safe ID matching + Cross-page redirect to index.html)
         tbody.querySelectorAll('.restore-log-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const logId = Number(btn.dataset.logId);
-                const found = userActivityLogs.find(item => item.id === logId);
+                const rawLogId = String(btn.dataset.logId || '');
+                const found = userActivityLogs.find(item => String(item.id) === rawLogId || String(item.logId) === rawLogId);
+                if (!found || !found.wikitext) {
+                    showToast('इस लॉग प्रविष्टि में विकिटेक्स्ट उपलब्ध नहीं है');
+                    return;
+                }
+
+                localStorage.setItem('wikilink_restore_article', JSON.stringify(found));
+
+                // यदि हम पहले से index.html पर हैं तो सीधे लोड करें, अन्यथा index.html पर जाएँ
+                if (DOM.rawWikitextInput || $('raw-wikitext-input')) {
+                    checkPendingRestoredArticle();
+                    const wb = $('dual-workbench-container');
+                    if (wb) wb.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+
+        // 2. विकिटेक्स्ट कॉपी करें
+        tbody.querySelectorAll('.copy-log-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const rawLogId = String(btn.dataset.logId || '');
+                const found = userActivityLogs.find(item => String(item.id) === rawLogId || String(item.logId) === rawLogId);
                 if (!found || !found.wikitext) return;
+                try {
+                    await navigator.clipboard.writeText(found.wikitext);
+                    showToast(`'${found.title}' का विकिटेक्स्ट क्लिपबोर्ड पर कॉपी हो गया!`);
+                } catch (err) {
+                    showToast('कॉपी करने में त्रुटि हुई');
+                }
+            });
+        });
 
-                if (DOM.langSelect) DOM.langSelect.value = found.lang || 'hi';
-                state.lang = found.lang || 'hi';
-                state.pageTitle = found.title || 'अशीर्षक लेख';
-                state.originalWikitext = found.wikitext;
-
-                safeSetValue(DOM.pageInput, found.title);
-                safeSetValue(DOM.rawWikitextInput, found.wikitext);
-                safeSetValue('contaminated-wikitext-output', found.wikitext);
-                updateCharCount();
-                closeTopAuthSection();
-                const wb = $('dual-workbench-container');
-                if (wb) wb.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                showToast(`'${found.title}' लॉग इतिहास से कार्यपटल में लोड किया गया`);
+        // 3. एकल लॉग प्रविष्टि हटाएँ (Local + Firestore)
+        tbody.querySelectorAll('.delete-log-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const rawLogId = String(btn.dataset.logId || '');
+                userActivityLogs = userActivityLogs.filter(
+                    item => String(item.id) !== rawLogId && String(item.logId) !== rawLogId
+                );
+                saveLogsToStorage();
+                updateAuthHeaderUI();
+                renderUserDashboard(searchQuery);
+                if (window.WikiFirebase && window.WikiFirebase.deleteSingleActivityLogInFirestore) {
+                    try {
+                        await window.WikiFirebase.deleteSingleActivityLogInFirestore(rawLogId);
+                    } catch (e) {}
+                }
+                showToast('लॉग प्रविष्टि हटा दी गई');
             });
         });
     }
@@ -4446,4 +4419,5 @@
     }
 
 })();
+
 

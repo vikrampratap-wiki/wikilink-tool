@@ -4757,5 +4757,283 @@ body[data-card-style="glass"] .workbench-flow-strip {
     }
 }
 
+/* ==========================================================================
+   11. पृथक पृष्ठ नेविगेशन, मोबाइल टॉगल मेन्यू, प्रोफ़ाइल थीम स्टूडियो एवं तार्किक फ़ुटर
+   ========================================================================== */
+
+/* ब्रांड होम लिंक */
+.brand-home-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.brand-home-link:hover {
+    text-decoration: none;
+}
+
+/* डेस्कटॉप पर मोबाइल टॉगल मेन्यू बटन पूर्णतः छुपा रहेगा (> 768px) */
+.mobile-menu-toggle-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--primary-color);
+    background: var(--primary-light);
+    color: var(--primary-color);
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-toggle-btn:hover,
+.mobile-menu-toggle-btn[aria-expanded="true"] {
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+.hamburger-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+/* यूज़र प्रोफ़ाइल के भीतर एकीकृत थीम एवं रंग पैलेट स्टूडियो */
+.profile-embedded-theme-studio {
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+}
+
+/* गतिविधि लॉग तालिका की प्रति-पंक्ति क्रिया बटन पट्टी */
+.log-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* फ़ुटर में संक्षिप्त स्वतंत्र एवं शून्य-लॉगिन पट्टी (Compact Zero-Login Strip in Footer) */
+.footer-zero-login-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    background: var(--primary-light);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+.footer-zero-login-strip p {
+    margin: 0;
+    flex: 1 1 260px;
+    line-height: 1.4;
+}
+
+.zero-login-badge {
+    background: var(--primary-color);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+/* फ़ुटर में वेबसाइट के सभी पृष्ठों का तार्किक नेविगेशन (Logical Sitemap Grid in Footer) */
+.footer-sitemap-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.footer-page-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.footer-page-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+}
+
+.footer-page-card.active {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+.footer-page-card strong {
+    font-size: 0.84rem;
+    color: var(--primary-color);
+}
+
+.footer-page-card span {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+/* पृथक लॉगिन पेज मुख्य कंटेनर */
+.login-main-container {
+    padding-top: 24px;
+    padding-bottom: 40px;
+}
+
+.standalone-cute-auth-card {
+    margin: 0 auto;
+    max-width: 900px;
+    width: 100%;
+}
+
+@media (max-width: 960px) {
+    .footer-sitemap-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* मोबाइल टॉगल मेन्यू एवं मोबाइल लॉगिन पेज विशेष रूपांतरण (<= 768px) */
+@media (max-width: 768px) {
+    /* 1. मोबाइल पर हैमबर्गर टॉगल मेन्यू बटन दिखाएँ */
+    .mobile-menu-toggle-btn {
+        display: inline-flex !important;
+    }
+
+    .logo-area {
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .app-subtitle {
+        display: none;
+    }
+
+    /* 2. मोबाइल पर हेडर नेविगेशन डिफ़ॉल्ट रूप से छुपा रहेगा और टॉगल करने पर तार्किक ग्रिड में खुलेगा */
+    .app-header .header-actions {
+        display: none !important;
+        width: 100%;
+        margin-top: 8px;
+        padding: 12px;
+        background: var(--bg-card);
+        border: 1.5px solid var(--primary-color);
+        border-radius: 12px;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .app-header .header-actions.mobile-menu-open {
+        display: grid !important;
+        animation: slideDown 0.22s var(--ease-spring) both;
+    }
+
+    .app-header .header-actions::before {
+        content: "📱 पृष्ठ नेविगेशन मेन्यू (Site Navigation)";
+        grid-column: 1 / -1;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        padding-bottom: 4px;
+        border-bottom: 1px dashed var(--border-color);
+        margin-bottom: 2px;
+    }
+
+    .app-header .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 0.78rem;
+    }
+
+    /* 3. मोबाइल लॉगिन पेज का नया स्मार्ट कॉम्पैक्ट डिज़ाइन (Mobile Login Page Redesign) */
+    .login-main-container {
+        padding-top: 12px;
+        padding-bottom: 24px;
+    }
+
+    .standalone-cute-auth-card {
+        border-radius: 18px;
+        border-width: 2px;
+        min-height: auto;
+    }
+
+    .login-page-body .cute-characters-stage {
+        padding: 8px 10px 6px 10px;
+        gap: 4px;
+        border-bottom: 2px solid #1e1b4b;
+    }
+
+    .login-page-body .characters-stage-floor {
+        height: 125px;
+        padding-top: 0;
+    }
+
+    .login-page-body .characters-group {
+        transform: scale(0.46);
+        transform-origin: bottom center;
+        height: 125px;
+        margin: 0 auto;
+    }
+
+    .login-page-body .stage-speech-bubble {
+        font-size: 0.73rem;
+        padding: 4px 10px;
+    }
+
+    .login-page-body .stage-caption-pill {
+        display: none;
+    }
+
+    .login-page-body .cute-auth-form-panel {
+        padding: 14px 16px 18px 16px;
+    }
+
+    .login-page-body .cute-auth-brand-mark {
+        display: none;
+    }
+
+    .login-page-body .cute-auth-heading {
+        font-size: 1.2rem;
+        margin-bottom: 2px;
+    }
+
+    .login-page-body .cute-auth-subheading {
+        font-size: 0.76rem;
+        margin-bottom: 12px;
+    }
+
+    .footer-sitemap-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+
 
 

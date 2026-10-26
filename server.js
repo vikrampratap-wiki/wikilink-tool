@@ -69,7 +69,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let reqPath = parsedUrl.pathname === '/' ? '/index.html' : (parsedUrl.pathname === '/login' ? '/login.html' : parsedUrl.pathname);
+  const ROUTE_MAP = {
+    '/': '/index.html',
+    '/index.html': '/index.html',
+    '/workbench': '/index.html',
+    '/login': '/login.html',
+    '/login.html': '/login.html',
+    '/logs': '/logs.html',
+    '/logs.html': '/logs.html',
+    '/profile': '/logs.html',
+    '/profile.html': '/logs.html',
+    '/about': '/about.html',
+    '/about.html': '/about.html'
+  };
+  let reqPath = ROUTE_MAP[parsedUrl.pathname] || parsedUrl.pathname;
   const safePath = path.normalize(reqPath).replace(/^(\.\.[/\\])+/, '');
   const filePath = path.join(ROOT_DIR, safePath);
 
