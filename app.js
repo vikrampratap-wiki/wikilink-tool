@@ -651,13 +651,36 @@
     function setupTheme() {
         const savedTheme = localStorage.getItem('wikilink_theme') || 
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        function applyThemeState(theme, notify = false) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('wikilink_theme', theme);
+
+            const iconEl = $('theme-toggle-icon');
+            const labelEl = $('theme-toggle-label');
+            if (iconEl && labelEl) {
+                if (theme === 'dark') {
+                    iconEl.textContent = '☀️';
+                    labelEl.textContent = 'लाइट मोड';
+                } else {
+                    iconEl.textContent = '🌙';
+                    labelEl.textContent = 'डार्क मोड';
+                }
+            } else if (DOM.themeToggleBtn) {
+                DOM.themeToggleBtn.textContent = theme === 'dark' ? '☀️ लाइट मोड' : '🌙 डार्क मोड';
+            }
+
+            if (notify) {
+                showToast(theme === 'dark' ? '🌙 डार्क मोड सक्रिय किया गया' : '☀️ लाइट मोड सक्रिय किया गया');
+            }
+        }
+
+        applyThemeState(savedTheme, false);
 
         safeAddListener(DOM.themeToggleBtn, 'click', () => {
             const current = document.documentElement.getAttribute('data-theme');
             const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('wikilink_theme', next);
+            applyThemeState(next, true);
         });
     }
 

@@ -99,6 +99,9 @@
                 <button type="button" id="admin-header-btn" class="btn btn-warning btn-sm nav-page-btn" style="display: none;" title="एडमिन पैनल (केवल विक्रम प्रताप हेतु)">
                     🛡️ एडमिन पैनल (<span id="admin-pending-badge">0</span>)
                 </button>
+                <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
+                    <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
+                </button>
                 <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
@@ -117,12 +120,12 @@
     </div>
 
     <main class="main-content container" style="padding-top: 20px; padding-bottom: 40px;">
-        <!-- 1. उपयोगकर्ता प्रोफ़ाइल एवं भीतर एकीकृत थीम व रंग पैलेट स्टूडियो (User Profile + Theme & Color Studio Inside Profile) -->
+        <!-- 1. उपयोगकर्ता प्रोफ़ाइल अनुभाग (User Profile Account Section) -->
         <section class="card workbench-card profile-master-card" style="margin-bottom: 20px;">
             <div class="workbench-card-header">
                 <div>
-                    <h2 class="workbench-card-title">1. उपयोगकर्ता प्रोफ़ाइल एवं व्यक्तिगत रूपसज्जा (User Profile & Theme Studio)</h2>
-                    <small class="form-hint">आपका खाता विवरण, क्लाउड सिंक स्थिति तथा आपकी पसंदीदा थीम व रंग पैलेट सेटिंग्स</small>
+                    <h2 class="workbench-card-title">1. उपयोगकर्ता प्रोफ़ाइल एवं खाता विवरण (User Profile & Account)</h2>
+                    <small class="form-hint">आपका विकिपीडिया संपादक खाता विवरण एवं क्लाउड सिंक स्थिति</small>
                 </div>
                 <span class="badge badge-tool" id="user-dash-status-badge">अतिथि सत्र (Guest Mode)</span>
             </div>
@@ -143,56 +146,46 @@
                         <button type="button" id="user-dash-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;">लॉगआउट करें ⏻</button>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <!-- यूज़र प्रोफ़ाइल के भीतर थीम, डार्क/लाइट एवं 1-टच रंग पैलेट स्टूडियो -->
-                <div id="profile-theme-studio" class="profile-embedded-theme-studio">
-                    <div class="skin-studio-header">
-                        <div>
-                            <h3 class="skin-studio-title">🎨 प्रोफ़ाइल थीम एवं 1-टच रंग पैलेट (Theme & Color Palette)</h3>
-                            <p class="skin-studio-subtitle">
-                                यहाँ चुनी गई थीम व रंग आपकी प्रोफ़ाइल में सुरक्षित रहते हैं और सभी पृष्ठों (कार्यपटल, लॉगिन, मानक) पर लागू होते हैं। (डिफ़ॉल्ट: <strong>विकी क्लासिक</strong>)
-                            </p>
-                        </div>
-                        <div class="skin-studio-actions">
-                            <div class="header-skin-dropdown-wrap" title="प्रोफ़ाइल थीम चुनें">
-                                <label for="header-skin-select" class="sr-only-label">थीम चुनें:</label>
-                                <select id="header-skin-select" class="header-skin-select" aria-label="प्रोफ़ाइल थीम चुनें">
-                                    <option value="wikimedia-classic" selected>🏛️ विकी क्लासिक (Default)</option>
-                                    <option value="anime-sakura">🌸 साकुरा एनीमे (Sakura)</option>
-                                    <option value="anime-mecha">🤖 साइबर मेका (Mecha)</option>
-                                    <option value="anime-shinkai">🌌 शिनकाई स्काई (Shinkai)</option>
-                                    <option value="anime-forest">🌿 जिबली फ़ॉरेस्ट (Forest)</option>
-                                    <option value="anime-royal">👑 रॉयल मैजिक (Royal)</option>
-                                </select>
+        <!-- 2. प्रोफ़ाइल में अलग तार्किक अनुभाग: रंग एवं थीम परिवर्तन स्टूडियो (Dedicated Logical Section for Theme & Color Customization) -->
+        <section id="profile-theme-studio" class="card workbench-card workbench-logical-card" style="margin-bottom: 20px;">
+            <div class="workbench-card-header">
+                <div class="workbench-header-main">
+                    <h2 class="workbench-card-title">2. रंग एवं थीम परिवर्तन स्टूडियो (Theme & Color Customization)</h2>
+                    <small class="form-hint">चरणबद्ध रूपसज्जा: 01. मुख्य थीम चुनें · 02. 1-टच रंग पैलेट बदलें · 03. कार्ड बॉर्डर शैली नियंत्रित करें</small>
+                </div>
+                <div class="workbench-header-meta">
+                    <span id="active-skin-badge" class="badge badge-tool">विकी क्लासिक (Default)</span>
+                    <button type="button" id="reset-skin-btn" class="btn btn-secondary btn-sm" title="डिफ़ॉल्ट विकी क्लासिक थीम पर रीसेट करें">↺ डिफ़ॉल्ट रीसेट करें</button>
+                </div>
+            </div>
+
+            <div class="workbench-logical-sections">
+                <!-- उप-खण्ड 01: रेडीमेड थीम चयन (Theme Presets) -->
+                <div class="workbench-logical-block">
+                    <div class="logical-block-header">
+                        <div class="logical-block-title-wrap">
+                            <span class="logical-step-index">01</span>
+                            <div>
+                                <h3 class="logical-block-title">मुख्य थीम चयन (Select Interface Theme)</h3>
+                                <p class="logical-block-subtitle">नीचे दिए गए 6 थीम कार्ड या ड्रॉपडाउन से अपनी पसंदीदा रूपसज्जा चुनें</p>
                             </div>
-                            <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm" title="डार्क या लाइट मोड बदलें">🌗 डार्क / लाइट मोड</button>
-                            <button type="button" id="card-style-cycle-btn" class="btn btn-outline btn-sm" title="कार्ड बॉर्डर स्टाइल बदलें">बॉर्डर: Clean Classic</button>
-                            <button type="button" id="reset-skin-btn" class="btn btn-secondary btn-sm" title="डिफ़ॉल्ट विकी क्लासिक थीम पर रीसेट करें">↺ डिफ़ॉल्ट (विकी क्लासिक)</button>
+                        </div>
+                        <div class="logical-lang-control">
+                            <label for="header-skin-select" class="logical-inline-label">त्वरित थीम सूची:</label>
+                            <select id="header-skin-select" class="form-control form-control-sm" aria-label="प्रोफ़ाइल थीम चुनें">
+                                <option value="wikimedia-classic" selected>🏛️ विकी क्लासिक (Default)</option>
+                                <option value="anime-sakura">🌸 साकुरा एनीमे (Sakura)</option>
+                                <option value="anime-mecha">🤖 साइबर मेका (Mecha)</option>
+                                <option value="anime-shinkai">🌌 शिनकाई स्काई (Shinkai)</option>
+                                <option value="anime-forest">🌿 जिबली फ़ॉरेस्ट (Forest)</option>
+                                <option value="anime-royal">👑 रॉयल मैजिक (Royal)</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- पंक्ति 1: 1-टच त्वरित रंग पैलेट -->
-                    <div class="one-touch-color-strip">
-                        <span class="touch-strip-label">1-टच रंग पैलेट (रंग पर टच करें):</span>
-                        <div class="touch-color-bubbles" id="touch-color-bubbles">
-                            <button type="button" class="color-bubble active" data-onetouch-color="#2a4b8d" data-onetouch-bg="#f8f9fa" data-onetouch-accent="#3366cc" style="background: #2a4b8d;" title="विकिपीडिया क्लासिक (Wiki Classic - Default)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#e11d48" data-onetouch-bg="#fff5f7" data-onetouch-accent="#ec4899" style="background: #e11d48;" title="साकुरा रोज़ (Sakura Rose)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#db2777" data-onetouch-bg="#fdf2f8" data-onetouch-accent="#f472b6" style="background: #db2777;" title="मैजेंटा पिंक (Anime Pink)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#7c3aed" data-onetouch-bg="#f5f3ff" data-onetouch-accent="#a855f7" style="background: #7c3aed;" title="रॉयल बैंगनी (Royal Violet)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#4f46e5" data-onetouch-bg="#eef2ff" data-onetouch-accent="#6366f1" style="background: #4f46e5;" title="साइबर इंडिगो (Cyber Indigo)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#2563eb" data-onetouch-bg="#eff6ff" data-onetouch-accent="#3b82f6" style="background: #2563eb;" title="कोबाल्ट ब्लू (Cobalt Blue)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#0284c7" data-onetouch-bg="#f0f9ff" data-onetouch-accent="#38bdf8" style="background: #0284c7;" title="शिनकाई स्काई (Sky Blue)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#0891b2" data-onetouch-bg="#ecfeff" data-onetouch-accent="#06b6d4" style="background: #0891b2;" title="नियो सियान (Neo Cyan)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#0d9488" data-onetouch-bg="#f0fdfa" data-onetouch-accent="#14b8a6" style="background: #0d9488;" title="ओशन टील (Ocean Teal)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#059669" data-onetouch-bg="#ecfdf5" data-onetouch-accent="#10b981" style="background: #059669;" title="जिबली पन्ना हरा (Ghibli Green)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#16a34a" data-onetouch-bg="#f0fdf4" data-onetouch-accent="#22c55e" style="background: #16a34a;" title="फ़ॉरेस्ट ग्रीन (Forest Green)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#d97706" data-onetouch-bg="#fffbeb" data-onetouch-accent="#f59e0b" style="background: #d97706;" title="गोल्डन एम्बर (Golden Amber)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#ea580c" data-onetouch-bg="#fff7ed" data-onetouch-accent="#f97316" style="background: #ea580c;" title="सनसेट ऑरेंज (Sunset Orange)"></button>
-                            <button type="button" class="color-bubble" data-onetouch-color="#dc2626" data-onetouch-bg="#fef2f2" data-onetouch-accent="#ef4444" style="background: #dc2626;" title="क्रिमसन रेड (Crimson Red)"></button>
-                        </div>
-                    </div>
-
-                    <!-- पंक्ति 2: 6 रेडीमेड स्किन्स -->
                     <div class="skin-presets-grid">
                         <button type="button" class="skin-preset-btn active" data-skin-id="wikimedia-classic">
                             <span class="skin-swatch swatch-classic"></span>
@@ -236,6 +229,42 @@
                                 <small>बैंगनी क्रिस्टल</small>
                             </div>
                         </button>
+                    </div>
+                </div>
+
+                <!-- उप-खण्ड 02: 1-टच रंग पैलेट एवं कार्ड बॉर्डर शैली (Color Palette & Card Style) -->
+                <div class="workbench-logical-block">
+                    <div class="logical-block-header">
+                        <div class="logical-block-title-wrap">
+                            <span class="logical-step-index">02</span>
+                            <div>
+                                <h3 class="logical-block-title">1-टच रंग पैलेट एवं कार्ड बॉर्डर शैली (Accent Color & Card Border)</h3>
+                                <p class="logical-block-subtitle">किसी भी रंग पर टच करके पूरे उपकरण का मुख्य रंग तुरंत बदलें</p>
+                            </div>
+                        </div>
+                        <div class="filter-toolbar-actions">
+                            <button type="button" id="card-style-cycle-btn" class="btn btn-outline btn-sm" title="कार्ड बॉर्डर स्टाइल बदलें">बॉर्डर: Clean Classic</button>
+                        </div>
+                    </div>
+
+                    <div class="one-touch-color-strip">
+                        <span class="touch-strip-label">1-टच रंग पैलेट (रंग पर टच करें):</span>
+                        <div class="touch-color-bubbles" id="touch-color-bubbles">
+                            <button type="button" class="color-bubble active" data-onetouch-color="#2a4b8d" data-onetouch-bg="#f8f9fa" data-onetouch-accent="#3366cc" style="background: #2a4b8d;" title="विकिपीडिया क्लासिक (Wiki Classic - Default)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#e11d48" data-onetouch-bg="#fff5f7" data-onetouch-accent="#ec4899" style="background: #e11d48;" title="साकुरा रोज़ (Sakura Rose)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#db2777" data-onetouch-bg="#fdf2f8" data-onetouch-accent="#f472b6" style="background: #db2777;" title="मैजेंटा पिंक (Anime Pink)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#7c3aed" data-onetouch-bg="#f5f3ff" data-onetouch-accent="#a855f7" style="background: #7c3aed;" title="रॉयल बैंगनी (Royal Violet)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#4f46e5" data-onetouch-bg="#eef2ff" data-onetouch-accent="#6366f1" style="background: #4f46e5;" title="साइबर इंडिगो (Cyber Indigo)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#2563eb" data-onetouch-bg="#eff6ff" data-onetouch-accent="#3b82f6" style="background: #2563eb;" title="कोबाल्ट ब्लू (Cobalt Blue)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#0284c7" data-onetouch-bg="#f0f9ff" data-onetouch-accent="#38bdf8" style="background: #0284c7;" title="शिनकाई स्काई (Sky Blue)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#0891b2" data-onetouch-bg="#ecfeff" data-onetouch-accent="#06b6d4" style="background: #0891b2;" title="नियो सियान (Neo Cyan)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#0d9488" data-onetouch-bg="#f0fdfa" data-onetouch-accent="#14b8a6" style="background: #0d9488;" title="ओशन टील (Ocean Teal)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#059669" data-onetouch-bg="#ecfdf5" data-onetouch-accent="#10b981" style="background: #059669;" title="जिबली पन्ना हरा (Ghibli Green)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#16a34a" data-onetouch-bg="#f0fdf4" data-onetouch-accent="#22c55e" style="background: #16a34a;" title="फ़ॉरेस्ट ग्रीन (Forest Green)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#d97706" data-onetouch-bg="#fffbeb" data-onetouch-accent="#f59e0b" style="background: #d97706;" title="गोल्डन एम्बर (Golden Amber)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#ea580c" data-onetouch-bg="#fff7ed" data-onetouch-accent="#f97316" style="background: #ea580c;" title="सनसेट ऑरेंज (Sunset Orange)"></button>
+                            <button type="button" class="color-bubble" data-onetouch-color="#dc2626" data-onetouch-bg="#fef2f2" data-onetouch-accent="#ef4444" style="background: #dc2626;" title="क्रिमसन रेड (Crimson Red)"></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -295,11 +324,11 @@
             </div>
         </section>
 
-        <!-- 2. उपयोगकर्ता डेटा एवं गतिविधि लॉग तालिका (User Activity Logs & Statistics) -->
+        <!-- 3. उपयोगकर्ता डेटा एवं गतिविधि लॉग तालिका (User Activity Logs & Statistics) -->
         <section id="logs-section" class="card workbench-card">
             <div class="workbench-card-header">
                 <div>
-                    <h2 class="workbench-card-title">2. मेरा गतिविधि लॉग एवं विश्लेषित लेख इतिहास (Activity Logs)</h2>
+                    <h2 class="workbench-card-title">3. मेरा गतिविधि लॉग एवं विश्लेषित लेख इतिहास (Activity Logs)</h2>
                     <small class="form-hint">यहाँ आपके द्वारा विश्लेषित और शुद्ध किए गए विकिपीडिया लेखों का रिकॉर्ड सुरक्षित रहता है। किसी भी लेख को 1-क्लिक में पुनः कार्यपटल में खोलें।</small>
                 </div>
             </div>
