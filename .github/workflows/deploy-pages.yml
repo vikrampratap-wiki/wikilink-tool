@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -17,10 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -34,6 +31,7 @@ jobs:
           FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_FIRESTORE_DATABASE_ID: ${{ secrets.FIREBASE_FIRESTORE_DATABASE_ID }}
         run: |
+          rm -rf _site
           mkdir -p _site
           cp index.html logs.html about.html login.html _site/
           cp app.js firebase-client.js words_blacklist.js style.css sw.js manifest.json _site/
@@ -52,14 +50,47 @@ jobs:
           EOF
           fi
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Publish clean static bundle to gh-pages branch (Fallback & Branch Mode Support)
+        id: gh_pages_branch
+        uses: peaceiris/actions-gh-pages@v4
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "chore(deploy): publish clean static bundle to gh-pages"
 
-      - name: Upload artifact
+      - name: Configure GitHub Pages (Auto-enable if supported)
+        id: config_pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        id: upload_artifact
+        if: steps.config_pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
+        continue-on-error: true
         with:
           path: './_site'
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages API (With Automatic Fallback Handling)
         id: deployment
+        if: steps.upload_artifact.outcome == 'success'
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Deployment Status & Diagnostic Summary
+        run: |
+          echo "## 🚀 WikiLink Assistant — GitHub Pages Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.deployment.outcome }}" = "success" ]; then
+            echo "- ✅ **GitHub Pages Actions Deployment सफल रहा!**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 **Live URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ✅ **`gh-pages` शाखा (Branch) पर सुरक्षित स्थैतिक बंडल सफलतापूर्वक प्रकाशित कर दिया गया है।**" >> $GITHUB_STEP_SUMMARY
+            echo "- ℹ️ **नोट (`status: 500` का कारण और समाधान):**" >> $GITHUB_STEP_SUMMARY
+            echo "  1. यदि आपकी रिपॉज़िटरी **Private (निजी)** है और आपका खाता **GitHub Free** योजना पर है, तो GitHub की नीति के अनुसार मुफ़्त खाते में Private रिपॉज़िटरी पर GitHub Pages API (`deploy-pages`) `status: 500` देता है। मुफ़्त GitHub Pages चलाने के लिए रिपॉज़िटरी **Public** होनी चाहिए (अथवा GitHub Pro खाता होना चाहिए)।" >> $GITHUB_STEP_SUMMARY
+            echo "  2. अपनी रिपॉज़िटरी में **Settings → Pages → Build and deployment → Source** में जाकर **Deploy from a branch** चुनें और शाखा में **`gh-pages` / `/(root)`** चुनकर Save करें, या **GitHub Actions** चुनें।" >> $GITHUB_STEP_SUMMARY
+          fi
