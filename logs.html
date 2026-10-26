@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi" dir="ltr">
+<html lang="hi" dir="ltr" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -619,30 +619,9 @@
                                 </div>
                             </div>
 
-                            <!-- तार्किक चरण 3: स्वीकृत वैश्विक बहिष्कार शब्दकोश प्रबंधन -->
-                            <div class="admin-logical-step-box" style="margin-top: 16px;">
-                                <div class="admin-step-header">
-                                    <span class="theme-step-badge">03</span>
-                                    <div style="flex: 1;">
-                                        <div class="admin-step-title-flex">
-                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">एडमिन द्वारा स्वीकृत वैश्विक बहिष्कार शब्दकोश (<span id="admin-approved-words-count">0</span> सक्रिय)</h3>
-                                            <div class="admin-approved-toolbar">
-                                                <input type="text" id="admin-approved-search-input" class="form-control form-control-sm" placeholder="स्वीकृत शब्द खोजें..." style="max-width: 180px;">
-                                                <select id="admin-approved-lang-filter" class="form-control form-control-sm" style="max-width: 120px;">
-                                                    <option value="all" selected>सभी भाषाएँ</option>
-                                                    <option value="hi">हिन्दी (hi)</option>
-                                                    <option value="en">English (en)</option>
-                                                    <option value="sa">संस्कृतम् (sa)</option>
-                                                </select>
-                                                <button type="button" id="btn-admin-export-blacklist" class="btn btn-secondary btn-sm" title="स्वीकृत वैश्विक बहिष्कार सूची को JSON के रूप में डाउनलोड करें">
-                                                    📥 सूची निर्यात (JSON)
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <p class="theme-studio-desc">यहाँ शामिल शब्द सभी उपयोगकर्ताओं के लिए स्वतः कड़ीकरण से बाहर (Excluded) रहते हैं:</p>
-                                    </div>
-                                </div>
-                                <div id="admin-approved-words-list" class="approved-blacklist-chips"></div>
+                            <!-- तार्किक चरण 3: स्वीकृत वैश्विक बहिष्कार शब्दकोश प्रबंधन (आकार बचाने हेतु अदृश्य) -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px; display: none;">
+                                <div id="admin-approved-words-list" class="approved-blacklist-chips" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
