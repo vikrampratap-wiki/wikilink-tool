@@ -1398,13 +1398,15 @@
             });
         }
 
-        // 2. तर्क: सामान्य दैनिक शब्द जिनकी कड़ी नहीं बनाई जाती (WP:NOTLINKED / WP:COMMONWORDS)
+        // 2. तर्क: सामान्य दैनिक शब्द (WP:NOTLINKED / WP:COMMONWORDS)
+        // यदि लेख में पहले से ये 7,479 शब्द उपलब्ध हों तो उन्हें यथावत रखा जाता है (उन्हें दोष नहीं माना जाता)।
+        // यह नियम केवल नए शब्दों की कड़ीकरण प्रक्रिया पर लागू होता है।
         const commonWordIssues = [];
         existingLinksList.forEach(item => {
             if (isNonLinkableWord(item.target, lang)) {
                 commonWordIssues.push(item);
                 result.commonWordIssues.push(item);
-                result.total++;
+                // नोट: लेख में पहले से मौजूद होने के कारण इसे दोष (result.total) में नहीं गिना जाता
             }
         });
 
@@ -1412,8 +1414,8 @@
             const examples = Array.from(new Set(commonWordIssues.map(c => `[[${c.target}]]`))).slice(0, 4).join(', ');
             result.arguments.push({
                 type: 'common-word',
-                title: 'तर्क 2: सामान्य दैनिक शब्द (WP:NOTLINKED / WP:COMMONWORDS)',
-                desc: `विकिपीडिया नियमावली (WP:LINK) अनुसार सामान्य दैनिक भाषा के शब्द (उदा: ${examples}) जो सर्वविदित हैं, उनकी आंतरिक कड़ी नहीं बनाई जाती। ऐसे सामान्य शब्दों की कड़ियों को हटाना चाहिए।`
+                title: 'तर्क 2: सामान्य दैनिक शब्द (पूर्व-मौजूद कड़ियाँ सुरक्षित)',
+                desc: `लेख में पूर्व से उपलब्ध शब्द (उदा: ${examples}) 7,479 नीतिगत सामान्य शब्दों में आते हैं। नीति अनुसार ये पहले से उपलब्ध कड़ियाँ यथावत सुरक्षित रखी गई हैं; इन्हें हटाया नहीं जाएगा। यह नियम केवल नए शब्दों की कड़ीकरण प्रक्रिया पर लागू रहेगा।`
             });
         }
 
@@ -1585,11 +1587,14 @@
                     html += `
                         <div class="defect-group">
                             <div class="defect-group-title" style="color: #8b5cf6;">
-                                <span>सामान्य दैनिक शब्द (WP:NOTLINKED)</span>
-                                <span class="badge badge-tool">${report.commonWordIssues.length} पद</span>
+                                <span>पूर्व-मौजूद सामान्य शब्द (यथावत सुरक्षित)</span>
+                                <span class="badge badge-tool">${report.commonWordIssues.length} पद सुरक्षित</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
+                                ये शब्द लेख में पहले से जुड़े हैं अतः इन्हें यथावत रखा गया है। केवल नए शब्दों पर यह रोक लागू होगी:
                             </div>
                             <div class="defect-tags-list">
-                                ${uniqCommon.map(t => `<span class="defect-tag">[[${escapeHtml(t)}]]</span>`).join('')}
+                                ${uniqCommon.map(t => `<span class="defect-tag" style="border-color: #8b5cf6;">[[${escapeHtml(t)}]]</span>`).join('')}
                             </div>
                         </div>
                     `;
@@ -1688,18 +1693,10 @@
             text = text.replace(selfRegex, (match, target, display) => display || target);
         }
 
-        // 2. सामान्य शब्द जिनकी आंतरिक कड़ी नहीं बनाई जाती हटाएं (WP:NOTLINKED / WP:COMMONWORDS)
-        const commonSet = NEVER_LINK_WORDS[state.lang] || NEVER_LINK_WORDS.hi;
-        text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
-            if (/^(category|श्रेणी|file|image|चित्र|फ़ाइल):/i.test(target)) return match;
-            const norm = target.trim().toLowerCase().replace(/_/g, ' ');
-            if (commonSet.has(norm)) {
-                return display || target;
-            }
-            return match;
-        });
+        // नोट: यदि लेख में पहले से 7,479 सामान्य शब्द उपलब्ध हों तो उन्हें यथावत रखा जाता है (उन्हें नहीं हटाया जाता)।
+        // 7,479 बहिष्कार सूची केवल नए शब्दों पर लागू होती है।
 
-        // 3. दोहराई गई कड़ियाँ साफ करें (WP:OVERLINKING)
+        // 2. दोहराई गई कड़ियाँ साफ करें (WP:OVERLINKING)
         const seenTargets = new Set();
         text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
             if (/^(category|श्रेणी|file|image|चित्र|फ़ाइल):/i.test(target)) return match;
@@ -2674,11 +2671,11 @@
             ruleId: 'common-word',
             name: '2. सामान्य दैनिक शब्द (WP:NOTLINKED)',
             passed: !isCommon,
-            desc: isCommon ? `'${word}' आम बोलचाल का शब्द है। विकिपीडिया (WP:LINK) अनुसार सामान्य दैनिक शब्दों की आंतरिक कड़ी नहीं बनाई जाती।` : 'यह कोई सामान्य दैनिक सर्वविदित शब्द नहीं है।'
+            desc: isCommon ? `'${word}' 7,479 नीतिगत सामान्य शब्दों (WP:NOTLINKED) में शामिल है। नए शब्दों के लिए इसकी आंतरिक कड़ी नहीं बनाई जाएगी (यद्यपि लेख में पहले से मौजूद होने पर यथावत सुरक्षित रखी जाती है)।` : 'यह कोई सामान्य दैनिक सर्वविदित शब्द नहीं है।'
         });
         if (isCommon) {
             isProhibited = true;
-            if (!primaryReason) primaryReason = `WP:NOTLINKED: विकिपीडिया नीति अनुसार सामान्य बोलचाल के शब्दों (जैसे पानी, दिन, घर, लोग आदि) को लिंक नहीं किया जाता।`;
+            if (!primaryReason) primaryReason = `WP:NOTLINKED: 7,479 नीतिगत सामान्य शब्दों में शामिल होने के कारण नए शब्दों के लिए इसकी कड़ी नहीं बनाई जाएगी (पहले से उपलब्ध होने पर यथावत सुरक्षित रहेगी)।`;
         }
 
         // नियम 3: स्व-कड़ीकरण दोष (WP:CIRCULAR / WP:SELFREF)
