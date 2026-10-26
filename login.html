@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="hi" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>लॉगिन, साइन अप एवं मेरा लॉग - विकीलिंक सहायक (WikiLink Assistant)</title>
+    <meta name="description" content="विकीलिंक सहायक का इंटरैक्टिव एनिमेटेड लॉगिन, साइन अप एवं उपयोगकर्ता गतिविधि लॉग पृष्ठ">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"
+      }
+    }
+    </script>
+</head>
+<body data-skin="wikimedia-classic" data-card-style="flat" class="login-page-body">
+    <!-- एनीमे फ्लोटिंग कण कैनवास -->
+    <canvas id="anime-bg-canvas" class="anime-bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- शीर्ष नेविगेशन पट्टी (Top Bar for Login Page) -->
+    <header class="app-header">
+        <div class="header-inner container">
+            <div class="logo-area">
+                <a href="index.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit;">
+                    <div class="anime-mascot-avatar" title="मुख्य उपकरण पटल पर वापस जाएँ">
+                        <svg class="mascot-svg" viewBox="0 0 64 64" width="38" height="38">
+                            <circle cx="32" cy="34" r="22" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M10 32 C10 14, 54 14, 54 32 C50 22, 42 18, 32 20 C22 18, 14 22, 10 32 Z" fill="var(--primary-color)" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <g class="mascot-eyes">
+                                <ellipse cx="23" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="21.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <ellipse cx="41" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="39.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                            </g>
+                            <path d="M28 43 Q32 47 36 43" fill="none" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text-block">
+                        <div class="logo-title-wrap">
+                            <h1 class="app-title">विकीलिंक सहायक</h1>
+                            <span class="badge badge-skin">लॉगिन एवं यूज़र लॉग पेज</span>
+                        </div>
+                        <p class="app-subtitle">इंटरैक्टिव एनिमेटेड लॉगिन, साइन अप एवं आपके विश्लेषित लेखों का व्यक्तिगत रिकॉर्ड</p>
+                    </div>
+                </a>
+            </div>
+            <div class="header-actions">
+                <div class="header-skin-dropdown-wrap" title="थीम चुनें (डिफ़ॉल्ट: विकी क्लासिक)">
+                    <select id="header-skin-select" class="header-skin-select">
+                        <option value="wikimedia-classic" selected>🏛️ विकी क्लासिक (Default)</option>
+                        <option value="anime-sakura">🌸 साकुरा एनीमे (Sakura)</option>
+                        <option value="anime-mecha">⚡ साइबर मेका (Mecha)</option>
+                        <option value="anime-shinkai">🌌 शिनकाई स्काई (Sky)</option>
+                        <option value="anime-forest">🌿 जिबली फ़ॉरेस्ट (Forest)</option>
+                        <option value="anime-royal">👑 रॉयल मैजिक (Royal)</option>
+                    </select>
+                </div>
+                <button id="theme-toggle-btn" class="btn btn-outline btn-sm">डार्क/लाइट</button>
+                <a href="index.html" class="btn btn-primary btn-sm">
+                    ← मुख्य उपकरण पटल (Workbench) पर जाएँ
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content container" style="padding-top: 24px; padding-bottom: 48px;">
+        <!-- शीर्ष सूचना: लॉगिन स्वैच्छिक है -->
+        <div class="banner banner-info" style="margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <strong>लॉगिन पूर्णतः स्वैच्छिक है:</strong> विकीलिंक सहायक का उपयोग करने के लिए लॉगिन की कोई बाध्यता नहीं है। यदि आप लॉगिन या साइन अप करते हैं, तो आप नीचे अपने <strong>संपूर्ण यूज़र डेटा एवं गतिविधि लॉग (Activity Logs)</strong> को सहेज व देख सकते हैं।
+            </div>
+            <a href="index.html" class="btn btn-secondary btn-sm">बिना लॉगिन सीधे टूल चलाएं →</a>
+        </div>
+
+        <!-- 1. मुख्य एनिमेटेड लॉगिन एवं साइन अप कार्ड (YouTube Video: WYLiXJDUnaw Style) -->
+        <section class="standalone-auth-section" style="margin-bottom: 32px;">
+            <div class="cute-auth-card standalone-cute-auth-card" style="margin: 0 auto; max-width: 920px; width: 100%;">
+                <div class="cute-auth-split">
+                    <!-- बायाँ भाग: 4 क्यूट एनिमेटेड कैरेक्टर्स मंच -->
+                    <div class="cute-characters-stage" id="cute-characters-stage">
+                        <div class="stage-speech-bubble" id="stage-speech-bubble">
+                            नमस्ते! पासवर्ड छुपा है (•••) इसलिए हमारी आँखें खुली हैं 👀
+                        </div>
+
+                        <div class="characters-stage-floor">
+                            <div class="characters-group" id="characters-group">
+                            <!-- 1. लंबा बैंगनी कैरेक्टर (Tall Purple Character) -->
+                            <div class="cute-char char-purple" id="char-purple" data-char-name="बैंगनी मित्र">
+                                <div class="char-face">
+                                    <div class="char-eyes">
+                                        <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                        <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                    </div>
+                                    <div class="char-mouth"></div>
+                                </div>
+                                <div class="char-hands">
+                                    <span class="char-hand hand-left"></span>
+                                    <span class="char-hand hand-right"></span>
+                                </div>
+                            </div>
+
+                            <!-- 2. मध्यम गहरा कैरेक्टर (Dark/Charcoal Character) -->
+                            <div class="cute-char char-pink" id="char-pink" data-char-name="छाया मित्र">
+                                <div class="char-face">
+                                    <div class="char-eyes">
+                                        <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                        <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                    </div>
+                                    <div class="char-mouth"></div>
+                                </div>
+                                <div class="char-hands">
+                                    <span class="char-hand hand-left"></span>
+                                    <span class="char-hand hand-right"></span>
+                                </div>
+                            </div>
+
+                            <!-- 3. गोल नारंगी डोम कैरेक्टर (Front-Left Orange Semicircle Dome) -->
+                            <div class="cute-char char-orange" id="char-orange" data-char-name="नारंगी डोम">
+                                <div class="char-face">
+                                    <div class="char-eyes">
+                                        <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                        <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                    </div>
+                                    <div class="char-cheeks">
+                                        <span class="cheek"></span>
+                                        <span class="cheek"></span>
+                                    </div>
+                                    <div class="char-mouth happy-open"></div>
+                                </div>
+                                <div class="char-hands">
+                                    <span class="char-hand hand-left"></span>
+                                    <span class="char-hand hand-right"></span>
+                                </div>
+                            </div>
+
+                            <!-- 4. पीला कैरेक्टर चोंच सहित (Front-Right Yellow Character) -->
+                            <div class="cute-char char-yellow" id="char-yellow" data-char-name="पीला पंछी">
+                                <div class="char-face">
+                                    <div class="char-eyes single-eye-row">
+                                        <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                    </div>
+                                    <div class="char-beak"></div>
+                                </div>
+                                <div class="char-hands">
+                                    <span class="char-hand hand-left"></span>
+                                    <span class="char-hand hand-right"></span>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+
+                        <!-- मोबाइल एवं डेस्कटॉप त्वरित टच रिएक्शन बार -->
+                        <div class="stage-bottom-controls">
+                            <div class="mobile-char-touch-bar" id="mobile-char-touch-bar">
+                                <button type="button" class="char-react-chip active" id="btn-char-open-eyes">
+                                    👀 आँखें खुलीं
+                                </button>
+                                <button type="button" class="char-react-chip" id="btn-char-cover-eyes">
+                                    🙈 आँखें बंद
+                                </button>
+                                <button type="button" class="char-react-chip" id="btn-char-happy-jump">
+                                    🎉 खुशी से उछलें
+                                </button>
+                            </div>
+
+                            <div class="stage-caption-pill">
+                                <span>मोबाइल पर पात्रों को टच करें • पासवर्ड दिखाने पर पात्र आँखें बंद कर लेंगे!</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- दायाँ भाग: लॉगिन / साइन अप फॉर्म -->
+                    <div class="cute-auth-form-panel">
+                        <div class="cute-auth-brand-mark" aria-hidden="true">✦</div>
+
+                        <h2 class="cute-auth-heading" id="auth-heading-title">Welcome back!</h2>
+                        <p class="cute-auth-subheading" id="auth-heading-sub">कृपया अपना विवरण दर्ज करें (या 1-क्लिक डेमो लॉगिन चुनें)</p>
+
+                        <!-- लॉगिन / साइन अप टैब्स -->
+                        <div class="cute-auth-mode-tabs">
+                            <button type="button" class="cute-mode-tab active" id="tab-auth-login" data-auth-mode="login">लॉगिन (Log in)</button>
+                            <button type="button" class="cute-mode-tab" id="tab-auth-signup" data-auth-mode="signup">साइन अप (Sign up)</button>
+                        </div>
+
+                        <form id="cute-auth-form" class="cute-auth-form">
+                            <div class="cute-field-group" id="auth-name-group" style="display: none;">
+                                <label for="auth-name-input">आपका नाम / विकिपीडिया उपनाम (Name)</label>
+                                <input type="text" id="auth-name-input" placeholder="उदा: विक्रम प्रताप" autocomplete="name">
+                            </div>
+
+                            <div class="cute-field-group">
+                                <label for="auth-email-input">ईमेल अथवा सदस्य नाम (Email / Username)</label>
+                                <input type="text" id="auth-email-input" placeholder="editor@hi.wikipedia.org" autocomplete="username" required>
+                            </div>
+
+                            <div class="cute-field-group">
+                                <div class="cute-pass-label-row">
+                                    <label for="auth-password-input">पासवर्ड (Password)</label>
+                                    <span class="pass-eye-status-hint" id="pass-eye-status-hint">🔒 पासवर्ड छुपा है → पात्रों की आँखें खुली हैं 👀</span>
+                                </div>
+                                <div class="cute-password-wrap">
+                                    <input type="password" id="auth-password-input" placeholder="••••••••" autocomplete="current-password" required>
+                                    <button type="button" id="auth-pass-toggle-btn" class="cute-pass-toggle" title="पासवर्ड दिखाएं (पात्र आँखें बंद करेंगे) / छिपाएं (पात्र आँखें खोलेंगे)">
+                                        <span id="auth-eye-icon">👁</span>
+                                        <span class="pass-toggle-text" id="auth-eye-text">दिखाएँ</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="cute-auth-options-row">
+                                <label class="cute-remember-check">
+                                    <input type="checkbox" id="auth-remember-cb" checked>
+                                    <span>सत्र याद रखें (Remember for 30 days)</span>
+                                </label>
+                                <button type="button" id="auth-demo-fill-btn" class="cute-link-btn">डेमो खाता भरें</button>
+                            </div>
+
+                            <button type="submit" id="auth-submit-btn" class="cute-submit-btn">
+                                Log in (लॉगिन करें)
+                            </button>
+
+                            <button type="button" id="auth-google-firebase-btn" class="cute-demo-google-btn" style="border-color: #3366cc; background: #eef4ff; color: #1e3a8a;">
+                                <span style="font-weight: 800; color: #ea4335;">G</span>
+                                <span>Google से साइन इन करें (Firebase Cloud Sync)</span>
+                            </button>
+
+                            <button type="button" id="auth-demo-login-btn" class="cute-demo-google-btn">
+                                <span style="font-weight: 800; color: #4f46e5;">W</span>
+                                <span>1-क्लिक विकिपीडिया संपादक डेमो लॉगिन</span>
+                            </button>
+                        </form>
+
+                        <div class="cute-guest-skip-box">
+                            <a href="index.html" class="cute-guest-btn" style="display: inline-block; text-decoration: none;">
+                                बिना लॉगिन के सीधे टूल पर वापस जाएँ →
+                            </a>
+                            <p>लॉगिन करने के बाद नीचे आपका यूज़र डेटा व गतिविधि लॉग तुरंत अपडेट हो जाएगा।</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. यूज़र प्रोफ़ाइल, डेटा एवं गतिविधि लॉग अनुभाग (User Data & Activity Logs Section) -->
+        <section id="logs-section" class="workbench-card" style="max-width: 920px; margin: 0 auto;">
+            <div class="workbench-card-header">
+                <div>
+                    <h2 class="workbench-card-title">मेरा यूज़र डेटा एवं गतिविधि लॉग (User Data & Activity Logs)</h2>
+                    <small class="form-hint">यहाँ आपके द्वारा लोड, विश्लेषित और शुद्ध किए गए विकिपीडिया लेखों का पूरा इतिहास सुरक्षित रहता है</small>
+                </div>
+                <span class="workbench-badge badge-source" id="user-dash-status-badge">अतिथि सत्र (Guest Mode)</span>
+            </div>
+
+            <!-- यूज़र प्रोफ़ाइल पट्टी -->
+            <div class="user-profile-strip" id="user-profile-strip">
+                <div class="user-profile-left">
+                    <div class="user-avatar-circle" id="user-dash-avatar">वि</div>
+                    <div class="user-profile-meta">
+                        <h4 id="user-dash-name">अतिथि संपादक (Guest Editor)</h4>
+                        <p id="user-dash-email">बिना लॉगिन के स्थानीय सत्र सक्रिय • ऊपर फॉर्म से लॉगिन कर अपना नाम जोड़ें</p>
+                    </div>
+                </div>
+                <div class="user-profile-actions" style="display: flex; gap: 8px;">
+                    <a href="index.html" class="btn btn-primary btn-sm">नया लेख विश्लेषण करें</a>
+                    <button type="button" id="user-dash-logout-btn" class="btn btn-outline text-danger btn-sm" style="display: none;">लॉगआउट करें</button>
+                </div>
+            </div>
+
+            <!-- 4 सारांश सांख्यिकी कार्ड्स -->
+            <div class="user-stats-grid">
+                <div class="user-stat-box">
+                    <span class="user-stat-lbl">विश्लेषित लेख</span>
+                    <strong class="user-stat-num" id="ust-articles-count">0</strong>
+                </div>
+                <div class="user-stat-box">
+                    <span class="user-stat-lbl">जोड़ी गई कड़ियाँ</span>
+                    <strong class="user-stat-num" style="color: var(--accent-green);" id="ust-links-added">+0</strong>
+                </div>
+                <div class="user-stat-box">
+                    <span class="user-stat-lbl">शुद्ध किए गए दोष</span>
+                    <strong class="user-stat-num" style="color: var(--accent-orange);" id="ust-contaminations-fixed">0</strong>
+                </div>
+                <div class="user-stat-box">
+                    <span class="user-stat-lbl">कुल लॉग प्रविष्टियाँ</span>
+                    <strong class="user-stat-num" id="ust-total-logs">0</strong>
+                </div>
+            </div>
+
+            <!-- लॉग खोज व नियंत्रण -->
+            <div class="user-logs-toolbar">
+                <input type="text" id="user-logs-search" class="form-control form-control-sm" placeholder="लॉग में लेख शीर्षक या क्रिया खोजें..." style="max-width: 300px;">
+                <div class="user-logs-actions">
+                    <button type="button" id="btn-export-user-logs" class="btn btn-secondary btn-sm">JSON डेटा डाउनलोड</button>
+                    <button type="button" id="btn-clear-user-logs" class="btn btn-outline text-danger btn-sm">लॉग साफ़ करें</button>
+                </div>
+            </div>
+
+            <!-- गतिविधि लॉग तालिका -->
+            <div class="table-responsive">
+                <table class="table suggestions-table">
+                    <thead>
+                        <tr>
+                            <th width="150">समय (Timestamp)</th>
+                            <th width="140">क्रिया (Action)</th>
+                            <th>लेख शीर्षक (Article)</th>
+                            <th width="80">भाषा</th>
+                            <th>विवरण (Metrics)</th>
+                            <th width="140">कार्यपटल में खोलें</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-logs-tbody">
+                        <!-- लॉग पंक्तियाँ यहाँ रेंडर होंगी -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast">संदेश</div>
+
+    <!-- लॉगिन पेज स्क्रिप्ट -->
+    <script>
+    (function () {
+        'use strict';
+        const $ = (id) => document.getElementById(id);
+
+        let currentUser = null;
+        let userActivityLogs = [];
+        let authMode = 'login';
+        let isPasswordRevealed = false;
+        let currentSkinId = localStorage.getItem('wikilink_skin_v3') || 'wikimedia-classic';
+
+        function showToast(msg) {
+            const t = $('toast');
+            if (!t) return;
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2600);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // थीम और स्किन लोड करें
+        function setupSkinAndTheme() {
+            const savedTheme = localStorage.getItem('wikilink_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.body.setAttribute('data-skin', currentSkinId);
+
+            const headerSkinSelect = $('header-skin-select');
+            if (headerSkinSelect) {
+                headerSkinSelect.value = currentSkinId;
+                headerSkinSelect.addEventListener('change', (e) => {
+                    currentSkinId = e.target.value || 'wikimedia-classic';
+                    document.body.setAttribute('data-skin', currentSkinId);
+                    localStorage.setItem('wikilink_skin_v3', currentSkinId);
+                    showToast('🎨 थीम बदल दी गई!');
+                });
+            }
+
+            const savedOneTouchColor = localStorage.getItem('wikilink_onetouch_color_v3');
+            if (savedOneTouchColor) {
+                applyInstantColor(savedOneTouchColor);
+            }
+
+            const themeBtn = $('theme-toggle-btn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const cur = document.documentElement.getAttribute('data-theme');
+                    const next = cur === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    localStorage.setItem('wikilink_theme', next);
+                });
+            }
+        }
+
+        function applyInstantColor(hex) {
+            document.body.style.setProperty('--primary-color', hex);
+            document.body.style.setProperty('--primary-hover', hex);
+            document.body.style.setProperty('--border-focus', hex);
+        }
+
+        // फ्लोटिंग एनीमे कण
+        function initCanvasParticles() {
+            const canvas = $('anime-bg-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w = (canvas.width = window.innerWidth);
+            let h = (canvas.height = window.innerHeight);
+            window.addEventListener('resize', () => {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            });
+
+            const colors = ['#f472b6', '#818cf8', '#38bdf8', '#fbbf24', '#34d399'];
+            const pts = Array.from({ length: 24 }, () => ({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                s: 4 + Math.random() * 6,
+                vy: 0.4 + Math.random() * 0.7,
+                vx: -0.3 + Math.random() * 0.6,
+                a: Math.random() * Math.PI * 2,
+                va: -0.02 + Math.random() * 0.04,
+                c: colors[Math.floor(Math.random() * colors.length)]
+            }));
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                pts.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx + Math.sin(p.a) * 0.25;
+                    p.a += p.va;
+                    if (p.y > h + 15) { p.y = -10; p.x = Math.random() * w; }
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.a);
+                    ctx.globalAlpha = 0.4;
+                    ctx.fillStyle = p.c;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -p.s);
+                    ctx.quadraticCurveTo(p.s * 0.85, -p.s * 0.3, 0, p.s);
+                    ctx.quadraticCurveTo(-p.s * 0.85, -p.s * 0.3, 0, -p.s);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                });
+                requestAnimationFrame(draw);
+            }
+            requestAnimationFrame(draw);
+        }
+
+        function loadStorage() {
+            try {
+                const u = localStorage.getItem('wikilink_current_user');
+                if (u) currentUser = JSON.parse(u);
+            } catch (e) {}
+
+            try {
+                const l = localStorage.getItem('wikilink_activity_logs');
+                if (l) {
+                    userActivityLogs = JSON.parse(l);
+                } else {
+                    userActivityLogs = [
+                        {
+                            id: Date.now() - 3600000,
+                            timestamp: new Date(Date.now() - 3600000).toLocaleString('hi-IN'),
+                            action: 'तार्किक विश्लेषण (उदाहरण)',
+                            title: 'तुलसीदास',
+                            lang: 'hi',
+                            newLinks: 8,
+                            contaminationsFixed: 4,
+                            note: 'प्रारंभिक उदाहरण सत्र',
+                            wikitext: "'''तुलसीदास''' (१५३२ - १६२३) [[हिन्दी साहित्य]] के महान [[कवि]] और [[सन्त]] थे। उनका जन्म [[राजापुर]] में हुआ था। उन्हें आदि काव्य [[रामायण]] के रचयिता [[महर्षि वाल्मीकि]] का अवतार माना जाता है।"
+                        }
+                    ];
+                }
+            } catch (e) {
+                userActivityLogs = [];
+            }
+        }
+
+        function trackCharactersToPoint(targetX, targetY) {
+            document.querySelectorAll('#cute-characters-stage .char-pupil').forEach(pupil => {
+                const rect = pupil.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const angle = Math.atan2(targetY - cy, targetX - cx);
+                const dx = Math.cos(angle) * 4.5;
+                const dy = Math.sin(angle) * 4.5;
+                pupil.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+            });
+
+            document.querySelectorAll('#cute-characters-stage .cute-char').forEach((ch, idx) => {
+                const rect = ch.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const deltaX = Math.max(-10, Math.min(10, (targetX - cx) * 0.02));
+                const skewX = Math.max(-3.5, Math.min(3.5, (targetX - cx) * -0.008));
+                ch.style.transform = `translateX(${(deltaX * (0.6 + idx * 0.12)).toFixed(1)}px) skewX(${skewX.toFixed(1)}deg)`;
+            });
+        }
+
+        function initAuthInteractions() {
+            const stage = $('cute-characters-stage');
+            const speech = $('stage-speech-bubble');
+            const nameGroup = $('auth-name-group');
+            const nameInput = $('auth-name-input');
+            const emailInput = $('auth-email-input');
+            const passInput = $('auth-password-input');
+            const passToggle = $('auth-pass-toggle-btn');
+            const eyeIcon = $('auth-eye-icon');
+            const demoFillBtn = $('auth-demo-fill-btn');
+            const demoLoginBtn = $('auth-demo-login-btn');
+            const authForm = $('cute-auth-form');
+
+            const eyeText = $('auth-eye-text');
+            const passHint = $('pass-eye-status-hint');
+            const btnOpenEyes = $('btn-char-open-eyes');
+            const btnCoverEyes = $('btn-char-cover-eyes');
+            const btnHappyJump = $('btn-char-happy-jump');
+
+            function syncCharacterEyesWithPasswordState() {
+                if (!stage) return;
+                // जब पासवर्ड दिख रहा है (isPasswordRevealed = true) -> पात्र शर्म से आँखें बंद कर लेते हैं (is-covering-eyes)
+                // जब पासवर्ड छुपा है (isPasswordRevealed = false) -> पात्र आँखें खोल लेते हैं!
+                stage.classList.remove('is-peeking');
+                if (isPasswordRevealed) {
+                    stage.classList.add('is-covering-eyes');
+                    if (eyeIcon) eyeIcon.textContent = '🙈';
+                    if (eyeText) eyeText.textContent = 'छुपाएँ';
+                    if (passHint) passHint.textContent = '🔓 पासवर्ड दिख रहा है → पात्रों ने आँखें बंद कर लीं 🙈';
+                    if (speech) speech.textContent = 'अरे! आपका पासवर्ड दिख रहा है, हमने आँखें बंद कर लीं! 🙈';
+                    if (btnCoverEyes) btnCoverEyes.classList.add('active');
+                    if (btnOpenEyes) btnOpenEyes.classList.remove('active');
+                } else {
+                    stage.classList.remove('is-covering-eyes');
+                    if (eyeIcon) eyeIcon.textContent = '👁';
+                    if (eyeText) eyeText.textContent = 'दिखाएँ';
+                    if (passHint) passHint.textContent = '🔒 पासवर्ड छुपा है → पात्रों की आँखें खुली हैं 👀';
+                    if (speech) speech.textContent = 'पासवर्ड छुपा है (•••), इसलिए हमारी आँखें खुली हैं! 👀';
+                    if (btnOpenEyes) btnOpenEyes.classList.add('active');
+                    if (btnCoverEyes) btnCoverEyes.classList.remove('active');
+                }
+            }
+
+            document.addEventListener('mousemove', (e) => {
+                if (!stage || stage.classList.contains('is-covering-eyes')) return;
+                trackCharactersToPoint(e.clientX, e.clientY);
+            });
+
+            // मोबाइल टच ट्रैकिंग (Touch Tracking for Mobile Users)
+            document.addEventListener('touchmove', (e) => {
+                if (!stage || stage.classList.contains('is-covering-eyes')) return;
+                if (e.touches && e.touches[0]) {
+                    trackCharactersToPoint(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchstart', (e) => {
+                if (!stage || stage.classList.contains('is-covering-eyes')) return;
+                if (e.touches && e.touches[0]) {
+                    trackCharactersToPoint(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            // मोबाइल/डेस्कटॉप पर किसी भी कैरेक्टर को टच करने पर उसकी प्रतिक्रिया
+            document.querySelectorAll('#cute-characters-stage .cute-char').forEach(ch => {
+                ch.style.cursor = 'pointer';
+                ch.addEventListener('click', () => {
+                    const cname = ch.dataset.charName || 'मित्र';
+                    ch.classList.remove('char-tap-bounce');
+                    void ch.offsetWidth;
+                    ch.classList.add('char-tap-bounce');
+                    if (speech) {
+                        speech.textContent = isPasswordRevealed
+                            ? `${cname}: पासवर्ड छुपाओ तभी आँखें खोलूँगा! 🙈`
+                            : `${cname}: नमस्ते! मैं आपकी मदद के लिए तैयार हूँ! ✨`;
+                    }
+                });
+            });
+
+            if (btnOpenEyes) {
+                btnOpenEyes.addEventListener('click', () => {
+                    isPasswordRevealed = false;
+                    if (passInput) passInput.type = 'password';
+                    syncCharacterEyesWithPasswordState();
+                });
+            }
+
+            if (btnCoverEyes) {
+                btnCoverEyes.addEventListener('click', () => {
+                    isPasswordRevealed = true;
+                    if (passInput) passInput.type = 'text';
+                    syncCharacterEyesWithPasswordState();
+                });
+            }
+
+            if (btnHappyJump && stage) {
+                btnHappyJump.addEventListener('click', () => {
+                    stage.classList.remove('is-happy-jump');
+                    void stage.offsetWidth;
+                    stage.classList.add('is-happy-jump');
+                    if (speech) speech.textContent = 'हुर्रे! विकिलिंक सहायक में आपका स्वागत है! 🎉';
+                    setTimeout(() => stage.classList.remove('is-happy-jump'), 1200);
+                });
+            }
+
+            document.querySelectorAll('[data-auth-mode]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    authMode = btn.dataset.authMode;
+                    document.querySelectorAll('[data-auth-mode]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (authMode === 'signup') {
+                        if (nameGroup) nameGroup.style.display = 'flex';
+                        $('auth-heading-title').textContent = 'Create Account!';
+                        $('auth-heading-sub').textContent = 'नया खाता बनाएं और अपने विकिलिंक लॉग्स सुरक्षित रखें';
+                        $('auth-submit-btn').textContent = 'Sign up (खाता बनाएं)';
+                        if (speech && !isPasswordRevealed) speech.textContent = 'नया खाता बना रहे हैं? स्वागत है! 🎉';
+                    } else {
+                        if (nameGroup) nameGroup.style.display = 'none';
+                        $('auth-heading-title').textContent = 'Welcome back!';
+                        $('auth-heading-sub').textContent = 'कृपया अपना विवरण दर्ज करें (या 1-क्लिक डेमो लॉगिन चुनें)';
+                        $('auth-submit-btn').textContent = 'Log in (लॉगिन करें)';
+                        if (speech && !isPasswordRevealed) speech.textContent = 'नमस्ते! अपना विवरण दर्ज करें ✨';
+                    }
+                });
+            });
+
+            [nameInput, emailInput].forEach(inp => {
+                if (!inp) return;
+                inp.addEventListener('focus', () => {
+                    if (!isPasswordRevealed && stage) {
+                        stage.classList.remove('is-covering-eyes');
+                    }
+                    if (speech && !isPasswordRevealed) {
+                        speech.textContent = inp === nameInput
+                            ? 'वाह, कितना सुंदर नाम है! 😊'
+                            : 'हम ध्यान से आपका ईमेल देख रहे हैं 👀';
+                    }
+                });
+                inp.addEventListener('input', () => {
+                    if (stage && stage.classList.contains('is-covering-eyes')) return;
+                    const rect = inp.getBoundingClientRect();
+                    const offset = Math.min(inp.value.length * 8, rect.width - 20);
+                    trackCharactersToPoint(rect.left + offset, rect.top + 15);
+                });
+            });
+
+            if (passInput) {
+                passInput.addEventListener('focus', () => {
+                    syncCharacterEyesWithPasswordState();
+                });
+                passInput.addEventListener('input', () => {
+                    // यदि पासवर्ड छुपा है (•••), तो पात्र टाइपिंग को ट्रैक करते हैं; यदि पासवर्ड दिख रहा है, तो आँखें बंद रखते हैं
+                    if (!isPasswordRevealed) {
+                        const rect = passInput.getBoundingClientRect();
+                        const offset = Math.min(passInput.value.length * 9, rect.width - 30);
+                        trackCharactersToPoint(rect.left + offset, rect.top + 15);
+                    }
+                });
+            }
+
+            if (passToggle && passInput) {
+                passToggle.addEventListener('click', () => {
+                    isPasswordRevealed = !isPasswordRevealed;
+                    passInput.type = isPasswordRevealed ? 'text' : 'password';
+                    syncCharacterEyesWithPasswordState();
+                    passInput.focus();
+                });
+            }
+
+            if (demoFillBtn) {
+                demoFillBtn.addEventListener('click', () => {
+                    if (nameInput) nameInput.value = 'विक्रम प्रताप (Wiki Editor)';
+                    if (emailInput) emailInput.value = 'editor@hi.wikipedia.org';
+                    if (passInput) passInput.value = 'WikiAnime2025!';
+                    if (speech) speech.textContent = 'डेमो विवरण भर दिया गया! अब Log in दबाएँ ✨';
+                });
+            }
+
+            if (demoLoginBtn) {
+                demoLoginBtn.addEventListener('click', () => {
+                    doLogin({
+                        name: 'विक्रम प्रताप (Demo Editor)',
+                        email: 'editor@hi.wikipedia.org',
+                        role: 'विकिपीडिया संपादक (Demo)'
+                    });
+                });
+            }
+
+            if (authForm) {
+                authForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const email = emailInput ? emailInput.value.trim() : '';
+                    if (!email) return;
+                    const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : email.split('@')[0];
+                    doLogin({
+                        name,
+                        email,
+                        role: authMode === 'signup' ? 'नव-पंजीकृत विकिपीडिया संपादक' : 'विकिपीडिया संपादक'
+                    });
+                });
+            }
+
+            const googleFirebaseBtn = $('auth-google-firebase-btn');
+            if (googleFirebaseBtn) {
+                googleFirebaseBtn.addEventListener('click', async () => {
+                    if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
+                        showToast('Firebase Auth लोड हो रहा है, कृपया पुनः प्रयास करें...');
+                        return;
+                    }
+                    try {
+                        const fbUser = await window.WikiFirebase.signInWithGooglePopup();
+                        if (fbUser) {
+                            doLogin({
+                                name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Google संपादक'),
+                                email: fbUser.email || 'editor@wikipedia.org',
+                                role: 'Firebase क्लाउड संपादक'
+                            });
+                        }
+                    } catch (err) {
+                        console.warn('Google sign-in popup closed or failed:', err);
+                        showToast('Google लॉगिन रद्द हुआ या पॉपअप बंद किया गया');
+                    }
+                });
+            }
+
+            window.addEventListener('wikilink:firebase-auth', (e) => {
+                const fbUser = e.detail?.user;
+                if (fbUser) {
+                    currentUser = {
+                        name: fbUser.name,
+                        email: fbUser.email,
+                        role: fbUser.role || 'Firebase क्लाउड संपादक',
+                        uid: fbUser.uid,
+                        loginTime: new Date().toISOString()
+                    };
+                    localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+                    if (fbUser.preferredSkin) {
+                        currentSkinId = fbUser.preferredSkin;
+                        document.body.setAttribute('data-skin', currentSkinId);
+                        localStorage.setItem('wikilink_skin_v3', currentSkinId);
+                        const headerSkinSelect = $('header-skin-select');
+                        if (headerSkinSelect) headerSkinSelect.value = currentSkinId;
+                    }
+                    renderDashboard();
+                }
+            });
+
+            window.addEventListener('wikilink:firebase-logs', (e) => {
+                const cloudLogs = e.detail?.logs;
+                if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
+                    userActivityLogs = cloudLogs;
+                    localStorage.setItem('wikilink_activity_logs', JSON.stringify(userActivityLogs.slice(0, 60)));
+                    renderDashboard();
+                }
+            });
+
+            const logoutBtn = $('user-dash-logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    if (window.WikiFirebase && window.WikiFirebase.signOutFirebaseUser) {
+                        try {
+                            await window.WikiFirebase.signOutFirebaseUser();
+                        } catch (e) {}
+                    }
+                    currentUser = null;
+                    localStorage.removeItem('wikilink_current_user');
+                    renderDashboard();
+                    showToast('लॉगआउट पूर्ण हुआ (अतिथि मोड सक्रिय)');
+                });
+            }
+
+            const searchInput = $('user-logs-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => renderDashboard(e.target.value));
+            }
+
+            const exportBtn = $('btn-export-user-logs');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    const blob = new Blob([JSON.stringify({ user: currentUser, logs: userActivityLogs }, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `wikilink_user_logs_${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('JSON डेटा डाउनलोड हुआ');
+                });
+            }
+
+            const clearBtn = $('btn-clear-user-logs');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', async () => {
+                    const ids = userActivityLogs.map(l => l.logId || l.id).filter(Boolean);
+                    userActivityLogs = [];
+                    localStorage.setItem('wikilink_activity_logs', '[]');
+                    if (window.WikiFirebase && window.WikiFirebase.clearUserActivityLogsInFirestore) {
+                        try {
+                            await window.WikiFirebase.clearUserActivityLogsInFirestore(ids);
+                        } catch (e) {}
+                    }
+                    renderDashboard();
+                    showToast('लॉग्स साफ़ किए गए');
+                });
+            }
+        }
+
+        function doLogin(userObj) {
+            const stage = $('cute-characters-stage');
+            const speech = $('stage-speech-bubble');
+            currentUser = {
+                name: userObj.name,
+                email: userObj.email,
+                role: userObj.role,
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+
+            userActivityLogs.unshift({
+                id: Date.now(),
+                timestamp: new Date().toLocaleString('hi-IN'),
+                action: 'यूज़र लॉगिन',
+                title: currentUser.name,
+                lang: 'hi',
+                newLinks: 0,
+                contaminationsFixed: 0,
+                note: `${currentUser.email} द्वारा लॉगिन`,
+                wikitext: ''
+            });
+            localStorage.setItem('wikilink_activity_logs', JSON.stringify(userActivityLogs.slice(0, 60)));
+
+            if (stage) {
+                stage.classList.remove('is-covering-eyes', 'is-peeking');
+                stage.classList.add('is-happy-jump');
+            }
+            if (speech) {
+                speech.textContent = `स्वागत है, ${currentUser.name}! 🎉`;
+            }
+
+            renderDashboard();
+            showToast(`स्वागत है, ${currentUser.name}! नीचे आपके लॉग्स अपडेट हो गए हैं।`);
+            setTimeout(() => {
+                if (stage) stage.classList.remove('is-happy-jump');
+                const logsSec = $('logs-section');
+                if (logsSec) logsSec.scrollIntoView({ behavior: 'smooth' });
+            }, 650);
+        }
+
+        function renderDashboard(query = '') {
+            const avatar = $('user-dash-avatar');
+            const nameEl = $('user-dash-name');
+            const emailEl = $('user-dash-email');
+            const badgeEl = $('user-dash-status-badge');
+            const logoutBtn = $('user-dash-logout-btn');
+
+            if (currentUser) {
+                if (avatar) avatar.textContent = currentUser.name.charAt(0).toUpperCase();
+                if (nameEl) nameEl.textContent = currentUser.name;
+                if (emailEl) emailEl.textContent = `${currentUser.email} • ${currentUser.role}`;
+                if (badgeEl) {
+                    badgeEl.className = 'workbench-badge badge-sanitized';
+                    badgeEl.textContent = '✓ लॉगिन सक्रिय';
+                }
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            } else {
+                if (avatar) avatar.textContent = 'G';
+                if (nameEl) nameEl.textContent = 'अतिथि संपादक (Guest Mode)';
+                if (emailEl) emailEl.textContent = 'बिना लॉगिन के स्थानीय सत्र सक्रिय • ऊपर फॉर्म से लॉगिन कर अपना नाम जोड़ें';
+                if (badgeEl) {
+                    badgeEl.className = 'workbench-badge badge-source';
+                    badgeEl.textContent = 'अतिथि सत्र (Guest Mode)';
+                }
+                if (logoutBtn) logoutBtn.style.display = 'none';
+            }
+
+            const uniqueArticles = new Set(
+                userActivityLogs
+                    .filter(l => l.title && l.title !== 'अशीर्षक लेख' && l.action !== 'यूज़र लॉगिन')
+                    .map(l => `${l.lang}:${l.title}`)
+            );
+            const totalLinks = userActivityLogs.reduce((a, b) => a + (Number(b.newLinks) || 0), 0);
+            const totalContam = userActivityLogs.reduce((a, b) => a + (Number(b.contaminationsFixed) || 0), 0);
+
+            $('ust-articles-count').textContent = uniqueArticles.size.toLocaleString('hi-IN');
+            $('ust-links-added').textContent = `+${totalLinks.toLocaleString('hi-IN')}`;
+            $('ust-contaminations-fixed').textContent = totalContam.toLocaleString('hi-IN');
+            $('ust-total-logs').textContent = userActivityLogs.length.toLocaleString('hi-IN');
+
+            const tbody = $('user-logs-tbody');
+            if (!tbody) return;
+            const q = (query || '').trim().toLowerCase();
+            const list = q
+                ? userActivityLogs.filter(l =>
+                    (l.title || '').toLowerCase().includes(q) ||
+                    (l.action || '').toLowerCase().includes(q) ||
+                    (l.note || '').toLowerCase().includes(q)
+                )
+                : userActivityLogs;
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--text-muted);">कोई लॉग प्रविष्टि नहीं मिली।</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(log => `
+                <tr>
+                    <td style="font-size: 0.78rem; color: var(--text-secondary);">${escapeHtml(log.timestamp)}</td>
+                    <td><span class="badge badge-tool">${escapeHtml(log.action)}</span></td>
+                    <td><strong>${escapeHtml(log.title)}</strong></td>
+                    <td><span class="compact-lang-badge">${escapeHtml(log.lang || 'hi')}</span></td>
+                    <td style="font-size: 0.82rem;">
+                        ${log.newLinks > 0 ? `<span style="color: var(--accent-green); font-weight:700;">+${log.newLinks} कड़ियाँ</span> ` : ''}
+                        ${log.contaminationsFixed > 0 ? `<span style="color: var(--accent-orange); font-weight:600;">(${log.contaminationsFixed} दोष)</span> ` : ''}
+                        <span style="color: var(--text-muted);">${escapeHtml(log.note || '')}</span>
+                    </td>
+                    <td>
+                        ${log.wikitext ? `<button type="button" class="btn btn-primary btn-sm open-in-workbench-btn" data-id="${log.id}">कार्यपटल में खोलें →</button>` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+
+            tbody.querySelectorAll('.open-in-workbench-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = Number(btn.dataset.id);
+                    const item = userActivityLogs.find(x => x.id === id);
+                    if (item) {
+                        localStorage.setItem('wikilink_restore_article', JSON.stringify(item));
+                        window.location.href = 'index.html';
+                    }
+                });
+            });
+        }
+
+        setupSkinAndTheme();
+        initCanvasParticles();
+        loadStorage();
+        initAuthInteractions();
+        renderDashboard();
+    })();
+    </script>
+    <script type="module" src="firebase-client.js"></script>
+</body>
+</html>

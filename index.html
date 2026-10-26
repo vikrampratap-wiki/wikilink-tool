@@ -11,24 +11,91 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"
+      }
+    }
+    </script>
 </head>
-<body>
+<body data-skin="wikimedia-classic" data-card-style="minimal">
+    <!-- तार्किक विकिपीडिया कड़ी जाल एवं एनीमे परिवेशी पृष्ठभूमि (Logical Wikilink Constellation & Anime Ambient Background) -->
+    <div class="logical-bg-backdrop" aria-hidden="true">
+        <div class="bg-aurora-orb orb-1"></div>
+        <div class="bg-aurora-orb orb-2"></div>
+        <div class="bg-aurora-orb orb-3"></div>
+        <div class="bg-logical-grid"></div>
+    </div>
+    <canvas id="anime-bg-canvas" class="anime-bg-canvas" aria-hidden="true"></canvas>
+
     <!-- शीर्ष पट्टी (App Header) -->
     <header class="app-header">
         <div class="header-inner container">
             <div class="logo-area">
+                <div class="anime-mascot-emblem-wrap" aria-hidden="true">
+                    <svg class="anime-header-mascot" viewBox="0 0 64 64" width="42" height="42">
+                        <defs>
+                            <linearGradient id="animeHairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="var(--primary-color)" />
+                                <stop offset="100%" stop-color="var(--accent-blue)" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="32" cy="34" r="22" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="2.5"/>
+                        <path d="M10 32 C10 14, 54 14, 54 32 C50 22, 42 18, 32 20 C22 18, 14 22, 10 32 Z" fill="url(#animeHairGrad)" stroke="#1e1b4b" stroke-width="2.5"/>
+                        <path d="M12 26 L6 14 L20 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                        <path d="M52 26 L58 14 L44 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                        <g class="mascot-eyes">
+                            <ellipse cx="23" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                            <circle cx="21.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                            <circle cx="24.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                            <ellipse cx="41" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                            <circle cx="39.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                            <circle cx="42.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                        </g>
+                        <ellipse cx="17" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                        <ellipse cx="47" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                        <path d="M28 43 Q32 47 36 43" fill="none" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </div>
                 <div class="logo-text-block">
                     <div class="logo-title-wrap">
                         <h1 class="app-title">विकीलिंक सहायक</h1>
-                        <span class="badge badge-tool">WikiLink Assistant</span>
-                        <span class="badge badge-version">v2.0</span>
+                        <span class="badge badge-tool">WikiLink v2.5</span>
                     </div>
                     <p class="app-subtitle">विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने एवं समीक्षा का स्वतंत्र उपकरण</p>
                 </div>
             </div>
             <div class="header-actions">
-                <button id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स">शॉर्टकट्स</button>
-                <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="डार्क/लाइट थीम बदलें">थीम बदलें</button>
+                <!-- डिफ़ॉल्ट थीम ड्रॉपडाउन (नए यूज़र के लिए डिफ़ॉल्ट: विकी क्लासिक) -->
+                <div class="header-theme-select-wrap" title="थीम व स्किन चुनें (डिफ़ॉल्ट: विकी क्लासिक)">
+                    <label for="header-skin-select" class="sr-only-label">थीम:</label>
+                    <select id="header-skin-select" class="header-skin-select" aria-label="थीम व स्किन चुनें">
+                        <option value="wikimedia-classic" selected>🏛️ विकी क्लासिक (Default)</option>
+                        <option value="anime-sakura">🌸 साकुरा एनीमे (Sakura)</option>
+                        <option value="anime-mecha">🤖 साइबर मेका (Mecha)</option>
+                        <option value="anime-shinkai">🌌 शिनकाई स्काई (Shinkai)</option>
+                        <option value="anime-forest">🌿 जिबली फ़ॉरेस्ट (Forest)</option>
+                        <option value="anime-royal">👑 रॉयल मैजिक (Royal)</option>
+                    </select>
+                </div>
+                <button type="button" id="skin-studio-toggle-btn" class="btn btn-anime-skin btn-sm" title="1-टच रंग व स्किन स्टूडियो खोलें/छुपाएँ">
+                    🎨 रंग पैलेट
+                </button>
+                <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm" title="डार्क/लाइट मोड बदलें">डार्क/लाइट</button>
+                <button type="button" id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स">शॉर्टकट्स</button>
+                <button type="button" id="user-logs-btn" class="btn btn-outline btn-sm" title="उपयोगकर्ता गतिविधि लॉग व डेटा ऊपर खोलें">
+                    मेरा लॉग (<span id="header-log-count">0</span>)
+                </button>
+                <button type="button" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm" title="एनिमेटेड लॉगिन / साइन अप पटल खोलें">
+                    <span class="auth-status-dot" id="auth-status-dot"></span>
+                    <span id="auth-btn-label">लॉगिन / साइन अप</span>
+                </button>
+                <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से तुरंत लॉगआउट करें">
+                    लॉगआउट ⏻
+                </button>
                 <a href="https://github.com/vikrampratap-wiki/wikilink-tool" target="_blank" class="btn btn-outline btn-sm" title="गिटहब रिपॉजिटरी">GitHub</a>
             </div>
         </div>
@@ -37,10 +104,393 @@
     <!-- मुख्य कंटेनर (Main Container) -->
     <main class="main-content container">
 
-        <!-- सूचना बैनर (Zero-Login / Independent Tool Information Banner) -->
-        <div class="banner banner-info" id="info-banner">
-            <div class="banner-body">
-                <strong>स्वतंत्र एवं सुरक्षित उपकरण:</strong> यह टूल विकिपीडिया लेखों का विश्लेषण कर तार्किक कड़ियाँ स्वतः जोड़ता है। विकिपीडिया पर बाहरी टूल से सीधे संपादन हेतु विकिमीडिया OAuth क्रेडेंशियल्स की आवश्यकता होती है, अतः किसी भी अप्रमाणित लॉगिन के स्थान पर यह टूल आपको <strong>विकिपीडिया-शैली लाइव डिफ़, पूर्वावलोकन और 1-क्लिक विकिटेक्स्ट कॉपी</strong> की सुविधा देता है, जिसे आप सीधे विकिपीडिया के संपादन पृष्ठ पर सुरक्षित रूप से पेस्ट कर सकते हैं।
+        <!-- 0. कॉम्पैक्ट शीर्ष लॉगिन, साइन अप एवं उपयोगकर्ता लॉग पटल (Compact Non-Intrusive Top Auth & Logs Drawer) -->
+        <section id="top-auth-page-section" class="top-auth-page-section" style="display: none;">
+            <div class="top-auth-top-bar">
+                <div class="top-auth-title-group">
+                    <span class="badge badge-tool">वैकल्पिक खाता एवं लॉग</span>
+                    <h2 class="top-auth-banner-title">एनिमेटेड लॉगिन / साइन अप एवं मेरा कार्य लॉग</h2>
+                    <small class="top-auth-hint">(नीचे मुख्य उपकरण पटल सदा सक्रिय है)</small>
+                </div>
+                <div class="top-auth-bar-actions">
+                    <button type="button" id="top-section-switch-auth-btn" class="btn btn-primary btn-sm">🔑 लॉगिन / साइन अप</button>
+                    <button type="button" id="top-section-switch-logs-btn" class="btn btn-secondary btn-sm">📋 मेरा लॉग (<span id="top-tab-log-count">0</span>)</button>
+                    <button type="button" id="top-section-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;">लॉगआउट ⏻</button>
+                    <button type="button" id="close-top-auth-section-btn" class="btn btn-outline btn-sm">✕ बंद करें (उपकरण दिखाएँ)</button>
+                </div>
+            </div>
+
+            <!-- भाग A: एनिमेटेड 4-कैरेक्टर लॉगिन एवं साइन अप मंच (Non-overlapping Clean Stage) -->
+            <div id="auth-modal" class="top-cute-auth-wrapper">
+                <div class="cute-auth-card top-embedded-auth-card">
+                    <div class="cute-auth-split">
+                        <!-- बायाँ भाग: इंटरैक्टिव एनिमेटेड कैरेक्टर्स मंच -->
+                        <div class="cute-characters-stage" id="cute-characters-stage">
+                            <div class="stage-speech-bubble" id="stage-speech-bubble">
+                                नमस्ते! पासवर्ड छुपा है (•••) इसलिए हमारी आँखें खुली हैं 👀
+                            </div>
+
+                            <div class="characters-stage-floor">
+                                <div class="characters-group" id="characters-group">
+                                    <!-- 1. लंबा बैंगनी कैरेक्टर (Tall Purple Character) -->
+                                    <div class="cute-char char-purple" id="char-purple" data-char-name="बैंगनी मित्र">
+                                        <div class="char-face" data-char-face>
+                                            <div class="char-eyes">
+                                                <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                                <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                            </div>
+                                            <div class="char-mouth"></div>
+                                        </div>
+                                        <div class="char-hands">
+                                            <span class="char-hand hand-left"></span>
+                                            <span class="char-hand hand-right"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. मध्यम गहरा कैरेक्टर (Medium Dark/Charcoal Character) -->
+                                    <div class="cute-char char-pink" id="char-pink" data-char-name="छाया मित्र">
+                                        <div class="char-face" data-char-face>
+                                            <div class="char-eyes">
+                                                <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                                <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                            </div>
+                                            <div class="char-mouth"></div>
+                                        </div>
+                                        <div class="char-hands">
+                                            <span class="char-hand hand-left"></span>
+                                            <span class="char-hand hand-right"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. गोल नारंगी डोम कैरेक्टर (Front-Left Orange Dome Character) -->
+                                    <div class="cute-char char-orange" id="char-orange" data-char-name="नारंगी डोम">
+                                        <div class="char-face" data-char-face>
+                                            <div class="char-eyes">
+                                                <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                                <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                            </div>
+                                            <div class="char-cheeks">
+                                                <span class="cheek"></span>
+                                                <span class="cheek"></span>
+                                            </div>
+                                            <div class="char-mouth happy-open"></div>
+                                        </div>
+                                        <div class="char-hands">
+                                            <span class="char-hand hand-left"></span>
+                                            <span class="char-hand hand-right"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4. पीला कैरेक्टर चोंच सहित (Front-Right Yellow Character with Beak) -->
+                                    <div class="cute-char char-yellow" id="char-yellow" data-char-name="पीला पंछी">
+                                        <div class="char-face" data-char-face>
+                                            <div class="char-eyes single-eye-row">
+                                                <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                            </div>
+                                            <div class="char-beak"></div>
+                                        </div>
+                                        <div class="char-hands">
+                                            <span class="char-hand hand-left"></span>
+                                            <span class="char-hand hand-right"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- मोबाइल एवं डेस्कटॉप त्वरित टच रिएक्शन बार (Clean Flex Row Below Stage Floor) -->
+                            <div class="stage-bottom-controls">
+                                <div class="mobile-char-touch-bar" id="mobile-char-touch-bar">
+                                    <button type="button" class="char-react-chip active" id="btn-char-open-eyes" title="आँखें खोलें (जब पासवर्ड छुपा हो)">
+                                        👀 आँखें खुलीं
+                                    </button>
+                                    <button type="button" class="char-react-chip" id="btn-char-cover-eyes" title="आँखें बंद करें (जब पासवर्ड दिखे)">
+                                        🙈 आँखें बंद
+                                    </button>
+                                    <button type="button" class="char-react-chip" id="btn-char-happy-jump" title="पात्रों को उछालें">
+                                        🎉 खुशी से उछलें
+                                    </button>
+                                </div>
+                                <div class="stage-caption-pill">
+                                    <span>मोबाइल पर पात्रों को टच करें • पासवर्ड दिखाने पर पात्र आँखें बंद कर लेंगे!</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- दायाँ भाग: लॉगिन / साइन अप फॉर्म (Right Form Panel) -->
+                        <div class="cute-auth-form-panel">
+                            <div class="cute-auth-brand-mark" aria-hidden="true">
+                                <svg viewBox="0 0 36 36" width="28" height="28">
+                                    <polygon points="18,3 33,12 27,31 9,31 3,12" fill="var(--primary-color)" />
+                                    <circle cx="18" cy="18" r="5" fill="var(--bg-card)" />
+                                </svg>
+                            </div>
+
+                            <h2 class="cute-auth-heading" id="auth-heading-title">Welcome back!</h2>
+                            <p class="cute-auth-subheading" id="auth-heading-sub">कृपया अपना विवरण दर्ज करें (अथवा बिना लॉगिन सीधे उपयोग करें)</p>
+
+                            <!-- वर्तमान लॉग-इन उपयोगकर्ता त्वरित स्थिति व लॉगआउट पट्टी (यदि लॉगिन है) -->
+                            <div id="auth-active-session-box" class="auth-active-session-box" style="display: none;">
+                                <div class="active-session-info">
+                                    <span class="active-session-dot"></span>
+                                    <div>
+                                        <strong id="auth-active-user-name">सदस्य</strong>
+                                        <small id="auth-active-user-email" style="display: block; color: var(--text-muted);"></small>
+                                    </div>
+                                </div>
+                                <button type="button" id="auth-form-logout-btn" class="btn btn-danger-soft btn-sm">
+                                    लॉगआउट करें (Logout) ⏻
+                                </button>
+                            </div>
+
+                            <!-- मोड स्विचर टैब्स -->
+                            <div class="cute-auth-mode-tabs">
+                                <button type="button" class="cute-mode-tab active" id="tab-auth-login" data-auth-mode="login">लॉगिन (Log in)</button>
+                                <button type="button" class="cute-mode-tab" id="tab-auth-signup" data-auth-mode="signup">साइन अप (Sign up)</button>
+                            </div>
+
+                            <form id="cute-auth-form" class="cute-auth-form" onsubmit="return false;">
+                                <!-- नाम फ़ील्ड (केवल साइन अप मोड में) -->
+                                <div class="cute-field-group" id="auth-name-group" style="display: none;">
+                                    <label for="auth-name-input" class="cute-label">आपका नाम / विकिपीडिया उपनाम (Name)</label>
+                                    <input type="text" id="auth-name-input" class="cute-line-input" placeholder="उदा: विक्रम प्रताप" autocomplete="name">
+                                </div>
+
+                                <!-- ईमेल / यूज़रनेम फ़ील्ड -->
+                                <div class="cute-field-group">
+                                    <label for="auth-email-input" class="cute-label">ईमेल अथवा सदस्य नाम (Email / Username)</label>
+                                    <input type="text" id="auth-email-input" class="cute-line-input" placeholder="editor@wikipedia.org या सदस्य नाम" autocomplete="username">
+                                </div>
+
+                                <!-- पासवर्ड फ़ील्ड (जब पासवर्ड दिखाते हैं तो पात्र आँखें बंद कर लेते हैं, जब छुपाते हैं तो आँखें खोल लेते हैं!) -->
+                                <div class="cute-field-group">
+                                    <div class="cute-pass-label-row">
+                                        <label for="auth-password-input" class="cute-label">पासवर्ड (Password)</label>
+                                        <span class="pass-eye-status-hint" id="pass-eye-status-hint">🔒 पासवर्ड छुपा है → पात्रों की आँखें खुली हैं 👀</span>
+                                    </div>
+                                    <div class="cute-password-wrap">
+                                        <input type="password" id="auth-password-input" class="cute-line-input" placeholder="••••••••" autocomplete="current-password">
+                                        <button type="button" id="auth-pass-toggle-btn" class="cute-pass-toggle" title="पासवर्ड दिखाएं (पात्र आँखें बंद करेंगे) / छिपाएं (पात्र आँखें खोलेंगे)">
+                                            <span id="auth-eye-icon">👁</span>
+                                            <span class="pass-toggle-text" id="auth-eye-text">दिखाएँ</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="cute-auth-options-row">
+                                    <label class="cute-remember-check">
+                                        <input type="checkbox" id="auth-remember-cb" checked>
+                                        <span>सत्र याद रखें (Remember me)</span>
+                                    </label>
+                                    <button type="button" id="auth-demo-fill-btn" class="cute-link-btn">डेमो खाता भरें</button>
+                                </div>
+
+                                <div id="auth-feedback-msg" class="auth-feedback-msg" style="display: none;"></div>
+
+                                <button type="submit" id="auth-submit-btn" class="cute-submit-btn">
+                                    लॉगिन करें (Log in)
+                                </button>
+
+                                <button type="button" id="auth-google-firebase-btn" class="cute-demo-google-btn" style="border-color: #3366cc; background: #eef4ff; color: #1e3a8a;">
+                                    <span style="font-weight: 800; color: #ea4335;">G</span>
+                                    <span>Google से साइन इन करें (Firebase Cloud Sync)</span>
+                                </button>
+
+                                <button type="button" id="auth-demo-login-btn" class="cute-demo-google-btn">
+                                    <span class="demo-wiki-badge" style="font-weight: 800; color: #4f46e5;">W</span>
+                                    <span>1-क्लिक विकिपीडिया संपादक डेमो लॉगिन</span>
+                                </button>
+                            </form>
+
+                            <div class="cute-auth-footer" style="margin-top: 10px; text-align: center; font-size: 0.8rem;">
+                                <span id="auth-switch-prompt">खाता नहीं है?</span>
+                                <button type="button" id="auth-switch-mode-btn" class="cute-link-btn">साइन अप करें (Sign up)</button>
+                            </div>
+
+                            <div class="cute-guest-skip-box">
+                                <button type="button" id="auth-continue-guest-btn" class="cute-guest-btn" style="width: 100%;">
+                                    बिना लॉगिन के सीधे मुख्य कार्यपटल का उपयोग करें ▼
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- भाग B: उपयोगकर्ता प्रोफ़ाइल, डेटा एवं गतिविधि लॉग पटल (Shown when Logs tab is clicked) -->
+            <div id="user-dashboard-modal" class="top-user-dashboard-wrapper" style="display: none;">
+                <div class="user-dashboard-card top-embedded-logs-card">
+                    <div class="modal-header">
+                        <div>
+                            <h3>उपयोगकर्ता प्रोफ़ाइल, डेटा एवं गतिविधि लॉग (User Data & Activity Logs)</h3>
+                            <small class="form-hint" id="user-dash-subtitle">आपके द्वारा विश्लेषित लेखों एवं किए गए शुद्धिकरण कार्यों का संपूर्ण विवरण</small>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <!-- उपयोगकर्ता प्रोफ़ाइल पट्टी -->
+                        <div class="user-profile-strip" id="user-profile-strip">
+                            <div class="user-avatar-circle" id="user-dash-avatar">वि</div>
+                            <div class="user-profile-meta">
+                                <div class="user-profile-name-row">
+                                    <strong id="user-dash-name">अतिथि संपादक (Guest Editor)</strong>
+                                    <span class="badge badge-tool" id="user-dash-status-badge">अतिथि सत्र (Guest Mode)</span>
+                                </div>
+                                <span class="user-profile-email" id="user-dash-email">बिना लॉगिन के स्थानीय सत्र सक्रिय • स्थायी प्रोफ़ाइल हेतु लॉगिन करें</span>
+                            </div>
+                            <div class="user-profile-actions">
+                                <button type="button" id="user-dash-login-btn" class="btn btn-primary btn-sm">🔑 लॉगिन / खाता बदलें</button>
+                                <button type="button" id="user-dash-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;">लॉगआउट करें (Logout) ⏻</button>
+                            </div>
+                        </div>
+
+                        <!-- 4 सारांश सांख्यिकी कार्ड्स -->
+                        <div class="user-stats-grid">
+                            <div class="user-stat-box">
+                                <span class="user-stat-label">विश्लेषित लेख</span>
+                                <strong class="user-stat-num" id="ust-articles-count">0</strong>
+                            </div>
+                            <div class="user-stat-box">
+                                <span class="user-stat-label">जोड़ी गई कड़ियाँ</span>
+                                <strong class="user-stat-num text-success" id="ust-links-added">+0</strong>
+                            </div>
+                            <div class="user-stat-box">
+                                <span class="user-stat-label">शुद्ध किए गए दोष</span>
+                                <strong class="user-stat-num" style="color: var(--accent-orange);" id="ust-contaminations-fixed">0</strong>
+                            </div>
+                            <div class="user-stat-box">
+                                <span class="user-stat-label">कुल लॉग प्रविष्टियाँ</span>
+                                <strong class="user-stat-num" id="ust-total-logs">0</strong>
+                            </div>
+                        </div>
+
+                        <!-- लॉग खोज व नियंत्रण -->
+                        <div class="user-logs-toolbar">
+                            <input type="text" id="user-logs-search" class="form-control form-control-sm" placeholder="लॉग में लेख शीर्षक या क्रिया खोजें..." style="max-width: 280px;">
+                            <div class="user-logs-btn-group">
+                                <button type="button" id="btn-export-user-logs" class="btn btn-secondary btn-sm">JSON डेटा डाउनलोड</button>
+                                <button type="button" id="btn-clear-user-logs" class="btn btn-outline text-danger btn-sm">लॉग साफ़ करें</button>
+                            </div>
+                        </div>
+
+                        <!-- गतिविधि लॉग तालिका -->
+                        <div class="user-logs-table-wrap">
+                            <table class="table suggestions-table">
+                                <thead>
+                                    <tr>
+                                        <th width="140">समय (Timestamp)</th>
+                                        <th width="130">क्रिया (Action)</th>
+                                        <th>लेख शीर्षक (Article)</th>
+                                        <th width="130">विवरण (Metrics)</th>
+                                        <th width="120">पुनः खोलें</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-logs-tbody">
+                                    <!-- लॉग पंक्तियाँ यहाँ रेंडर होंगी -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- सरलीकृत 1-टच स्किन एवं रंग स्टूडियो (Collapsed by default so it doesn't eat workbench space; opens on click) -->
+        <section id="skin-studio-panel" class="skin-studio-card" style="display: none;">
+            <div class="skin-studio-header">
+                <div>
+                    <h3 class="skin-studio-title">🎨 1-टच थीम एवं लाइव रंग स्टूडियो (रंग पर टच करें — तुरंत बदलें)</h3>
+                    <p class="skin-studio-subtitle">डिफ़ॉल्ट रूप से <strong>विकी क्लासिक</strong> सक्रिय है। नीचे किसी भी रंग के गोले या एनीमे स्किन पर टच कर रूप बदलें:</p>
+                </div>
+                <div class="skin-studio-actions">
+                    <button type="button" id="card-style-cycle-btn" class="btn btn-outline btn-sm" title="बॉर्डर स्टाइल बदलें">बॉर्डर: Classic Minimal</button>
+                    <button type="button" id="reset-skin-btn" class="btn btn-outline btn-sm">डिफ़ॉल्ट (विकी क्लासिक)</button>
+                    <button type="button" id="close-skin-studio-btn" class="btn btn-secondary btn-sm">छुपाएँ ▲</button>
+                </div>
+            </div>
+
+            <!-- पंक्ति 1: 1-टच त्वरित रंग पैलेट (Touch any color circle to instantly recolor UI) -->
+            <div class="one-touch-color-strip">
+                <span class="touch-strip-label">1. रंग पर टच करें:</span>
+                <div class="touch-color-bubbles" id="touch-color-bubbles">
+                    <button type="button" class="color-bubble active" data-onetouch-color="#2a4b8d" data-onetouch-bg="#f8f9fa" data-onetouch-accent="#3366cc" style="background: #2a4b8d;" title="विकिपीडिया क्लासिक (Wiki Classic - Default)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#e11d48" data-onetouch-bg="#fff5f7" data-onetouch-accent="#ec4899" style="background: #e11d48;" title="साकुरा रोज़ (Sakura Rose)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#db2777" data-onetouch-bg="#fdf2f8" data-onetouch-accent="#f472b6" style="background: #db2777;" title="मैजेंटा पिंक (Anime Pink)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#7c3aed" data-onetouch-bg="#f5f3ff" data-onetouch-accent="#a855f7" style="background: #7c3aed;" title="रॉयल बैंगनी (Royal Violet)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#4f46e5" data-onetouch-bg="#eef2ff" data-onetouch-accent="#6366f1" style="background: #4f46e5;" title="साइबर इंडिगो (Cyber Indigo)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#2563eb" data-onetouch-bg="#eff6ff" data-onetouch-accent="#3b82f6" style="background: #2563eb;" title="कोबाल्ट ब्लू (Cobalt Blue)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#0284c7" data-onetouch-bg="#f0f9ff" data-onetouch-accent="#38bdf8" style="background: #0284c7;" title="शिनकाई स्काई (Sky Blue)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#0891b2" data-onetouch-bg="#ecfeff" data-onetouch-accent="#06b6d4" style="background: #0891b2;" title="नियो सियान (Neo Cyan)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#0d9488" data-onetouch-bg="#f0fdfa" data-onetouch-accent="#14b8a6" style="background: #0d9488;" title="ओशन टील (Ocean Teal)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#059669" data-onetouch-bg="#ecfdf5" data-onetouch-accent="#10b981" style="background: #059669;" title="जिबली पन्ना हरा (Ghibli Green)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#16a34a" data-onetouch-bg="#f0fdf4" data-onetouch-accent="#22c55e" style="background: #16a34a;" title="फ़ॉरेस्ट ग्रीन (Forest Green)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#d97706" data-onetouch-bg="#fffbeb" data-onetouch-accent="#f59e0b" style="background: #d97706;" title="गोल्डन एम्बर (Golden Amber)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#ea580c" data-onetouch-bg="#fff7ed" data-onetouch-accent="#f97316" style="background: #ea580c;" title="सनसेट ऑरेंज (Sunset Orange)"></button>
+                    <button type="button" class="color-bubble" data-onetouch-color="#dc2626" data-onetouch-bg="#fef2f2" data-onetouch-accent="#ef4444" style="background: #dc2626;" title="क्रिमसन रेड (Crimson Red)"></button>
+                </div>
+            </div>
+
+            <!-- पंक्ति 2: 6 रेडीमेड स्किन्स (विकी क्लासिक प्रथम एवं डिफ़ॉल्ट) -->
+            <div class="skin-presets-grid">
+                <button type="button" class="skin-preset-btn active" data-skin-id="wikimedia-classic">
+                    <span class="skin-swatch swatch-classic"></span>
+                    <div class="skin-preset-info">
+                        <strong>विकी क्लासिक (Default)</strong>
+                        <small>पारंपरिक विकिपीडिया रूप</small>
+                    </div>
+                </button>
+
+                <button type="button" class="skin-preset-btn" data-skin-id="anime-sakura">
+                    <span class="skin-swatch swatch-sakura"></span>
+                    <div class="skin-preset-info">
+                        <strong>साकुरा एनीमे</strong>
+                        <small>गुलाबी साकुरा</small>
+                    </div>
+                </button>
+
+                <button type="button" class="skin-preset-btn" data-skin-id="anime-mecha">
+                    <span class="skin-swatch swatch-mecha"></span>
+                    <div class="skin-preset-info">
+                        <strong>साइबर मेका</strong>
+                        <small>नियो इंडिगो</small>
+                    </div>
+                </button>
+
+                <button type="button" class="skin-preset-btn" data-skin-id="anime-shinkai">
+                    <span class="skin-swatch swatch-shinkai"></span>
+                    <div class="skin-preset-info">
+                        <strong>शिनकाई स्काई</strong>
+                        <small>आसमानी नीला</small>
+                    </div>
+                </button>
+
+                <button type="button" class="skin-preset-btn" data-skin-id="anime-forest">
+                    <span class="skin-swatch swatch-forest"></span>
+                    <div class="skin-preset-info">
+                        <strong>जिबली फ़ॉरेस्ट</strong>
+                        <small>शांत पन्ना हरा</small>
+                    </div>
+                </button>
+
+                <button type="button" class="skin-preset-btn" data-skin-id="anime-royal">
+                    <span class="skin-swatch swatch-royal"></span>
+                    <div class="skin-preset-info">
+                        <strong>रॉयल मैजिक</strong>
+                        <small>बैंगनी क्रिस्टल</small>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- सूचना बैनर एवं वैकल्पिक उपयोगकर्ता स्थिति पट्टी (Zero-Login + Optional User Log Banner) -->
+        <div class="banner banner-info anime-hero-banner" id="info-banner">
+            <div class="banner-body anime-banner-flex">
+                <div class="anime-banner-text">
+                    <strong>स्वतंत्र एवं शून्य-लॉगिन उपकरण:</strong> इस टूल का उपयोग करने के लिए <strong>लॉगिन करना बिल्कुल आवश्यक नहीं है</strong>—आप सीधे नीचे बॉक्स 1 में लेख लोड कर विकिपीडिया-शैली लाइव डिफ़, पूर्वावलोकन और 1-क्लिक विकिटेक्स्ट कॉपी कर सकते हैं। यदि आप वैकल्पिक रूप से <strong>लॉगिन / साइन अप</strong> करते हैं, तो आप अपने विश्लेषित लेखों का इतिहास और <strong>व्यक्तिगत गतिविधि लॉग (Activity Logs)</strong> सहेज व देख सकते हैं।
+                </div>
+                <div class="anime-banner-cta">
+                    <button type="button" id="banner-skin-btn" class="btn btn-secondary btn-sm">🎨 रंग व थीम बदलें</button>
+                    <button type="button" id="banner-auth-btn" class="btn btn-primary btn-sm">लॉगिन / मेरा लॉग देखें ▲</button>
+                    <button type="button" id="banner-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;">लॉगआउट ⏻</button>
+                </div>
             </div>
         </div>
 
@@ -911,6 +1361,7 @@
     </footer>
 
     <script src="words_blacklist.js"></script>
+    <script type="module" src="firebase-client.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

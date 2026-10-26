@@ -8,5 +8,9 @@
     "build": "node -e \"console.log('Static assets verified successfully.')\"",
     "start": "node server.js",
     "lint": "node --check app.js && node --check server.js"
+  },
+  "devDependencies": {
+    "@firebase/eslint-plugin-security-rules": "^0.0.2",
+    "eslint": "^10.13.0"
   }
 }

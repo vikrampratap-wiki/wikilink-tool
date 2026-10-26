@@ -2780,3 +2780,1982 @@ kbd {
         align-items: flex-start;
     }
 }
+
+/* ==========================================================================
+   अध्याय 9: एनीमे (ANIME) स्किन इंजन, कस्टम थीम स्टूडियो एवं क्यूट लॉगिन मोडल
+   ========================================================================== */
+
+/* 1. एनीमे कैनवास पृष्ठभूमि (Floating Sakura / Starlight Particles Canvas) */
+.anime-bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.65;
+}
+
+.app-header,
+.main-content,
+.app-footer,
+.skin-studio-drawer {
+    position: relative;
+    z-index: 2;
+}
+
+/* 2. एनीमे स्किन प्रीसेट वेरिएबल्स (6 Skins + Dark Mode Adaptation) */
+body[data-skin="anime-sakura"] {
+    --primary-color: #d9468f;
+    --primary-hover: #be185d;
+    --primary-light: #fdf2f8;
+    --accent-blue: #ec4899;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --bg-main: #fff9fc;
+    --bg-card: #ffffff;
+    --bg-alt: #fce7f3;
+    --bg-input: #ffffff;
+    --border-color: #f9a8d4;
+    --border-focus: #db2777;
+    --anime-ink-border: #4a153b;
+    --anime-cel-shadow: 4px 4px 0px rgba(74, 21, 59, 0.14);
+    --anime-cel-shadow-hover: 6px 6px 0px rgba(217, 70, 143, 0.28);
+    --anime-gradient: linear-gradient(135deg, #ec4899 0%, #8b5cf6 55%, #f43f5e 100%);
+}
+
+body[data-skin="anime-mecha"] {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: #eef2ff;
+    --accent-blue: #06b6d4;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #f43f5e;
+    --bg-main: #f3f6ff;
+    --bg-card: #ffffff;
+    --bg-alt: #e0e7ff;
+    --bg-input: #ffffff;
+    --border-color: #a5b4fc;
+    --border-focus: #4f46e5;
+    --anime-ink-border: #1e1b4b;
+    --anime-cel-shadow: 4px 4px 0px rgba(30, 27, 75, 0.16);
+    --anime-cel-shadow-hover: 6px 6px 0px rgba(99, 102, 241, 0.3);
+    --anime-gradient: linear-gradient(135deg, #4f46e5 0%, #06b6d4 55%, #ec4899 100%);
+}
+
+body[data-skin="anime-shinkai"] {
+    --primary-color: #0284c7;
+    --primary-hover: #0369a1;
+    --primary-light: #f0f9ff;
+    --accent-blue: #38bdf8;
+    --accent-green: #0d9488;
+    --accent-orange: #f97316;
+    --accent-red: #e11d48;
+    --bg-main: #f2f9ff;
+    --bg-card: #ffffff;
+    --bg-alt: #e0f2fe;
+    --bg-input: #ffffff;
+    --border-color: #7dd3fc;
+    --border-focus: #0284c7;
+    --anime-ink-border: #0c4a6e;
+    --anime-cel-shadow: 4px 4px 0px rgba(12, 74, 110, 0.14);
+    --anime-cel-shadow-hover: 6px 6px 0px rgba(2, 132, 199, 0.26);
+    --anime-gradient: linear-gradient(135deg, #0284c7 0%, #6366f1 55%, #f43f5e 100%);
+}
+
+body[data-skin="anime-forest"] {
+    --primary-color: #059669;
+    --primary-hover: #047857;
+    --primary-light: #ecfdf5;
+    --accent-blue: #0d9488;
+    --accent-green: #16a34a;
+    --accent-orange: #d97706;
+    --accent-red: #dc2626;
+    --bg-main: #f4fbf7;
+    --bg-card: #ffffff;
+    --bg-alt: #d1fae5;
+    --bg-input: #ffffff;
+    --border-color: #6ee7b7;
+    --border-focus: #059669;
+    --anime-ink-border: #064e3b;
+    --anime-cel-shadow: 4px 4px 0px rgba(6, 78, 59, 0.14);
+    --anime-cel-shadow-hover: 6px 6px 0px rgba(5, 150, 105, 0.25);
+    --anime-gradient: linear-gradient(135deg, #059669 0%, #10b981 55%, #f59e0b 100%);
+}
+
+body[data-skin="anime-royal"] {
+    --primary-color: #7c3aed;
+    --primary-hover: #6d28d9;
+    --primary-light: #f5f3ff;
+    --accent-blue: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-orange: #d97706;
+    --accent-red: #e11d48;
+    --bg-main: #faf7ff;
+    --bg-card: #ffffff;
+    --bg-alt: #ede9fe;
+    --bg-input: #ffffff;
+    --border-color: #c4b5fd;
+    --border-focus: #7c3aed;
+    --anime-ink-border: #2e1065;
+    --anime-cel-shadow: 4px 4px 0px rgba(46, 16, 101, 0.15);
+    --anime-cel-shadow-hover: 6px 6px 0px rgba(124, 58, 237, 0.28);
+    --anime-gradient: linear-gradient(135deg, #7c3aed 0%, #ec4899 55%, #f59e0b 100%);
+}
+
+body[data-skin="wikimedia-classic"],
+body:not([data-skin]) {
+    --primary-color: #2a4b8d;
+    --primary-hover: #1f3665;
+    --primary-light: #eaf3ff;
+    --accent-blue: #3366cc;
+    --accent-green: #14866d;
+    --accent-orange: #d46b08;
+    --accent-red: #d33;
+    --bg-main: #f8f9fa;
+    --bg-card: #ffffff;
+    --bg-alt: #f1f3f5;
+    --bg-input: #ffffff;
+    --border-color: #c8ccd1;
+    --border-focus: #3366cc;
+    --anime-ink-border: #a2a9b1;
+    --anime-cel-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    --anime-cel-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.1);
+    --anime-gradient: linear-gradient(135deg, #2a4b8d 0%, #3366cc 55%, #14866d 100%);
+}
+
+[data-theme="dark"] body[data-skin="wikimedia-classic"],
+body[data-theme="dark"][data-skin="wikimedia-classic"] {
+    --primary-color: #6c99e8;
+    --primary-hover: #8db5f8;
+    --primary-light: #1e293b;
+    --accent-blue: #6c99e8;
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-alt: #172033;
+    --bg-input: #0f172a;
+    --border-color: #334155;
+    --anime-ink-border: #475569;
+}
+
+/* डार्क थीम के साथ एनीमे स्किन्स का समन्वय */
+[data-theme="dark"] body[data-skin="anime-sakura"],
+body[data-theme="dark"][data-skin="anime-sakura"] {
+    --bg-main: #180d16;
+    --bg-card: #241322;
+    --bg-alt: #331a30;
+    --bg-input: #1d0f1b;
+    --border-color: #6b2957;
+    --primary-light: #3b1734;
+    --anime-ink-border: #f472b6;
+    --anime-cel-shadow: 4px 4px 0px rgba(244, 114, 182, 0.22);
+}
+
+[data-theme="dark"] body[data-skin="anime-mecha"],
+body[data-theme="dark"][data-skin="anime-mecha"] {
+    --bg-main: #0b0f1d;
+    --bg-card: #131b31;
+    --bg-alt: #1e294a;
+    --bg-input: #0e1526;
+    --border-color: #37497e;
+    --primary-light: #1e294b;
+    --anime-ink-border: #38bdf8;
+    --anime-cel-shadow: 4px 4px 0px rgba(56, 189, 248, 0.22);
+}
+
+[data-theme="dark"] body[data-skin="anime-shinkai"],
+body[data-theme="dark"][data-skin="anime-shinkai"] {
+    --bg-main: #081420;
+    --bg-card: #0f2133;
+    --bg-alt: #163049;
+    --bg-input: #0b1927;
+    --border-color: #234e70;
+    --primary-light: #15314b;
+    --anime-ink-border: #38bdf8;
+    --anime-cel-shadow: 4px 4px 0px rgba(56, 189, 248, 0.2);
+}
+
+[data-theme="dark"] body[data-skin="anime-forest"],
+body[data-theme="dark"][data-skin="anime-forest"] {
+    --bg-main: #091813;
+    --bg-card: #11261f;
+    --bg-alt: #19382e;
+    --bg-input: #0d1e18;
+    --border-color: #255846;
+    --primary-light: #17382c;
+    --anime-ink-border: #34d399;
+    --anime-cel-shadow: 4px 4px 0px rgba(52, 211, 153, 0.2);
+}
+
+[data-theme="dark"] body[data-skin="anime-royal"],
+body[data-theme="dark"][data-skin="anime-royal"] {
+    --bg-main: #120b20;
+    --bg-card: #1d1233;
+    --bg-alt: #2a1b4a;
+    --bg-input: #160e27;
+    --border-color: #4c3282;
+    --primary-light: #2b1a4a;
+    --anime-ink-border: #a78bfa;
+    --anime-cel-shadow: 4px 4px 0px rgba(167, 139, 250, 0.22);
+}
+
+/* 3. एनीमे सेल-शेडेड (Cel-Shaded) और ग्लास कार्ड शैलियाँ */
+body[data-card-style="cel"] .workbench-card,
+body[data-card-style="cel"] .card,
+body[data-card-style="cel"] .banner-info,
+body[data-card-style="cel"] .workbench-flow-strip,
+body[data-card-style="cel"] .shortcuts-quick-strip {
+    border: 2px solid var(--border-color);
+    box-shadow: var(--anime-cel-shadow, 4px 4px 0px rgba(0, 0, 0, 0.1));
+    border-radius: 12px;
+}
+
+body[data-card-style="cel"] .workbench-card:hover {
+    box-shadow: var(--anime-cel-shadow-hover, 6px 6px 0px rgba(0, 0, 0, 0.16));
+    transform: translate(-2px, -2px);
+}
+
+body[data-card-style="cel"] .btn-primary,
+body[data-card-style="cel"] .btn-success {
+    border: 2px solid rgba(0, 0, 0, 0.18);
+    box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.2);
+}
+
+body[data-card-style="cel"] .btn-primary:hover:not(:disabled),
+body[data-card-style="cel"] .btn-success:hover:not(:disabled) {
+    transform: translate(-1px, -2px);
+    box-shadow: 4px 5px 0px rgba(0, 0, 0, 0.24);
+}
+
+body[data-card-style="glass"] .workbench-card,
+body[data-card-style="glass"] .card,
+body[data-card-style="glass"] .banner-info,
+body[data-card-style="glass"] .workbench-flow-strip {
+    background-color: color-mix(in srgb, var(--bg-card) 82%, transparent);
+    backdrop-filter: blur(14px);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+}
+
+/* 4. एनीमे मैस्कॉट अवतार व हेडर बैज */
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.anime-mascot-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--primary-light);
+    border: 2px solid var(--primary-color);
+    box-shadow: 2px 3px 0px color-mix(in srgb, var(--primary-color) 35%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.25s var(--ease-bounce), box-shadow 0.25s ease;
+}
+
+.anime-mascot-avatar:hover {
+    transform: scale(1.08) rotate(-5deg);
+}
+
+.mascot-svg {
+    width: 38px;
+    height: 38px;
+}
+
+.mascot-eyes {
+    animation: mascotBlink 4.5s infinite;
+    transform-origin: center 22px;
+}
+
+@keyframes mascotBlink {
+    0%, 94%, 100% { transform: scaleY(1); }
+    96% { transform: scaleY(0.12); }
+}
+
+.badge-skin {
+    background: var(--anime-gradient, linear-gradient(135deg, #ec4899, #8b5cf6));
+    color: #ffffff;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.28);
+}
+
+.btn-anime-skin {
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border: 1.5px solid var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+}
+
+.btn-anime-skin:hover {
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+.btn-anime-auth {
+    background: var(--anime-gradient, linear-gradient(135deg, #ec4899, #6366f1));
+    color: #ffffff;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.26);
+}
+
+.btn-anime-auth:hover {
+    opacity: 0.95;
+    color: #ffffff;
+}
+
+.auth-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fde047;
+    display: inline-block;
+    box-shadow: 0 0 6px #fde047;
+}
+
+.auth-status-dot.logged-in {
+    background-color: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+}
+
+.log-count-pill {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 0 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+/* 5. सरलीकृत 1-टच एनीमे स्किन एवं कलर स्टूडियो (1-Touch Skin & Color Studio) */
+.skin-studio-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--anime-cel-shadow, 4px 4px 0px rgba(0, 0, 0, 0.1));
+    animation: slideDown 0.28s var(--ease-spring) both;
+}
+
+.skin-studio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.skin-studio-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.skin-studio-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+}
+
+.skin-studio-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 1-टच रंग बबल पट्टी (1-Touch Color Bubbles Strip) */
+.one-touch-color-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.touch-strip-label {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.touch-color-bubbles {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.color-bubble {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid #ffffff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-bounce), box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.color-bubble:hover {
+    transform: scale(1.22) translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+.color-bubble:active {
+    transform: scale(0.92);
+}
+
+.color-bubble.active {
+    transform: scale(1.18);
+    border-color: #111827;
+    box-shadow: 0 0 0 3px var(--primary-light), 0 5px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .color-bubble.active {
+    border-color: #ffffff;
+}
+
+/* त्वरित हेडर रंग डॉट्स (Quick Header Color Dots) */
+.quick-touch-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-color);
+    border-radius: 999px;
+}
+
+.touch-color-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.18s var(--ease-bounce);
+}
+
+.touch-color-dot:hover {
+    transform: scale(1.25);
+}
+
+.skin-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 10px;
+}
+
+.skin-preset-card,
+.skin-preset-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--bg-main);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.2s var(--ease-spring), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skin-preset-card:hover,
+.skin-preset-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.skin-preset-card.active,
+.skin-preset-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+    box-shadow: 3px 3px 0px var(--primary-color);
+}
+
+.skin-swatch {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.swatch-sakura { background: linear-gradient(135deg, #ec4899, #f472b6, #fda4af); }
+.swatch-mecha { background: linear-gradient(135deg, #4f46e5, #06b6d4, #ec4899); }
+.swatch-shinkai { background: linear-gradient(135deg, #0284c7, #38bdf8, #818cf8); }
+.swatch-forest { background: linear-gradient(135deg, #059669, #34d399, #fbbf24); }
+.swatch-royal { background: linear-gradient(135deg, #7c3aed, #c084fc, #f59e0b); }
+.swatch-classic { background: linear-gradient(135deg, #2a4b8d, #3366cc, #14866d); }
+
+.skin-preset-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.skin-preset-info strong {
+    font-size: 0.86rem;
+    color: var(--text-primary);
+}
+
+.skin-preset-info small {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+}
+
+.anime-banner-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.anime-banner-text {
+    flex: 1;
+    min-width: 260px;
+}
+
+.anime-banner-cta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   6. क्यूट एनिमेटेड कैरेक्टर्स लॉगिन / साइन-अप मोडल (YouTube Video: WYLiXJDUnaw)
+   ========================================================================== */
+.auth-modal-backdrop {
+    z-index: 1200;
+    backdrop-filter: blur(6px);
+}
+
+.cute-auth-card {
+    position: relative;
+    width: 95%;
+    max-width: 880px;
+    min-height: 540px;
+    background: #ffffff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    border: 3px solid #1e1b4b;
+    animation: modalPopIn 0.34s var(--ease-spring) both;
+}
+
+[data-theme="dark"] .cute-auth-card {
+    background: #181824;
+    border-color: #4f46e5;
+}
+
+.cute-auth-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e293b;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.cute-auth-close-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    background: #f1f5f9;
+}
+
+.cute-auth-split {
+    display: grid;
+    grid-template-columns: 1.02fr 1fr;
+    min-height: 430px;
+}
+
+/* बायाँ मंच (Left Character Stage matching YouTube Video - Non-Overlapping Flex Flow) */
+.cute-characters-stage {
+    position: relative;
+    background: linear-gradient(180deg, #e9ecf2 0%, #dde2eb 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 14px 12px 14px;
+    gap: 8px;
+    overflow: hidden;
+    user-select: none;
+}
+
+[data-theme="dark"] .cute-characters-stage {
+    background: linear-gradient(180deg, #232738 0%, #181b28 100%);
+}
+
+.stage-speech-bubble {
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    border: 2px solid #1e1b4b;
+    z-index: 10;
+    text-align: center;
+    max-width: 96%;
+    transition: transform 0.25s var(--ease-bounce);
+}
+
+.characters-stage-floor {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    overflow: hidden;
+    padding-top: 4px;
+}
+
+.stage-bottom-controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 12;
+}
+
+/* 4 ज्यामितीय पात्रों का समूह (4 Geometric Characters Group) */
+.characters-group {
+    position: relative;
+    width: 340px;
+    height: 270px;
+    margin: 0 auto;
+    transform: scale(0.86);
+    transform-origin: bottom center;
+}
+
+.cute-char {
+    position: absolute;
+    bottom: 0;
+    transition: transform 0.22s ease-out;
+    transform-origin: bottom center;
+}
+
+/* 1. बैंगनी लंबा आयताकार पात्र (Purple Tall Character - Back Left) */
+.char-purple {
+    left: 42px;
+    bottom: 0;
+    width: 112px;
+    height: 295px;
+    background: #7c3aed;
+    border-radius: 18px 18px 0 0;
+    z-index: 2;
+    box-shadow: inset -8px 0 0 rgba(0, 0, 0, 0.12);
+}
+
+.char-purple .char-face {
+    position: absolute;
+    top: 38px;
+    left: 22px;
+    width: 72px;
+    height: 50px;
+}
+
+/* 2. गहरा/गुलाबी मध्यम आयताकार पात्र (Dark/Charcoal Character - Back Center) */
+.char-pink {
+    left: 136px;
+    bottom: 0;
+    width: 96px;
+    height: 215px;
+    background: #27272a;
+    border-radius: 16px 16px 0 0;
+    z-index: 3;
+    box-shadow: inset -7px 0 0 rgba(0, 0, 0, 0.22);
+}
+
+.char-pink .char-face {
+    position: absolute;
+    top: 34px;
+    left: 16px;
+    width: 64px;
+    height: 45px;
+}
+
+/* 3. नारंगी अर्धवृत्त डोम पात्र (Orange Semicircle Dome - Front Left) */
+.char-orange {
+    left: 8px;
+    bottom: 0;
+    width: 180px;
+    height: 130px;
+    background: #f97316;
+    border-radius: 110px 110px 0 0;
+    z-index: 5;
+    box-shadow: inset -10px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+.char-orange .char-face {
+    position: absolute;
+    top: 38px;
+    left: 48px;
+    width: 86px;
+    height: 54px;
+}
+
+/* 4. पीला गोल पात्र चोंच सहित (Yellow Cylinder Character - Front Right) */
+.char-yellow {
+    left: 210px;
+    bottom: 0;
+    width: 108px;
+    height: 162px;
+    background: #facc15;
+    border-radius: 56px 56px 0 0;
+    z-index: 4;
+    box-shadow: inset -8px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+.char-yellow .char-face {
+    position: absolute;
+    top: 36px;
+    left: 18px;
+    width: 72px;
+    height: 52px;
+}
+
+/* आँखें और पुतलियाँ (Eyes & Pupils) */
+.char-eyes {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 54px;
+    margin: 0 auto;
+}
+
+.char-eyes.single-eye-row {
+    justify-content: center;
+}
+
+.char-eye {
+    width: 18px;
+    height: 18px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transition: height 0.18s ease, transform 0.18s ease;
+}
+
+.char-pupil {
+    width: 8px;
+    height: 8px;
+    background: #111827;
+    border-radius: 50%;
+    position: relative;
+    transition: transform 0.08s linear;
+}
+
+.char-pupil::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 1.5px;
+    width: 2.5px;
+    height: 2.5px;
+    background: #ffffff;
+    border-radius: 50%;
+}
+
+/* मुँह, गाल और चोंच (Mouths, Cheeks & Beak) */
+.char-mouth {
+    width: 16px;
+    height: 8px;
+    border-bottom: 3px solid #111827;
+    border-radius: 0 0 16px 16px;
+    margin: 8px auto 0 auto;
+    transition: all 0.2s ease;
+}
+
+.char-pink .char-mouth {
+    border-bottom-color: #ffffff;
+}
+
+.char-mouth.happy-open {
+    width: 20px;
+    height: 12px;
+    background: #111827;
+    border-radius: 2px 2px 14px 14px;
+}
+
+.char-cheeks {
+    display: flex;
+    justify-content: space-between;
+    width: 66px;
+    margin: 2px auto 0 auto;
+}
+
+.cheek {
+    width: 10px;
+    height: 5px;
+    background: rgba(239, 68, 68, 0.45);
+    border-radius: 50%;
+}
+
+.char-beak {
+    width: 28px;
+    height: 6px;
+    background: #111827;
+    border-radius: 99px;
+    margin: 8px auto 0 12px;
+    transition: transform 0.2s ease;
+}
+
+/* हाथ जो पासवर्ड टाइप करते समय आँखें ढकते हैं (Hands for covering eyes) */
+.char-hands {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.char-hand {
+    position: absolute;
+    width: 24px;
+    height: 28px;
+    border-radius: 14px;
+    background: inherit;
+    filter: brightness(0.88);
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    bottom: 20px;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: transform 0.28s var(--ease-spring), opacity 0.2s ease;
+}
+
+.char-hand.hand-left { left: 16px; }
+.char-hand.hand-right { right: 16px; }
+
+/* अवस्था 1: पासवर्ड लिखते समय आँखें बंद करना / हाथों से ढकना (Covering Eyes State) */
+.cute-characters-stage.is-covering-eyes .char-hand {
+    opacity: 1;
+    transform: translateY(-185px);
+}
+
+.cute-characters-stage.is-covering-eyes .char-pink .char-hand {
+    transform: translateY(-115px);
+}
+
+.cute-characters-stage.is-covering-eyes .char-orange .char-hand {
+    transform: translateY(-45px);
+}
+
+.cute-characters-stage.is-covering-eyes .char-yellow .char-hand {
+    transform: translateY(-82px);
+}
+
+.cute-characters-stage.is-covering-eyes .char-eye {
+    height: 3px;
+    background: #111827;
+}
+
+.cute-characters-stage.is-covering-eyes .char-pupil {
+    opacity: 0;
+}
+
+/* अवस्था 2: पासवर्ड दिखाते समय एक आँख से झाँकना (Peeking State) */
+.cute-characters-stage.is-peeking .char-eye.eye-right {
+    height: 16px !important;
+    background: #ffffff !important;
+}
+
+.cute-characters-stage.is-peeking .char-eye.eye-right .char-pupil {
+    opacity: 1 !important;
+}
+
+.cute-characters-stage.is-peeking .char-hand.hand-right {
+    transform: translateY(-150px) translateX(14px) rotate(18deg) !important;
+}
+
+/* अवस्था 3: लॉगिन / साइन-अप सफल होने पर खुशी से उछलना (Happy Jump) */
+@keyframes cuteCharJump {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    30% { transform: translateY(-22px) scaleY(1.06); }
+    60% { transform: translateY(-8px) scaleY(0.96); }
+}
+
+.cute-characters-stage.is-happy-jump .char-purple { animation: cuteCharJump 0.6s var(--ease-bounce) 0.02s 2; }
+.cute-characters-stage.is-happy-jump .char-pink { animation: cuteCharJump 0.6s var(--ease-bounce) 0.08s 2; }
+.cute-characters-stage.is-happy-jump .char-orange { animation: cuteCharJump 0.6s var(--ease-bounce) 0.14s 2; }
+.cute-characters-stage.is-happy-jump .char-yellow { animation: cuteCharJump 0.6s var(--ease-bounce) 0.2s 2; }
+
+.stage-caption-pill {
+    position: static;
+    background: rgba(15, 23, 42, 0.78);
+    color: #ffffff;
+    font-size: 0.71rem;
+    padding: 4px 12px;
+    border-radius: 999px;
+    z-index: 10;
+    text-align: center;
+    max-width: 96%;
+}
+
+/* दायाँ लॉगिन/साइन-अप फॉर्म पैनल (Right Minimalist Form Panel matching YouTube Video) */
+.cute-auth-form-panel {
+    padding: 22px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #ffffff;
+    color: #111827;
+}
+
+[data-theme="dark"] .cute-auth-form-panel {
+    background: #181824;
+    color: #f8fafc;
+}
+
+.cute-auth-brand-mark {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 10px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #111827;
+}
+
+[data-theme="dark"] .cute-auth-brand-mark {
+    color: #f8fafc;
+}
+
+.cute-auth-heading {
+    font-size: 1.55rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 0 0 4px 0;
+    color: inherit;
+}
+
+.cute-auth-subheading {
+    font-size: 0.82rem;
+    color: #64748b;
+    text-align: center;
+    margin: 0 0 18px 0;
+}
+
+.cute-auth-mode-tabs {
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+}
+
+[data-theme="dark"] .cute-auth-mode-tabs {
+    background: #26293c;
+}
+
+.cute-mode-tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cute-mode-tab.active {
+    background: #111827;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .cute-mode-tab.active {
+    background: #6366f1;
+}
+
+.cute-auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.cute-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cute-field-group label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+[data-theme="dark"] .cute-field-group label {
+    color: #cbd5e1;
+}
+
+.cute-field-group input {
+    border: none;
+    border-bottom: 2px solid #cbd5e1;
+    padding: 8px 4px;
+    font-size: 0.92rem;
+    background: transparent;
+    color: inherit;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.cute-field-group input:focus {
+    border-bottom-color: #111827;
+}
+
+[data-theme="dark"] .cute-field-group input:focus {
+    border-bottom-color: #818cf8;
+}
+
+.cute-password-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.cute-password-wrap input {
+    width: 100%;
+    padding-right: 36px;
+}
+
+.cute-pass-toggle {
+    position: absolute;
+    right: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    opacity: 0.7;
+    padding: 4px;
+}
+
+.cute-pass-toggle:hover {
+    opacity: 1;
+}
+
+.cute-auth-options-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.76rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.cute-remember-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.cute-link-btn {
+    background: none;
+    border: none;
+    color: #6366f1;
+    font-weight: 700;
+    font-size: 0.76rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.cute-submit-btn {
+    margin-top: 6px;
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 999px;
+    border: none;
+    background: #111827;
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.cute-submit-btn:hover {
+    background: #312e81;
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.22);
+}
+
+[data-theme="dark"] .cute-submit-btn {
+    background: #6366f1;
+}
+
+.cute-demo-google-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.cute-demo-google-btn:hover {
+    background: #f1f5f9;
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .cute-demo-google-btn {
+    background: #26293c;
+    border-color: #3b4262;
+    color: #f8fafc;
+}
+
+.cute-guest-skip-box {
+    margin-top: 16px;
+    text-align: center;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 12px;
+}
+
+.cute-guest-skip-box p {
+    font-size: 0.74rem;
+    color: #64748b;
+    margin: 6px 0 0 0;
+}
+
+.cute-guest-btn {
+    background: none;
+    border: 1.5px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cute-guest-btn:hover {
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+/* 7. उपयोगकर्ता डैशबोर्ड एवं गतिविधि लॉग मोडल (User Activity Log Modal) */
+.user-profile-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--primary-light);
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.user-profile-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--anime-gradient, linear-gradient(135deg, #ec4899, #6366f1));
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+}
+
+.user-profile-meta h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.user-profile-meta p {
+    margin: 2px 0 4px 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.user-stat-box {
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+}
+
+.user-stat-num {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.user-stat-lbl {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+}
+
+.user-logs-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.user-logs-actions,
+.user-logs-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   8. तार्किक पृष्ठभूमि प्रभाव (Logical Wikilink & Anime Ambient Background Effects)
+   ========================================================================== */
+.logical-bg-backdrop {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.bg-aurora-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(75px);
+    opacity: 0.26;
+    animation: floatAuroraOrb 18s ease-in-out infinite alternate;
+}
+
+[data-theme="dark"] .bg-aurora-orb {
+    opacity: 0.22;
+}
+
+.bg-aurora-orb.orb-1 {
+    width: 440px;
+    height: 440px;
+    top: -120px;
+    left: -100px;
+    background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+}
+
+.bg-aurora-orb.orb-2 {
+    width: 520px;
+    height: 520px;
+    top: 32%;
+    right: -150px;
+    background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+    animation-duration: 23s;
+    animation-delay: -5s;
+}
+
+.bg-aurora-orb.orb-3 {
+    width: 400px;
+    height: 400px;
+    bottom: -120px;
+    left: 22%;
+    background: radial-gradient(circle, var(--accent-orange) 0%, transparent 70%);
+    animation-duration: 20s;
+    animation-delay: -9s;
+}
+
+@keyframes floatAuroraOrb {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(45px, 30px) scale(1.12); }
+    100% { transform: translate(-35px, 50px) scale(0.94); }
+}
+
+.bg-logical-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(to right, rgba(99, 102, 241, 0.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(236, 72, 153, 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65) 20%, transparent 85%);
+}
+
+/* ==========================================================================
+   9. शीर्ष लॉगिन, साइन अप एवं यूज़र लॉग पटल (Top-of-Page Embedded Auth & Logs)
+   ========================================================================== */
+.top-auth-page-section {
+    position: relative;
+    z-index: 5;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 2.5px solid var(--primary-color);
+    border-radius: 18px;
+    box-shadow: var(--anime-cel-shadow, 0 14px 36px rgba(0, 0, 0, 0.12));
+    animation: slideDown 0.3s var(--ease-spring) both;
+}
+
+.top-auth-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 1.5px dashed var(--border-color);
+}
+
+.top-auth-title-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.top-auth-banner-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.top-auth-bar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.top-cute-auth-wrapper {
+    margin-bottom: 18px;
+}
+
+.top-embedded-auth-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    border: 2.5px solid #1e1b4b;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.top-embedded-logs-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-danger-soft {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    border: 1.5px solid rgba(220, 38, 38, 0.38);
+    font-weight: 700;
+}
+
+.btn-danger-soft:hover {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+}
+
+[data-theme="dark"] .btn-danger-soft {
+    background: rgba(248, 113, 113, 0.16);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.4);
+}
+
+.auth-active-session-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1.5px solid rgba(16, 185, 129, 0.4);
+    border-radius: 12px;
+}
+
+.active-session-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.active-session-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+/* हेडर डिफ़ॉल्ट थीम ड्रॉपडाउन (Header Theme Select Dropdown) */
+.sr-only-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.header-skin-dropdown-wrap {
+    display: inline-flex;
+    align-items: center;
+}
+
+.header-skin-select {
+    appearance: auto;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    border: 1.5px solid var(--primary-color);
+    border-radius: 999px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    max-width: 215px;
+}
+
+.header-skin-select:hover,
+.header-skin-select:focus {
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* मोबाइल एवं डेस्कटॉप कैरेक्टर टच रिएक्शन बार (Touch Controls for Mobile Users) */
+.mobile-char-touch-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0 2px 0;
+    z-index: 12;
+}
+
+.char-react-chip {
+    background: rgba(255, 255, 255, 0.94);
+    color: #1e1b4b;
+    border: 1.5px solid #1e1b4b;
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #1e1b4b;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.char-react-chip:hover,
+.char-react-chip:active {
+    transform: translateY(-1px) scale(1.04);
+}
+
+.char-react-chip.active {
+    background: #1e1b4b;
+    color: #ffffff;
+}
+
+.cute-pass-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pass-eye-status-hint {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #4f46e5;
+}
+
+[data-theme="dark"] .pass-eye-status-hint {
+    background: rgba(129, 140, 248, 0.2);
+    color: #a5b4fc;
+}
+
+.cute-pass-toggle {
+    position: absolute;
+    right: 2px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: inherit;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.cute-pass-toggle:hover {
+    background: rgba(99, 102, 241, 0.2);
+    transform: scale(1.04);
+}
+
+@keyframes charTapBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    40% { transform: translateY(-18px) scale(1.06); }
+    75% { transform: translateY(-5px) scale(0.97); }
+}
+
+.cute-char.char-tap-bounce {
+    animation: charTapBounce 0.48s var(--ease-bounce);
+}
+
+/* ==========================================================================
+   10. संपूर्ण मोबाइल एवं टैबलेट संगतता (Full Mobile & Touch Compatibility)
+   ========================================================================== */
+@media (max-width: 960px) {
+    .dual-workbench-container {
+        grid-template-columns: 1fr !important;
+        gap: 14px;
+    }
+
+    .cute-auth-split {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .cute-characters-stage {
+        padding: 12px 10px 10px 10px;
+    }
+
+    .characters-group {
+        transform: scale(0.76);
+        transform-origin: bottom center;
+        height: 235px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+    }
+
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    /* हेडर एवं नेविगेशन मोबाइल लेआउट */
+    .app-header {
+        padding: 10px 0;
+        position: relative;
+    }
+
+    .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 0 12px;
+    }
+
+    .logo-area {
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .app-title {
+        font-size: 1.18rem;
+    }
+
+    .app-subtitle {
+        font-size: 0.74rem;
+        line-height: 1.35;
+    }
+
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .header-skin-dropdown-wrap {
+        flex: 1 1 160px;
+    }
+
+    .header-skin-select {
+        width: 100%;
+        max-width: none;
+        font-size: 0.76rem;
+        padding: 6px 8px;
+        min-height: 34px;
+    }
+
+    .header-actions .btn {
+        font-size: 0.75rem;
+        padding: 6px 10px;
+        min-height: 34px;
+    }
+
+    .quick-touch-dots {
+        padding: 4px 8px;
+    }
+
+    /* शीर्ष लॉगिन व यूज़र लॉग सेक्शन मोबाइल पर कॉम्पैक्ट */
+    .top-auth-page-section {
+        padding: 10px;
+        margin-bottom: 14px;
+        border-radius: 14px;
+    }
+
+    .top-auth-top-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .top-auth-banner-title {
+        font-size: 0.98rem;
+    }
+
+    .top-auth-bar-actions {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+
+    .top-auth-bar-actions .btn {
+        flex: 1 1 auto;
+        font-size: 0.74rem;
+        padding: 6px 8px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .cute-characters-stage {
+        padding: 10px 8px 8px 8px;
+        gap: 6px;
+    }
+
+    .characters-group {
+        transform: scale(0.66);
+        transform-origin: bottom center;
+        height: 205px;
+    }
+
+    .cute-auth-form-panel {
+        padding: 16px 14px;
+    }
+
+    .cute-auth-heading {
+        font-size: 1.28rem;
+    }
+
+    /* बैनर एवं फ्लो स्टेपर मोबाइल अनुकूलन */
+    .banner-info {
+        padding: 10px 12px;
+        font-size: 0.82rem;
+    }
+
+    .anime-welcome-banner {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px;
+    }
+
+    .anime-banner-cta {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .anime-banner-cta .btn {
+        flex: 1 1 45%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .workbench-flow-strip {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 10px;
+    }
+
+    .workbench-flow-strip .flow-arrow {
+        display: none;
+    }
+
+    .flow-step {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    /* कार्यपटल बॉक्स 1 व बॉक्स 2 (Workbench Cards & Form Controls) */
+    .workbench-card {
+        border-radius: 10px;
+    }
+
+    .workbench-card-header,
+    .workbench-card-body {
+        padding: 12px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .flex-1,
+    .flex-2 {
+        min-width: 0 !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .lang-selector-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .custom-lang-input {
+        width: 100% !important;
+    }
+
+    .input-with-button {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .input-with-button input,
+    .input-with-button .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .textarea-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .textarea-Quick-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .textarea-Quick-actions .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+    }
+
+    .contamination-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
+    }
+
+    .box2-tabs {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        padding-bottom: 4px;
+    }
+
+    .box2-tab {
+        white-space: nowrap;
+        flex: 0 0 auto;
+        font-size: 0.78rem;
+        padding: 6px 10px;
+    }
+
+    /* सहायक टूल और सुझाव तालिका */
+    .aux-tools-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .suggestions-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .suggestions-table {
+        min-width: 580px;
+    }
+
+    /* विकिपीडिया होवर सारांश कार्ड मोबाइल पर नीचे फिक्स्ड शीट की तरह */
+    .wiki-summary-card {
+        left: 10px !important;
+        right: 10px !important;
+        bottom: 12px !important;
+        top: auto !important;
+        width: auto !important;
+        max-width: calc(100vw - 20px) !important;
+    }
+
+    /* स्किन स्टूडियो एवं यूज़र लॉग्स */
+    .one-touch-color-strip {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .touch-color-bubbles {
+        gap: 8px;
+    }
+
+    .color-bubble {
+        width: 32px;
+        height: 32px;
+    }
+
+    .skin-presets-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .user-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .user-logs-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .characters-group {
+        transform: scale(0.58);
+        transform-origin: bottom center;
+        height: 180px;
+    }
+
+    .stage-speech-bubble {
+        font-size: 0.74rem;
+        padding: 5px 10px;
+    }
+
+    .char-react-chip {
+        font-size: 0.68rem;
+        padding: 4px 8px;
+    }
+
+    .skin-presets-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .contamination-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .stat-num {
+        font-size: 1.15rem;
+    }
+}
+
+
+
