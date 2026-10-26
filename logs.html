@@ -7,10 +7,19 @@
     <meta name="description" content="विकीलिंक सहायक उपयोगकर्ता प्रोफ़ाइल, व्यक्तिगत गतिविधि लॉग इतिहास, थीम एवं 1-टच रंग पैलेट स्टूडियो">
     <meta property="og:title" content="यूज़र प्रोफ़ाइल, थीम एवं गतिविधि लॉग - विकीलिंक सहायक">
     <meta property="og:description" content="विकीलिंक सहायक उपयोगकर्ता प्रोफ़ाइल, व्यक्तिगत गतिविधि लॉग इतिहास, थीम एवं 1-टच रंग पैलेट स्टूडियो">
+    <meta name="theme-color" content="#0969da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WikiLink">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
     <script type="importmap">
     {
       "imports": {
@@ -76,7 +85,7 @@
                 </button>
             </div>
             <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
-                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल (बॉक्स 1 व 2)">
+                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल">
                     🛠️ कार्यपटल
                 </a>
                 <a href="logs.html" class="btn btn-primary btn-sm nav-page-btn active" title="उपयोगकर्ता प्रोफ़ाइल, थीम स्टूडियो एवं गतिविधि लॉग पेज">
@@ -89,12 +98,21 @@
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
+                <button type="button" id="pwa-install-btn" class="btn btn-outline btn-sm pwa-install-btn" style="display: none;" title="ऑफ़लाइन कार्यपटल ऐप इंस्टॉल करें">
+                    📲 ऐप इंस्टॉल करें
+                </button>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
                     लॉगआउट ⏻
                 </button>
             </nav>
         </div>
     </header>
+
+    <!-- ऑफ़लाइन मोड सूचना पट्टी -->
+    <div id="offline-connectivity-banner" class="offline-connectivity-banner container" style="display: none;" role="status" aria-live="polite">
+        <span class="offline-pulse-dot"></span>
+        <span><strong>ऑफ़लाइन मोड सक्रिय:</strong> आपके स्थानीय गतिविधि लॉग्स और थीम सेटिंग्स ऑफ़लाइन उपलब्ध हैं।</span>
+    </div>
 
     <main class="main-content container" style="padding-top: 20px; padding-bottom: 40px;">
         <!-- 1. उपयोगकर्ता प्रोफ़ाइल एवं भीतर एकीकृत थीम व रंग पैलेट स्टूडियो (User Profile + Theme & Color Studio Inside Profile) -->
@@ -300,7 +318,7 @@
             <div class="footer-sitemap-grid">
                 <a href="index.html" class="footer-page-card">
                     <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
-                    <span>बॉक्स 1 (मूल लेख), बॉक्स 2 (दूषित कड़ी निदान) व लाइव डिफ़</span>
+                    <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
                 <a href="logs.html" class="footer-page-card active">
                     <strong>👤 2. प्रोफ़ाइल, थीम व मेरा लॉग (Profile & Logs)</strong>
@@ -329,8 +347,7 @@
         </div>
     </footer>
 
-    <script src="words_blacklist.js"></script>
     <script type="module" src="firebase-client.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
 </body>
 </html>

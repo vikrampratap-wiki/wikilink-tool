@@ -7,10 +7,19 @@
     <meta name="description" content="विकीलिंक सहायक टूल परिचय, कार्यप्रणाली एवं विकिपीडिया आंतरिक कड़ीकरण के मानक (Wikimedia Manual of Style: Linking)">
     <meta property="og:title" content="परिचय एवं विकिपीडिया संपादन मानक (About) - विकीलिंक सहायक">
     <meta property="og:description" content="विकीलिंक सहायक टूल परिचय, कार्यप्रणाली एवं विकिपीडिया आंतरिक कड़ीकरण के मानक (Wikimedia Manual of Style: Linking)">
+    <meta name="theme-color" content="#0969da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WikiLink">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
     <script type="importmap">
     {
       "imports": {
@@ -76,7 +85,7 @@
                 </button>
             </div>
             <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
-                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल (बॉक्स 1 व 2)">
+                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल">
                     🛠️ कार्यपटल
                 </a>
                 <a href="logs.html" class="btn btn-outline btn-sm nav-page-btn" title="उपयोगकर्ता प्रोफ़ाइल, थीम स्टूडियो एवं गतिविधि लॉग पेज">
@@ -89,12 +98,21 @@
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
+                <button type="button" id="pwa-install-btn" class="btn btn-outline btn-sm pwa-install-btn" style="display: none;" title="ऑफ़लाइन कार्यपटल ऐप इंस्टॉल करें">
+                    📲 ऐप इंस्टॉल करें
+                </button>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
                     लॉगआउट ⏻
                 </button>
             </nav>
         </div>
     </header>
+
+    <!-- ऑफ़लाइन मोड सूचना पट्टी -->
+    <div id="offline-connectivity-banner" class="offline-connectivity-banner container" style="display: none;" role="status" aria-live="polite">
+        <span class="offline-pulse-dot"></span>
+        <span><strong>ऑफ़लाइन मोड सक्रिय:</strong> विकिपीडिया संपादन व कड़ियों के सभी मानक ऑफ़लाइन उपलब्ध हैं।</span>
+    </div>
 
     <main class="main-content container" style="padding-top: 20px; padding-bottom: 40px;">
         <div class="top-auth-top-bar" style="background: var(--bg-card); padding: 14px 18px; border-radius: 12px; border: 1.5px solid var(--border-color); margin-bottom: 18px;">
@@ -119,7 +137,7 @@
                 </p>
                 <div class="guide-grid">
                     <div class="guide-box">
-                        <h4>📦 बॉक्स 1: मूल लेख एवं तार्किक छन्नी</h4>
+                        <h4>📦 मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</h4>
                         <ul>
                             <li>किसी भी भाषा (हिन्दी, अंग्रेज़ी, संस्कृत, मराठी, तमिल, बंगाली आदि) के विकिपीडिया से सीधा लेख लोड करें या कच्चा विकिटेक्स्ट पेस्ट करें।</li>
                             <li><strong>7-नियम तार्किक छन्नी</strong> द्वारा सामान्य दैनिक शब्दों, संख्याओं, मात्रकों और तिथियों को स्वतः बाहर रखें।</li>
@@ -127,11 +145,11 @@
                         </ul>
                     </div>
                     <div class="guide-box">
-                        <h4>🩺 बॉक्स 2: दूषित लेख एवं तार्किक निदान</h4>
+                        <h4>🔍 समीक्षा एवं मीडियाविकी डिफ़</h4>
                         <ul>
-                            <li>लेख में पहले से मौजूद <strong>डुप्लिकेट कड़ियों (Overlinks)</strong> की पहचान और 1-क्लिक सफाई।</li>
-                            <li><strong>स्व-कड़ी (Self-links)</strong>, अनावश्यक पाइप कड़ियों (<code>[[भारत|भारत]]</code>) और खाली कड़ियों का स्वतः शोधन।</li>
-                            <li>दोनों बॉक्स की समेकित तुलना कर प्रामाणिक <strong>विकिपीडिया मीडियाविकी डिफ़ (Diff)</strong> तैयार करना।</li>
+                            <li>सुझाई गई प्रत्येक आंतरिक कड़ी का संदर्भ, लक्ष्य पृष्ठ और स्थिति (नीली कड़ी, पुनर्निर्देशन, बहुविकल्पी) देखें।</li>
+                            <li>सहायक टूल्स से <strong>डुप्लिकेट कड़ियों (Overlinks)</strong> और <strong>कस्टम बहिष्कार सूची</strong> का प्रबंधन करें।</li>
+                            <li>प्रामाणिक <strong>विकिपीडिया मीडियाविकी डिफ़ (Diff)</strong> में परिवर्तनों की तुलना करें।</li>
                         </ul>
                     </div>
                     <div class="guide-box">
@@ -173,8 +191,8 @@
                     <div class="guide-box">
                         <h4>🚀 उपयोग की सरल विधि (3 चरण):</h4>
                         <ol>
-                            <li><strong>चरण 1:</strong> <a href="index.html">मुख्य कार्यपटल</a> के बॉक्स 1 में विकिपीडिया लेख का शीर्षक लिखकर लोड करें और <strong>"तार्किक विश्लेषण एवं दूषित तत्व पहचान"</strong> दबाएँ।</li>
-                            <li><strong>चरण 2:</strong> बॉक्स 2 के तार्किक दोष निदान, सुझाव तालिका और <strong>विकिपीडिया लाइव डिफ़</strong> में जोड़ी गई कड़ियों की समीक्षा करें।</li>
+                            <li><strong>चरण 1:</strong> <a href="index.html">मुख्य कार्यपटल</a> में विकिपीडिया लेख का शीर्षक लिखकर लोड करें और <strong>"तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें"</strong> दबाएँ।</li>
+                            <li><strong>चरण 2:</strong> सुझाव तालिका और <strong>विकिपीडिया लाइव डिफ़</strong> में जोड़ी गई कड़ियों की समीक्षा करें।</li>
                             <li><strong>चरण 3:</strong> <strong>"संशोधित विकिटेक्स्ट कॉपी करें"</strong> दबाकर विकिपीडिया के संपादन पृष्ठ पर पेस्ट करें और संपादन सारांश के साथ सहेजें।</li>
                         </ol>
                     </div>
@@ -256,7 +274,7 @@
             <div class="footer-sitemap-grid">
                 <a href="index.html" class="footer-page-card">
                     <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
-                    <span>बॉक्स 1 (मूल लेख), बॉक्स 2 (दूषित कड़ी निदान) व लाइव डिफ़</span>
+                    <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
                 <a href="logs.html" class="footer-page-card">
                     <strong>👤 2. प्रोफ़ाइल, थीम व मेरा लॉग (Profile & Logs)</strong>
@@ -285,8 +303,7 @@
         </div>
     </footer>
 
-    <script src="words_blacklist.js"></script>
     <script type="module" src="firebase-client.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
 </body>
 </html>

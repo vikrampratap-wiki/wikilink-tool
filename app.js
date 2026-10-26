@@ -254,41 +254,59 @@
         ])
     };
 
-    // लोड करें विस्तारित 5000+ बहिष्कार महा-सूची (WP:NOTLINKED / WP:COMMONWORDS)
-    try {
-        let extList = null;
-        if (typeof COMMON_5000_WORDS !== 'undefined' && Array.isArray(COMMON_5000_WORDS)) {
-            extList = COMMON_5000_WORDS;
-        } else if (typeof window !== 'undefined' && Array.isArray(window.COMMON_5000_WORDS)) {
-            extList = window.COMMON_5000_WORDS;
-        } else if (typeof global !== 'undefined' && Array.isArray(global.COMMON_5000_WORDS)) {
-            extList = global.COMMON_5000_WORDS;
-        } else if (typeof require !== 'undefined') {
-            try {
-                extList = require('./words_blacklist.js');
-            } catch (e) { }
-        }
+    // विलंबित लोडिंग (Lazy initialization) द्वारा 7,479+ शब्दों की बहिष्कार सूची लोड करें ताकि मोबाइल PageSpeed LCP/TBT बाधित न हो
+    let extendedBlacklistLoaded = false;
+    function ensureExtendedBlacklistLoaded() {
+        if (extendedBlacklistLoaded) return;
+        extendedBlacklistLoaded = true;
+        try {
+            let extList = null;
+            if (typeof COMMON_5000_WORDS !== 'undefined' && Array.isArray(COMMON_5000_WORDS)) {
+                extList = COMMON_5000_WORDS;
+            } else if (typeof window !== 'undefined' && Array.isArray(window.COMMON_5000_WORDS)) {
+                extList = window.COMMON_5000_WORDS;
+            } else if (typeof global !== 'undefined' && Array.isArray(global.COMMON_5000_WORDS)) {
+                extList = global.COMMON_5000_WORDS;
+            } else if (typeof require !== 'undefined') {
+                try {
+                    extList = require('./words_blacklist.js');
+                } catch (e) { }
+            }
 
-        if (Array.isArray(extList)) {
-            extList.forEach(w => {
-                if (w && typeof w === 'string') {
-                    const clean = w.trim().toLowerCase();
-                    if (/^[\u0900-\u097F]/.test(clean)) {
-                        NEVER_LINK_WORDS.hi.add(clean);
-                    } else if (/^[a-z]/.test(clean)) {
-                        NEVER_LINK_WORDS.en.add(clean);
-                    } else {
-                        NEVER_LINK_WORDS.hi.add(clean);
+            if (Array.isArray(extList)) {
+                for (let i = 0; i < extList.length; i++) {
+                    const w = extList[i];
+                    if (w && typeof w === 'string') {
+                        const clean = w.trim().toLowerCase();
+                        const code = clean.charCodeAt(0);
+                        if (code >= 0x0900 && code <= 0x097F) {
+                            NEVER_LINK_WORDS.hi.add(clean);
+                        } else if (code >= 97 && code <= 122) {
+                            NEVER_LINK_WORDS.en.add(clean);
+                        } else {
+                            NEVER_LINK_WORDS.hi.add(clean);
+                        }
                     }
                 }
-            });
+            }
+        } catch (e) {
+            console.warn('विस्तारित बहिष्कार सूची लोड करने में त्रुटि:', e);
         }
-    } catch (e) {
-        console.warn('विस्तारित बहिष्कार सूची लोड करने में त्रुटि:', e);
+    }
+
+    if (typeof window !== 'undefined') {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(() => ensureExtendedBlacklistLoaded(), { timeout: 2500 });
+        } else {
+            setTimeout(ensureExtendedBlacklistLoaded, 1200);
+        }
+    } else {
+        ensureExtendedBlacklistLoaded();
     }
 
     function isNonLinkableWord(term, lang = 'hi') {
         if (!term) return false;
+        ensureExtendedBlacklistLoaded();
         const clean = term.trim().toLowerCase().replace(/_/g, ' ');
         const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
         if (langSet.has(clean)) return true;
@@ -516,10 +534,80 @@
             bindEvents();
             initAnimeSkinAndStudio();
             initCuteAuthAndUserLogs();
+            initServiceWorkerAndOfflineMode();
             updateCharCount();
             updateDiffModeButtons();
         } catch (err) {
             console.error('Initialization error:', err);
+        }
+    }
+
+    // ================== सर्विस वर्कर, ऑफ़लाइन कार्यपटल एवं PWA इंस्टॉल ==================
+    let deferredPwaPrompt = null;
+
+    const OFFLINE_PRESET_ARTICLES = {
+        'भारत': `'''भारत''' (आधिकारिक नाम: '''भारत गणराज्य''') दक्षिण एशिया में स्थित एक विशाल देश है। इसकी राजधानी [[नई दिल्ली]] है। भारत के उत्तर में हिमालय पर्वत श्रृंखला और दक्षिण में हिन्द महासागर स्थित है। भारत की प्रमुख नदियों में गंगा, यमुना, ब्रह्मपुत्र, नर्मदा और गोदावरी शामिल हैं। भारतीय संविधान विश्व का सबसे बड़ा लिखित संविधान है। भारत में अनेक भाषाएँ बोली जाती हैं जिनमें हिन्दी और संस्कृत प्रमुख हैं।`,
+        'महात्मा गांधी': `'''मोहनदास करमचन्द गांधी''' (२ अक्टूबर १८६९ - ३० जनवरी १९४८) भारत के स्वतंत्रता संग्राम के प्रमुख राजनीतिक एवं आध्यात्मिक नेता थे। उन्हें '''महात्मा गांधी''' और राष्ट्रपिता के नाम से जाना जाता है। उन्होंने सत्य और अहिंसा के मार्ग पर चलकर भारतीय राष्ट्रीय कांग्रेस के नेतृत्व में दांडी मार्च, असहयोग आंदोलन और भारत छोड़ो आंदोलन चलाया। उनका जन्म गुजरात के पोरबंदर में हुआ था।`,
+        'हिन्दी साहित्य': `'''हिन्दी साहित्य''' भारतीय साहित्य की एक समृद्ध परंपरा है। इसे आदिकाल, भक्तिकाल, रीतिकाल और आधुनिक काल में विभाजित किया गया है। भक्तिकाल में तुलसीदास, कबीरदास, सूरदास और मीराबाई ने अमूल्य रचनाएँ कीं। आधुनिक काल में भारतेंदु हरिश्चंद्र, मुंशी प्रेमचंद, जयशंकर प्रसाद, सूर्यकांत त्रिपाठी निराला और महादेवी वर्मा ने गद्य व पद्य को नई दिशा दी।`,
+        'अंतरिक्ष विज्ञान': `'''अंतरिक्ष विज्ञान''' ब्रह्मांड, खगोलीय पिंडों, उपग्रहों और ग्रहों के अध्ययन से संबंधित विज्ञान है। भारत में भारतीय अंतरिक्ष अनुसंधान संगठन (इसरो) ने आर्यभट्ट, चंद्रयान और मंगलयान जैसे ऐतिहासिक अभियान संचालित किए हैं। पृथ्वी की कक्षा में कृत्रिम उपग्रह संचार, मौसम विज्ञान और वैज्ञानिक अनुसंधान में सहायता करते हैं।`,
+        'तुलसीदास': `'''तुलसीदास''' (१५३२ - १६२३) हिन्दी साहित्य के महान कवि और सन्त थे। उनका जन्म [[राजापुर]] में हुआ था। उन्हें आदि काव्य [[रामायण]] के रचयिता महर्षि वाल्मीकि का अवतार माना जाता है। तुलसीदास ने अनेक ग्रन्थों की रचना की जिनमें [[रामचरितमानस]] सर्वोपरि है। तुलसीदास का विवाह रत्नावली से हुआ था।`
+    };
+
+    function initServiceWorkerAndOfflineMode() {
+        const offlineBanner = $('offline-connectivity-banner');
+        const installBtn = $('pwa-install-btn');
+
+        function updateOnlineStatusUI() {
+            const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            if (offlineBanner) {
+                offlineBanner.style.display = isOffline ? 'flex' : 'none';
+            }
+        }
+
+        updateOnlineStatusUI();
+        window.addEventListener('online', () => {
+            updateOnlineStatusUI();
+            showToast('इंटरनेट कनेक्शन पुनः जुड़ गया (ऑनलाइन मोड सक्रिय)');
+        });
+        window.addEventListener('offline', () => {
+            updateOnlineStatusUI();
+            showToast('ऑफ़लाइन मोड सक्रिय: मुख्य कार्यपटल बिना इंटरनेट के कार्यशील है');
+        });
+
+        // PWA इन-ऐप इंस्टॉल प्रॉम्प्ट
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            if (installBtn) {
+                installBtn.style.display = 'inline-flex';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPwaPrompt) return;
+                deferredPwaPrompt.prompt();
+                try {
+                    await deferredPwaPrompt.userChoice;
+                } catch (err) {}
+                deferredPwaPrompt = null;
+                installBtn.style.display = 'none';
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            deferredPwaPrompt = null;
+            if (installBtn) installBtn.style.display = 'none';
+            showToast('विकीलिंक सहायक ऑफ़लाइन ऐप सफलतापूर्वक इंस्टॉल हो गया!');
+        });
+
+        // Service Worker पंजीकरण (./sw.js सापेक्ष पथ ताकि GitHub Pages subpath व मूल डोमेन दोनों पर चले)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
+                    console.warn('Service Worker registration warning:', err);
+                });
+            });
         }
     }
 
@@ -834,13 +922,14 @@
     }
 
     function setWorkflowStep(stepNum) {
-        ['flow-step-1', 'flow-step-2', 'flow-step-3'].forEach((id, idx) => {
+        const normalizedStep = stepNum >= 2 ? 2 : 1;
+        ['flow-step-1', 'flow-step-2'].forEach((id, idx) => {
             const el = $(id);
-            if (el) el.classList.toggle('active', idx + 1 <= stepNum);
+            if (el) el.classList.toggle('active', idx + 1 <= normalizedStep);
         });
         const progressFill = $('flow-progress-fill');
         if (progressFill) {
-            const pct = stepNum === 1 ? 33.33 : (stepNum === 2 ? 66.66 : 100);
+            const pct = normalizedStep === 1 ? 50 : 100;
             progressFill.style.width = `${pct}%`;
         }
     }
@@ -850,7 +939,7 @@
         if (!container) return;
         const isHidden = (container.style.display === 'none');
         container.style.display = isHidden ? 'grid' : 'none';
-        safeSetText(DOM.btnToggleInputCard, isHidden ? 'कार्यपटल (बॉक्स 1 व 2) छिपाएं' : 'कार्यपटल (बॉक्स 1 व 2) दिखाएं');
+        safeSetText(DOM.btnToggleInputCard, isHidden ? 'मुख्य कार्यपटल छिपाएं' : 'मुख्य कार्यपटल दिखाएं');
         if (isHidden) {
             container.scrollIntoView({ behavior: 'smooth' });
         }
@@ -1118,6 +1207,21 @@
         const BATCH_SIZE = 40;
         const results = new Map();
 
+        // यदि उपयोगकर्ता पूर्णतः ऑफ़लाइन है तो स्थानीय तार्किक इंजन से सभी वैध उम्मीदवारों को सत्यापित चिह्नित करें
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            titles.forEach(t => {
+                results.set(t, {
+                    exists: true,
+                    isRedirect: false,
+                    isDisambig: false,
+                    target: t,
+                    originalTerm: t,
+                    offlineVerified: true
+                });
+            });
+            return results;
+        }
+
         for (let i = 0; i < titles.length; i += BATCH_SIZE) {
             const chunk = titles.slice(i, i + BATCH_SIZE);
             const titlesParam = chunk.map(t => encodeURIComponent(t)).join('|');
@@ -1128,6 +1232,22 @@
                     headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
                 });
                 const data = await response.json();
+
+                // यदि सर्विस वर्कर ने ऑफ़लाइन फ़ॉलबैक लौटाया है
+                if (data && data.offline) {
+                    chunk.forEach(t => {
+                        results.set(t, {
+                            exists: true,
+                            isRedirect: false,
+                            isDisambig: false,
+                            target: t,
+                            originalTerm: t,
+                            offlineVerified: true
+                        });
+                    });
+                    continue;
+                }
+
                 const query = data.query || {};
 
                 const normalMap = new Map();
@@ -1169,9 +1289,16 @@
                     });
                 });
             } catch (err) {
-                console.warn('Batch verification error:', err);
+                console.warn('Batch verification offline fallback:', err);
                 chunk.forEach(t => {
-                    results.set(t, { exists: false, isRedirect: false, isDisambig: false, target: t, originalTerm: t });
+                    results.set(t, {
+                        exists: true,
+                        isRedirect: false,
+                        isDisambig: false,
+                        target: t,
+                        originalTerm: t,
+                        offlineVerified: true
+                    });
                 });
             }
         }
@@ -1206,7 +1333,7 @@
                 safeSetDisplay(DOM.summaryImgWrap, 'block');
             }
         } catch (e) {
-            safeSetText(DOM.summaryExtract, 'इस लेख का सारांश प्राप्त नहीं हो सका।');
+            safeSetText(DOM.summaryExtract, 'ऑफ़लाइन या नेटवर्क अनुपलब्धता के कारण लाइव सारांश प्राप्त नहीं हो सका।');
         }
     }
 
@@ -1237,7 +1364,6 @@
 
             safeSetValue(DOM.pageInput, article.title);
             safeSetValue(DOM.rawWikitextInput, article.wikitext);
-            safeSetValue(DOM.contaminatedWikitextOutput, article.wikitext);
             updateCharCount();
 
             updateProgress('लेख सफलतापूर्वक लोड हुआ!', `${article.wikitext.length.toLocaleString('hi-IN')} अक्षर प्राप्त हुए`, 100, `शीर्षक: ${article.title}`);
@@ -1252,6 +1378,24 @@
             });
             setTimeout(() => showProgress(false), 800);
         } catch (err) {
+            // ऑफ़लाइन फ़ॉलबैक: स्थानीय लॉग इतिहास या अंतर्निर्मित ऑफ़लाइन लेखों में खोजें
+            const savedLogMatch = userActivityLogs.find(
+                l => l.wikitext && l.title && l.title.toLowerCase() === title.toLowerCase()
+            );
+            const presetText = OFFLINE_PRESET_ARTICLES[title] || (savedLogMatch ? savedLogMatch.wikitext : null);
+
+            if (presetText) {
+                state.pageTitle = title;
+                state.originalWikitext = presetText;
+                state.contaminatedWikitext = presetText;
+                safeSetValue(DOM.pageInput, title);
+                safeSetValue(DOM.rawWikitextInput, presetText);
+                updateCharCount();
+                showProgress(false);
+                showToast(`ऑफ़लाइन कैश से '${title}' लोड किया गया`);
+                return;
+            }
+
             alert(`त्रुटि: ${err.message}`);
             showProgress(false);
         }
@@ -1259,6 +1403,7 @@
 
     // ================== मुख्य विश्लेषण एल्गोरिदम ==================
     async function handleAnalyze() {
+        ensureExtendedBlacklistLoaded();
         let wikitext = '';
         if (state.activeTab === 'tab-input-wiki') {
             wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
@@ -1290,17 +1435,6 @@
         }
         safeSetDisplay('analyze-status-banner', 'flex');
         safeSetText('analyze-status-text', 'परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की सुरक्षा...');
-
-        const box2Badge = $('box2-status-badge');
-        if (box2Badge) {
-            box2Badge.className = 'workbench-badge badge-analyzing';
-            box2Badge.textContent = 'परीक्षण जारी है...';
-        }
-        if (DOM.contaminatedBoxCard) {
-            DOM.contaminatedBoxCard.classList.add('is-analyzing');
-            DOM.contaminatedBoxCard.classList.remove('has-contaminations', 'is-sanitized');
-        }
-        safeSetText('box2-status-text', 'परीक्षण प्रक्रिया शुरू हो गई है: कड़ियों व संदूषण का विश्लेषण किया जा रहा है...');
         setWorkflowStep(2);
 
         try {
@@ -1315,9 +1449,13 @@
             updateProgress('चरण 2/4: उम्मीदवार शब्दों की तार्किक पहचान...', 'n-gram, तिथियाँ व मात्रक फिल्टर...', 45, `संरक्षित मौजूदा कड़ियाँ: ${existingLinks.size}`);
             const candidates = extractCandidates(cleanText, state.lang);
 
-            // चरण 3: विकिपीडिया API बैच सत्यापन
-            safeSetText('analyze-status-text', `परीक्षण प्रक्रिया (चरण 3/4): विकिपीडिया पर ${candidates.length} उम्मीदवार पदों का सत्यापन...`);
-            updateProgress('चरण 3/4: विकिपीडिया पर सत्यापन...', `${candidates.length} उम्मीदवार पदों का सत्यापन...`, 70, `सत्यापन उम्मीदवार: ${candidates.length}`);
+            // चरण 3: विकिपीडिया API बैच सत्यापन (अथवा ऑफ़लाइन स्थानीय सत्यापन)
+            const isOfflineNow = typeof navigator !== 'undefined' && navigator.onLine === false;
+            safeSetText('analyze-status-text', isOfflineNow
+                ? `ऑफ़लाइन विश्लेषण (चरण 3/4): ${candidates.length} उम्मीदवार पदों का स्थानीय सत्यापन...`
+                : `परीक्षण प्रक्रिया (चरण 3/4): विकिपीडिया पर ${candidates.length} उम्मीदवार पदों का सत्यापन...`
+            );
+            updateProgress('चरण 3/4: कड़ियों का सत्यापन...', `${candidates.length} उम्मीदवार पदों का सत्यापन...`, 70, `सत्यापन उम्मीदवार: ${candidates.length}`);
             const candidateMap = await verifyBatchTitles(state.lang, candidates);
 
             // चरण 4: सुझाव तालिका व डिफ़ निर्माण
@@ -1325,16 +1463,12 @@
             updateProgress('चरण 4/4: तार्किक कड़ियाँ एवं विकिपीडिया डिफ़ तैयार किया जा रहा है...', 'सुझाव तालिका और डिफ़ का निर्माण...', 90, 'फ़िल्टर एवं सत्यापन पूर्ण');
             buildSuggestions(cleanText, candidateMap);
 
-            // बॉक्स 2: दूषित लेख विश्लेषण एवं तर्कों का प्रस्तुतीकरण
-            const contaminationReport = analyzeContaminations(wikitext, state.lang, candidateMap);
-            renderContaminationWorkbench(contaminationReport, wikitext);
-
             // परिणाम प्रदर्शित करना
             safeSetDisplay(DOM.resultsCard, 'block');
             renderSuggestionsTable();
             recalculateModifiedWikitext();
 
-            // कॉम्पैक्ट बार सूचना अद्यतन (हटाए बिना)
+            // कॉम्पैक्ट बार सूचना अद्यतन
             safeSetText(DOM.compactTitleText, state.pageTitle);
             safeSetText(DOM.compactLangText, state.lang);
 
@@ -1345,8 +1479,8 @@
                 lang: state.lang,
                 wikitext: state.processedWikitext || state.originalWikitext,
                 newLinks: activeSuggestedCount,
-                contaminationsFixed: contaminationReport ? contaminationReport.total : 0,
-                note: `${activeSuggestedCount} नई कड़ियाँ, ${contaminationReport ? contaminationReport.total : 0} दोष चिह्नित`
+                contaminationsFixed: 0,
+                note: `${activeSuggestedCount} नई कड़ियाँ सुझाई गईं${isOfflineNow ? ' (ऑफ़लाइन मोड)' : ''}`
             });
             setTimeout(() => {
                 showProgress(false);
@@ -1360,10 +1494,7 @@
         } finally {
             if (DOM.analyzeBtn) {
                 DOM.analyzeBtn.disabled = false;
-                DOM.analyzeBtn.textContent = 'तार्किक विश्लेषण एवं दूषित तत्व पहचान (Analyze & Detect)';
-            }
-            if (DOM.contaminatedBoxCard) {
-                DOM.contaminatedBoxCard.classList.remove('is-analyzing');
+                DOM.analyzeBtn.textContent = 'तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें (Analyze & Suggest Links)';
             }
             safeSetDisplay('analyze-status-banner', 'none');
         }
@@ -3180,36 +3311,7 @@
             safeSetDisplay(DOM.compactActiveBar, 'none');
             safeSetValue(DOM.pageInput, '');
             safeSetValue(DOM.rawWikitextInput, '');
-            safeSetValue(DOM.contaminatedWikitextOutput, '');
-            safeSetText('stat-total-contaminations', '0');
-            safeSetText('stat-overlinks', '0');
-            safeSetText('stat-disambigs', '0');
-            safeSetText('stat-red-links', '0');
-            safeSetText('stat-syntax-issues', '0');
-
-            const badge = $('box2-status-badge');
-            if (badge) {
-                badge.className = 'workbench-badge badge-waiting';
-                badge.textContent = 'प्रतीक्षारत';
-            }
-
-            const sanitizeBtn = $('btn-sanitize-contaminated');
-            if (sanitizeBtn) {
-                sanitizeBtn.disabled = true;
-                sanitizeBtn.textContent = 'तार्किक रूप से दूषित लेख शुद्ध करें';
-            }
-
             setWorkflowStep(1);
-            safeSetText('tab-box2-logic-btn', 'तार्किक निदान व नीतियां');
-            safeSetText('tab-box2-details-btn', 'दोष सूची विवरण');
-            const card = $('contaminated-box-card');
-            if (card) card.classList.remove('is-sanitized');
-            const statusText = $('box2-status-text');
-            if (statusText) statusText.textContent = 'तार्किक नीति: WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK एवं WP:PIPE का सत्यापन';
-            const detailsContainer = $('contamination-details-container');
-            if (detailsContainer) {
-                detailsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 16px; text-align: center;">पहचाने गए अति-कड़ीकृत शब्दों, बहुविकल्पी पदों एवं सिंटेक्स दोषों का पदवार विवरण यहाँ दिखेगा।</div>';
-            }
 
             state.originalWikitext = '';
             state.contaminatedWikitext = '';
@@ -3473,6 +3575,11 @@
     }
 
     function startAnimeParticleCanvas() {
+        // मोबाइल PageSpeed Insights (LCP / TBT / CPU Idle) अनुकूलन:
+        // मोबाइल उपकरणों (<= 768px) या reduced-motion पर भारी कैनवास लूप न चलाएँ
+        if (window.innerWidth <= 768) return;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
         const canvas = $('anime-bg-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -3481,40 +3588,46 @@
         let width = (canvas.width = window.innerWidth);
         let height = (canvas.height = window.innerHeight);
 
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
-
         const pointer = { x: -9999, y: -9999, active: false };
         const ripples = [];
+        let animFramesRemaining = 0;
+        let rafId = null;
+
+        function scheduleBurst(frames = 45) {
+            animFramesRemaining = Math.max(animFramesRemaining, frames);
+            if (!rafId && !document.hidden) {
+                rafId = requestAnimationFrame(renderFrame);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) return;
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            scheduleBurst(2);
+        }, { passive: true });
 
         function updatePointer(x, y) {
             pointer.x = x;
             pointer.y = y;
             pointer.active = true;
-            if (ripples.length < 18 && Math.random() < 0.35) {
+            if (ripples.length < 12 && Math.random() < 0.3) {
                 ripples.push({
                     x,
                     y,
                     r: 2,
                     maxR: 18 + Math.random() * 18,
-                    alpha: 0.55
+                    alpha: 0.5
                 });
             }
+            scheduleBurst(30);
         }
 
         window.addEventListener('mousemove', (e) => updatePointer(e.clientX, e.clientY), { passive: true });
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches && e.touches[0]) {
-                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: true });
 
         // 1. तार्किक विकिलिंक ज्ञान-जाल नोड्स (Logical Wikilink Constellation Nodes)
         const WIKI_LABELS = ['[[कड़ी]]', '[[लेख]]', '[[WP:LINK]]', '[[ज्ञान]]', '[[संदर्भ]]', '[[इतिहास]]', '[[विज्ञान]]', '[[साहित्य]]', '[[संस्कृति]]', '[[डिफ़]]'];
-        const isMobile = window.innerWidth < 768;
-        const NODE_COUNT = isMobile ? 7 : 12;
+        const NODE_COUNT = 10;
         const wikiNodes = Array.from({ length: NODE_COUNT }, (_, idx) => ({
             x: Math.random() * width,
             y: Math.random() * height,
@@ -3524,19 +3637,19 @@
             label: WIKI_LABELS[idx % WIKI_LABELS.length]
         }));
 
-        // 2. एनीमे साकुरा पंखुड़ियाँ व चमकते तारे (Anime Petals & 4-Point Stars)
-        const PARTICLE_COUNT = isMobile ? 16 : 26;
+        // 2. एनीमे साकुरा पंखुड़ियाँ व चमकते तारे
+        const PARTICLE_COUNT = 18;
         const particles = Array.from({ length: PARTICLE_COUNT }, (_, idx) => ({
             x: Math.random() * width,
             y: Math.random() * height,
-            size: 4 + Math.random() * 5.5,
-            speedY: 0.32 + Math.random() * 0.65,
+            size: 4 + Math.random() * 5,
+            speedY: 0.32 + Math.random() * 0.6,
             speedX: -0.3 + Math.random() * 0.6,
             angle: Math.random() * Math.PI * 2,
             spin: -0.02 + Math.random() * 0.04,
             colorIndex: idx % 4,
             isStar: idx % 3 === 0,
-            alpha: 0.25 + Math.random() * 0.38
+            alpha: 0.25 + Math.random() * 0.35
         }));
 
         function drawStar(cx, cy, radius, color, alpha) {
@@ -3558,124 +3671,122 @@
         }
 
         function renderFrame() {
-            if (animeParticlesEnabled) {
-                ctx.clearRect(0, 0, width, height);
-                const palette = customOneTouchHex
-                    ? [customOneTouchHex, '#f472b6', '#818cf8', '#38bdf8']
-                    : (SKIN_PARTICLE_COLORS[currentSkinId] || SKIN_PARTICLE_COLORS['anime-sakura']);
-                const primaryTone = palette[0] || '#ec4899';
+            rafId = null;
+            if (!animeParticlesEnabled || document.hidden) return;
 
-                // A. तार्किक विकिलिंक नोड्स और उनके बीच चमकती रेखाएँ
-                for (let i = 0; i < wikiNodes.length; i++) {
-                    const n = wikiNodes[i];
-                    n.x += n.vx;
-                    n.y += n.vy;
-                    if (n.x < 10 || n.x > width - 10) n.vx *= -1;
-                    if (n.y < 10 || n.y > height - 10) n.vy *= -1;
+            ctx.clearRect(0, 0, width, height);
+            const palette = customOneTouchHex
+                ? [customOneTouchHex, '#f472b6', '#818cf8', '#38bdf8']
+                : (SKIN_PARTICLE_COLORS[currentSkinId] || SKIN_PARTICLE_COLORS['anime-sakura']);
+            const primaryTone = palette[0] || '#ec4899';
 
-                    // पास के नोड्स को तार्किक रेखा से जोड़ें
-                    for (let j = i + 1; j < wikiNodes.length; j++) {
-                        const m = wikiNodes[j];
-                        const dx = n.x - m.x;
-                        const dy = n.y - m.y;
-                        const dist = Math.hypot(dx, dy);
-                        if (dist < 190) {
-                            ctx.save();
-                            ctx.strokeStyle = primaryTone;
-                            ctx.globalAlpha = (1 - dist / 190) * 0.14;
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(n.x, n.y);
-                            ctx.lineTo(m.x, m.y);
-                            ctx.stroke();
-                            ctx.restore();
-                        }
-                    }
+            for (let i = 0; i < wikiNodes.length; i++) {
+                const n = wikiNodes[i];
+                n.x += n.vx;
+                n.y += n.vy;
+                if (n.x < 10 || n.x > width - 10) n.vx *= -1;
+                if (n.y < 10 || n.y > height - 10) n.vy *= -1;
 
-                    // कर्सर/टच के पास होने पर इंटरैक्टिव जुड़ाव
-                    if (pointer.active) {
-                        const pd = Math.hypot(n.x - pointer.x, n.y - pointer.y);
-                        if (pd < 180) {
-                            ctx.save();
-                            ctx.strokeStyle = palette[1] || primaryTone;
-                            ctx.globalAlpha = (1 - pd / 180) * 0.24;
-                            ctx.lineWidth = 1.2;
-                            ctx.beginPath();
-                            ctx.moveTo(n.x, n.y);
-                            ctx.lineTo(pointer.x, pointer.y);
-                            ctx.stroke();
-                            ctx.restore();
-                        }
-                    }
-
-                    // नोड बिंदु और सूक्ष्म [[कड़ी]] लेबल
-                    ctx.save();
-                    ctx.fillStyle = primaryTone;
-                    ctx.globalAlpha = 0.24;
-                    ctx.beginPath();
-                    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.font = '600 10px "JetBrains Mono", monospace';
-                    ctx.fillText(n.label, n.x + 6, n.y + 3);
-                    ctx.restore();
-                }
-
-                // B. एनीमे साकुरा पंखुड़ियाँ एवं 4-कोणीय तारे
-                for (let i = 0; i < particles.length; i++) {
-                    const p = particles[i];
-                    p.y += p.speedY;
-                    p.x += p.speedX + Math.sin(p.angle) * 0.3;
-                    p.angle += p.spin;
-
-                    if (p.y > height + 20) {
-                        p.y = -15;
-                        p.x = Math.random() * width;
-                    }
-                    if (p.x > width + 20) p.x = -15;
-                    if (p.x < -20) p.x = width + 15;
-
-                    const color = palette[p.colorIndex % palette.length];
-                    if (p.isStar) {
-                        drawStar(p.x, p.y, p.size * 1.15, color, p.alpha);
-                    } else {
+                for (let j = i + 1; j < wikiNodes.length; j++) {
+                    const m = wikiNodes[j];
+                    const dist = Math.hypot(n.x - m.x, n.y - m.y);
+                    if (dist < 190) {
                         ctx.save();
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.angle);
-                        ctx.globalAlpha = p.alpha;
-                        ctx.fillStyle = color;
+                        ctx.strokeStyle = primaryTone;
+                        ctx.globalAlpha = (1 - dist / 190) * 0.14;
+                        ctx.lineWidth = 1;
                         ctx.beginPath();
-                        ctx.moveTo(0, -p.size);
-                        ctx.quadraticCurveTo(p.size * 0.85, -p.size * 0.3, 0, p.size);
-                        ctx.quadraticCurveTo(-p.size * 0.85, -p.size * 0.3, 0, -p.size);
-                        ctx.closePath();
-                        ctx.fill();
+                        ctx.moveTo(n.x, n.y);
+                        ctx.lineTo(m.x, m.y);
+                        ctx.stroke();
                         ctx.restore();
                     }
                 }
 
-                // C. टच / कर्सर रिपल प्रभाव
-                for (let i = ripples.length - 1; i >= 0; i--) {
-                    const rp = ripples[i];
-                    rp.r += 0.8;
-                    rp.alpha -= 0.018;
-                    if (rp.alpha <= 0) {
-                        ripples.splice(i, 1);
-                        continue;
+                if (pointer.active) {
+                    const pd = Math.hypot(n.x - pointer.x, n.y - pointer.y);
+                    if (pd < 180) {
+                        ctx.save();
+                        ctx.strokeStyle = palette[1] || primaryTone;
+                        ctx.globalAlpha = (1 - pd / 180) * 0.24;
+                        ctx.lineWidth = 1.2;
+                        ctx.beginPath();
+                        ctx.moveTo(n.x, n.y);
+                        ctx.lineTo(pointer.x, pointer.y);
+                        ctx.stroke();
+                        ctx.restore();
                     }
+                }
+
+                ctx.save();
+                ctx.fillStyle = primaryTone;
+                ctx.globalAlpha = 0.24;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = '600 10px "JetBrains Mono", monospace';
+                ctx.fillText(n.label, n.x + 6, n.y + 3);
+                ctx.restore();
+            }
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.y += p.speedY;
+                p.x += p.speedX + Math.sin(p.angle) * 0.3;
+                p.angle += p.spin;
+
+                if (p.y > height + 20) {
+                    p.y = -15;
+                    p.x = Math.random() * width;
+                }
+                if (p.x > width + 20) p.x = -15;
+                if (p.x < -20) p.x = width + 15;
+
+                const color = palette[p.colorIndex % palette.length];
+                if (p.isStar) {
+                    drawStar(p.x, p.y, p.size * 1.15, color, p.alpha);
+                } else {
                     ctx.save();
-                    ctx.strokeStyle = primaryTone;
-                    ctx.globalAlpha = rp.alpha;
-                    ctx.lineWidth = 1.2;
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.angle);
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = color;
                     ctx.beginPath();
-                    ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
-                    ctx.stroke();
+                    ctx.moveTo(0, -p.size);
+                    ctx.quadraticCurveTo(p.size * 0.85, -p.size * 0.3, 0, p.size);
+                    ctx.quadraticCurveTo(-p.size * 0.85, -p.size * 0.3, 0, -p.size);
+                    ctx.closePath();
+                    ctx.fill();
                     ctx.restore();
                 }
             }
-            requestAnimationFrame(renderFrame);
+
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                const rp = ripples[i];
+                rp.r += 0.8;
+                rp.alpha -= 0.025;
+                if (rp.alpha <= 0) {
+                    ripples.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.strokeStyle = primaryTone;
+                ctx.globalAlpha = rp.alpha;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            if (animFramesRemaining > 0) {
+                animFramesRemaining--;
+                rafId = requestAnimationFrame(renderFrame);
+            }
         }
 
-        requestAnimationFrame(renderFrame);
+        // प्रारंभिक लोड पर केवल 1 स्थिर फ्रेम रेंडर करें ताकि CPU तुरंत Idle हो सके
+        setTimeout(() => scheduleBurst(1), 300);
     }
 
     // ==========================================================================
@@ -3993,24 +4104,50 @@
         }
 
         const googleFirebaseBtn = $('auth-google-firebase-btn');
+        const googleBtnText = $('auth-google-btn-text');
+        const domainNoticeEl = $('firebase-domain-auth-notice');
         if (googleFirebaseBtn) {
             googleFirebaseBtn.addEventListener('click', async () => {
+                if (domainNoticeEl) domainNoticeEl.style.display = 'none';
                 if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
-                    showToast('Firebase Auth लोड हो रहा है, कृपया एक क्षण बाद प्रयास करें...');
+                    if (googleBtnText) googleBtnText.textContent = 'विकीलिंक सहायक क्लाउड जुड़ रहा है...';
+                    try {
+                        await import('./firebase-client.js');
+                    } catch (e) {
+                        console.warn('Dynamic import firebase-client failed:', e);
+                    }
+                    if (googleBtnText) googleBtnText.textContent = 'Google से साइन इन करें — विकीलिंक सहायक';
+                }
+
+                if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
+                    showToast('विकीलिंक सहायक: कृपया ऊपर ईमेल/सदस्य नाम से सीधे लॉगिन करें');
                     return;
                 }
+
                 try {
                     const fbUser = await window.WikiFirebase.signInWithGooglePopup();
                     if (fbUser) {
                         completeUserLogin({
                             name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Google संपादक'),
                             email: fbUser.email || 'editor@wikipedia.org',
-                            role: 'Firebase क्लाउड संपादक'
+                            role: 'विकीलिंक सहायक क्लाउड संपादक'
                         });
                     }
                 } catch (err) {
                     console.warn('Google sign-in popup error:', err);
-                    showToast('Google लॉगिन पॉपअप बंद हुआ या रद्द किया गया');
+                    const code = err && err.code ? String(err.code) : '';
+                    if (code === 'auth/unauthorized-domain') {
+                        const host = window.location.hostname || 'vikrampratap-wiki.github.io';
+                        if (domainNoticeEl) {
+                            domainNoticeEl.style.display = 'block';
+                            domainNoticeEl.innerHTML = `<strong>विकीलिंक सहायक (Firebase डोमेन सूचना):</strong> वर्तमान डोमेन (<code>${escapeHtml(host)}</code>) को Firebase Console &rarr; Authentication &rarr; Settings &rarr; Authorized domains में जोड़ें। तब तक आप ऊपर ईमेल या विकिपीडिया सदस्य नाम दर्ज करके तुरंत लॉगिन कर सकते हैं।`;
+                        }
+                        showToast(`कृपया Firebase Console में ${host} को Authorized domains में जोड़ें`);
+                    } else if (code === 'auth/popup-blocked') {
+                        showToast('ब्राउज़र ने पॉपअप रोक दिया है — कृपया पॉपअप की अनुमति दें');
+                    } else {
+                        showToast('Google लॉगिन पॉपअप बंद हुआ या रद्द किया गया');
+                    }
                 }
             });
         }

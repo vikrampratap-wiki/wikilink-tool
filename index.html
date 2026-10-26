@@ -7,10 +7,19 @@
     <meta name="description" content="विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, अति-कड़ीकरण शोधन एवं मीडियाविकी डिफ़ समीक्षा का स्वतंत्र उपकरण">
     <meta property="og:title" content="विकीलिंक सहायक (WikiLink Assistant)">
     <meta property="og:description" content="विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, अति-कड़ीकरण शोधन एवं मीडियाविकी डिफ़ समीक्षा का स्वतंत्र उपकरण">
+    <meta name="theme-color" content="#0969da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WikiLink">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
     <script type="importmap">
     {
       "imports": {
@@ -76,7 +85,7 @@
                 </button>
             </div>
             <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
-                <a href="index.html" class="btn btn-primary btn-sm nav-page-btn active" title="मुख्य कार्यपटल (बॉक्स 1 व 2)">
+                <a href="index.html" class="btn btn-primary btn-sm nav-page-btn active" title="मुख्य कार्यपटल">
                     🛠️ कार्यपटल
                 </a>
                 <a href="logs.html" class="btn btn-outline btn-sm nav-page-btn" title="उपयोगकर्ता प्रोफ़ाइल, थीम स्टूडियो एवं गतिविधि लॉग पेज">
@@ -89,6 +98,9 @@
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
+                <button type="button" id="pwa-install-btn" class="btn btn-outline btn-sm pwa-install-btn" style="display: none;" title="ऑफ़लाइन कार्यपटल ऐप इंस्टॉल करें">
+                    📲 ऐप इंस्टॉल करें
+                </button>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से तुरंत लॉगआउट करें">
                     लॉगआउट ⏻
                 </button>
@@ -96,6 +108,12 @@
             </nav>
         </div>
     </header>
+
+    <!-- ऑफ़लाइन मोड सूचना पट्टी (Offline Workbench Banner) -->
+    <div id="offline-connectivity-banner" class="offline-connectivity-banner container" style="display: none;" role="status" aria-live="polite">
+        <span class="offline-pulse-dot"></span>
+        <span><strong>ऑफ़लाइन मोड सक्रिय:</strong> इंटरनेट कनेक्शन उपलब्ध नहीं है — सर्विस वर्कर कैश और स्थानीय तार्किक इंजन से मुख्य कार्यपटल (लेख विश्लेषण, कड़ियों की पहचान एवं लाइव डिफ़) पूर्णतः कार्यशील है।</span>
+    </div>
 
     <!-- मुख्य कंटेनर (Main Container - Dedicated Workbench View) -->
     <main class="main-content container">
@@ -110,7 +128,7 @@
             </div>
             <div class="compact-actions">
                 <button type="button" id="btn-toggle-input-card" class="btn btn-secondary btn-sm">
-                    कार्यपटल (बॉक्स 1 व 2) दिखाएं / छिपाएं
+                    मुख्य कार्यपटल दिखाएं / छिपाएं
                 </button>
             </div>
         </div>
@@ -120,31 +138,26 @@
             <div class="flow-steps-row">
                 <div class="flow-step step-1 active" id="flow-step-1">
                     <span class="flow-num">1</span>
-                    <span class="flow-label">बॉक्स 1: मूल लेख एवं तार्किक छन्नी</span>
+                    <span class="flow-label">मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</span>
                 </div>
                 <div class="flow-arrow" aria-hidden="true">→</div>
                 <div class="flow-step step-2" id="flow-step-2">
                     <span class="flow-num">2</span>
-                    <span class="flow-label">बॉक्स 2: दूषित लेख एवं तार्किक निदान</span>
-                </div>
-                <div class="flow-arrow" aria-hidden="true">→</div>
-                <div class="flow-step step-3" id="flow-step-3">
-                    <span class="flow-num">3</span>
-                    <span class="flow-label">समीक्षा एवं विकिपीडिया डिफ़</span>
+                    <span class="flow-label">कड़ियों की समीक्षा एवं विकिपीडिया डिफ़</span>
                 </div>
             </div>
             <div class="flow-progress-track" aria-hidden="true">
-                <div class="flow-progress-fill" id="flow-progress-fill" style="width: 33.33%;"></div>
+                <div class="flow-progress-fill" id="flow-progress-fill" style="width: 50%;"></div>
             </div>
         </div>
 
-        <!-- दोहरे कार्यपटल (Dual-Box Workbench Layout) -->
-        <div class="dual-workbench-container" id="dual-workbench-container">
-            <!-- 1. बॉक्स 1: मूल लेख एवं तार्किक छन्नी (Input Article & Filters Box) -->
+        <!-- मुख्य कार्यपटल (Unified Workbench Layout) -->
+        <div class="dual-workbench-container single-workbench-layout" id="dual-workbench-container">
+            <!-- 1. मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी (Input Article & Filters Box) -->
             <section id="input-control-card" class="workbench-card">
                 <div class="workbench-card-header">
                     <div>
-                        <h2 class="workbench-card-title">बॉक्स 1: मूल लेख एवं तार्किक छन्नी</h2>
+                        <h2 class="workbench-card-title">मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</h2>
                         <small class="form-hint">यहाँ विकिपीडिया लेख लोड करें एवं कड़ियों की तार्किक छन्नी निर्धारित करें</small>
                     </div>
                     <span class="workbench-badge badge-source">स्रोत व छन्नी</span>
@@ -392,104 +405,15 @@
                     </div>
                 </div>
 
-                <!-- 1.5 बॉक्स 1 मुख्य विश्लेषण बटन एवं सक्रिय परीक्षण स्थिति -->
+                <!-- 1.5 मुख्य विश्लेषण बटन एवं सक्रिय परीक्षण स्थिति -->
                 <div class="action-footer" style="margin-top: 10px;">
                     <button type="button" id="analyze-btn" class="btn btn-primary btn-lg" style="width: 100%;">
-                        तार्किक विश्लेषण एवं दूषित तत्व पहचान (Analyze & Detect)
+                        तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें (Analyze & Suggest Links)
                     </button>
                     <div id="analyze-status-banner" class="analyze-status-banner" style="display: none;">
                         <span class="analyze-spinner"></span>
                         <span id="analyze-status-text">परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की वैधता जाँची जा रही है...</span>
                     </div>
-                </div>
-            </section>
-
-            <!-- 2. बॉक्स 2: दूषित लेख एवं तार्किक निदान (Contaminated Article & Logic Box) -->
-            <section id="contaminated-box-card" class="workbench-card">
-                <div class="workbench-card-header">
-                    <div>
-                        <h2 class="workbench-card-title">बॉक्स 2: दूषित लेख एवं तार्किक निदान</h2>
-                        <small class="form-hint">विश्लेषण उपरांत दूषित कड़ियाँ, अति-कड़ीकरण एवं नीतिगत तर्क यहाँ प्रदर्शित होंगे</small>
-                    </div>
-                    <span id="box2-status-badge" class="workbench-badge badge-waiting">प्रतीक्षारत</span>
-                </div>
-
-                <!-- 2.1 दूषित तत्व सांख्यिकी ग्रिड -->
-                <div class="contamination-stats-grid">
-                    <div class="contamination-stat-item">
-                        <span class="contamination-stat-label">कुल दूषित तत्व</span>
-                        <span class="contamination-stat-value" id="stat-total-contaminations">0</span>
-                    </div>
-                    <div class="contamination-stat-item">
-                        <span class="contamination-stat-label">अति-कड़ीकरण</span>
-                        <span class="contamination-stat-value text-warning" id="stat-overlinks">0</span>
-                    </div>
-                    <div class="contamination-stat-item">
-                        <span class="contamination-stat-label">बहुविकल्पी</span>
-                        <span class="contamination-stat-value text-danger" id="stat-disambigs">0</span>
-                    </div>
-                    <div class="contamination-stat-item">
-                        <span class="contamination-stat-label">लाल कड़ियाँ</span>
-                        <span class="contamination-stat-value text-danger" id="stat-red-links">0</span>
-                    </div>
-                    <div class="contamination-stat-item">
-                        <span class="contamination-stat-label">सिंटेक्स/मात्रक</span>
-                        <span class="contamination-stat-value text-secondary" id="stat-syntax-issues">0</span>
-                    </div>
-                </div>
-
-                <!-- 2.2 बॉक्स 2 दृश्य चयन टैब एवं कॉपी क्रिया -->
-                <div class="box2-nav-toolbar">
-                    <div class="box2-tabs">
-                        <button type="button" class="box2-tab-btn active" data-box2-tab="text" id="tab-box2-text-btn">दूषित विकिटेक्स्ट</button>
-                        <button type="button" class="box2-tab-btn" data-box2-tab="logic" id="tab-box2-logic-btn">तार्किक निदान व नीतियां</button>
-                        <button type="button" class="box2-tab-btn" data-box2-tab="details" id="tab-box2-details-btn">दोष सूची विवरण</button>
-                    </div>
-                    <button type="button" id="btn-copy-contaminated" class="btn btn-text btn-sm">दूषित पाठ कॉपी करें</button>
-                </div>
-
-                <!-- 2.3 बॉक्स 2 सामग्री क्षेत्र (220px fixed height) -->
-                <div class="box2-content-area">
-                    <!-- दृश्य 1: दूषित विकिटेक्स्ट बॉक्स -->
-                    <div id="box2-pane-text" class="box2-tab-pane active">
-                        <textarea id="contaminated-wikitext-output" class="form-control monospace-input workbench-textarea" readonly placeholder="विश्लेषण आरंभ होने पर दूषित/समस्याग्रस्त विकिटेक्स्ट स्वतः यहाँ पहुँचेगा..."></textarea>
-                    </div>
-
-                    <!-- दृश्य 2: तर्कों का प्रयोग (Wikipedia Policy Arguments Container) -->
-                    <div id="box2-pane-logic" class="box2-tab-pane" style="display: none;">
-                        <div class="contamination-logic-box">
-                            <div class="logic-box-title">
-                                <span>विकिपीडिया तार्किक विश्लेषण (Policy Arguments)</span>
-                                <span id="logic-rule-count" class="badge badge-tool">0 नियम सक्रिय</span>
-                            </div>
-                            <div id="contamination-arguments-container">
-                                <div style="color: var(--text-muted); font-size: 0.85rem; padding: 16px; text-align: center;">
-                                    लेख का विश्लेषण करने पर पाए गए दोषों का तार्किक कारण (WP:LINK, WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK) यहाँ प्रदर्शित होगा।
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- दृश्य 3: दोष विवरण सूची -->
-                    <div id="box2-pane-details" class="box2-tab-pane" style="display: none;">
-                        <div id="contamination-details-container" class="contamination-details-box">
-                            <div style="color: var(--text-muted); font-size: 0.85rem; padding: 16px; text-align: center;">
-                                पहचाने गए अति-कड़ीकृत शब्दों, बहुविकल्पी पदों एवं सिंटेक्स दोषों का पदवार विवरण यहाँ दिखेगा।
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2.4 तार्किक स्थिति सारांश पट्टी -->
-                <div class="box2-status-strip">
-                    <span class="box2-status-text" id="box2-status-text">तार्किक नीति: WP:OVERLINKING, WP:DISAMBIG, WP:DATELINK एवं WP:PIPE का सत्यापन</span>
-                </div>
-
-                <!-- 2.5 बॉक्स 2 क्रिया बटन -->
-                <div class="action-footer" style="margin-top: 10px;">
-                    <button type="button" id="btn-sanitize-contaminated" class="btn btn-success btn-lg" style="width: 100%;" disabled>
-                        तार्किक रूप से दूषित लेख शुद्ध करें (Clean & Sanitize)
-                    </button>
                 </div>
             </section>
         </div>
@@ -548,10 +472,9 @@
             <div id="aux-guide-details" class="aux-guide-details" style="display: none;">
                 <h4>सहायक उपकरणों का चरणबद्ध उपयोग:</h4>
                 <ol>
-                    <li><strong>लेख लोड करें:</strong> सबसे पहले बॉक्स 1 में विकिपीडिया लेख लोड करें या विकिटेक्स्ट दर्ज करें।</li>
-                    <li><strong>तार्किक विश्लेषण:</strong> 'तार्किक विश्लेषण एवं दूषित तत्व पहचान' दबाएँ। बॉक्स 2 में दूषित लेख व नीतिगत तर्क प्रदर्शित होंगे।</li>
-                    <li><strong>तार्किक शुद्धिकरण:</strong> बॉक्स 2 में 'तार्किक रूप से दूषित लेख शुद्ध करें' दबाकर दूषित कड़ियों को साफ़ करें।</li>
-                    <li><strong>समीक्षा व डिफ़:</strong> मीडियाविकी डिफ़ में परिवर्तनों की पुष्टि करें और संशोधित विकिटेक्स्ट विकिपीडिया पर पेस्ट करें।</li>
+                    <li><strong>लेख लोड करें:</strong> सबसे पहले मुख्य कार्यपटल में विकिपीडिया लेख लोड करें या विकिटेक्स्ट दर्ज करें।</li>
+                    <li><strong>तार्किक विश्लेषण:</strong> 'तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें' दबाएँ।</li>
+                    <li><strong>समीक्षा व डिफ़:</strong> सुझाव तालिका एवं मीडियाविकी डिफ़ में परिवर्तनों की पुष्टि करें और संशोधित विकिटेक्स्ट विकिपीडिया पर पेस्ट करें।</li>
                 </ol>
             </div>
         </div>
@@ -935,7 +858,7 @@
             <div class="footer-sitemap-grid">
                 <a href="index.html" class="footer-page-card active">
                     <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
-                    <span>बॉक्स 1 (मूल लेख), बॉक्स 2 (दूषित कड़ी निदान) व लाइव डिफ़</span>
+                    <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
                 <a href="logs.html" class="footer-page-card">
                     <strong>👤 2. प्रोफ़ाइल, थीम व मेरा लॉग (Profile & Logs)</strong>
@@ -964,8 +887,8 @@
         </div>
     </footer>
 
-    <script src="words_blacklist.js"></script>
+    <script src="words_blacklist.js" defer></script>
     <script type="module" src="firebase-client.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
 </body>
 </html>

@@ -1,16 +1,16 @@
 /**
- * WikiLink Assistant - Firebase (Firestore + Google Auth) Client Integration
- * Connects the application to the provisioned Cloud Firestore database and Firebase Authentication.
+ * विकीलिंक सहायक (WikiLink Assistant) — Firebase (Firestore + Google Auth) Client Integration
+ * Supports both AI Studio Cloud Run (/) and GitHub Pages (/wikilink-tool/) deployments.
  */
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
   onAuthStateChanged
-} from 'firebase/auth';
+} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
 import {
   getFirestore,
   doc,
@@ -25,7 +25,25 @@ import {
   writeBatch,
   serverTimestamp,
   getDocFromServer
-} from 'firebase/firestore';
+} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
+
+export const TOOL_DISPLAY_NAME = 'विकीलिंक सहायक (WikiLink Assistant)';
+
+// Built-in configuration so subpath deployments (e.g. https://vikrampratap-wiki.github.io/wikilink-tool/)
+// initialize immediately without failing on root-relative fetch('/firebase-applet-config.json').
+const DEFAULT_FIREBASE_CONFIG = {
+  appName: TOOL_DISPLAY_NAME,
+  projectId: 'gen-lang-client-0674523264',
+  appId: '1:427939105273:web:f28b4dff0f837055675528',
+  apiKey: 'AIzaSyB53REyQ8sajBSd9pAafMO3V7-fggJ36b4',
+  authDomain: 'gen-lang-client-0674523264.firebaseapp.com',
+  firestoreDatabaseId: 'ai-studio-wikilinktool-edb12aa5-8e5d-4788-a1e8-8cf16feeb5e1',
+  storageBucket: 'gen-lang-client-0674523264.firebasestorage.app',
+  messagingSenderId: '427939105273',
+  measurementId: '',
+  oAuthClientId: '427939105273-5cd0s50fupo14af8d7vegdm1kalhhi4q.apps.googleusercontent.com',
+  recaptchaSiteKey: ''
+};
 
 export const OperationType = {
   CREATE: 'create',
@@ -49,6 +67,7 @@ let app = null;
 let db = null;
 let auth = null;
 let unsubscribeLogsSnapshot = null;
+let authListenerBound = false;
 const profileEnsurePromises = new Map();
 
 function sanitizeId(rawId) {
@@ -86,8 +105,22 @@ export function handleFirestoreError(error, operationType, path) {
   throw new Error(JSON.stringify(errInfo));
 }
 
+function initFirebaseInstances(config = DEFAULT_FIREBASE_CONFIG) {
+  if (!app) {
+    app = getApps().length > 0 ? getApp() : initializeApp(config);
+  }
+  if (!db) {
+    db = getFirestore(app, config.firestoreDatabaseId || DEFAULT_FIREBASE_CONFIG.firestoreDatabaseId);
+  }
+  if (!auth) {
+    auth = getAuth(app);
+    auth.languageCode = 'hi';
+  }
+  return { app, db, auth };
+}
+
 async function testConnection() {
-  if (!db) return;
+  if (!db || !navigator.onLine) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
@@ -320,7 +353,7 @@ async function updatePreferredSkinInFirestore(skinId) {
 }
 
 async function signInWithGooglePopup() {
-  if (!auth) throw new Error('Firebase Auth अभी लोड हो रहा है, कृपया एक क्षण प्रतीक्षा करें।');
+  initFirebaseInstances(DEFAULT_FIREBASE_CONFIG);
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   const result = await signInWithPopup(auth, provider);
@@ -345,67 +378,79 @@ async function signOutFirebaseUser() {
   }
 }
 
+// Immediately initialize Firebase & expose window.WikiFirebase synchronously so the Google Sign-In
+// button never gets stuck on "Firebase Auth लोड हो रहा है..."
+initFirebaseInstances(DEFAULT_FIREBASE_CONFIG);
+
+window.WikiFirebase = {
+  isReady: true,
+  toolName: TOOL_DISPLAY_NAME,
+  getCurrentUser: () => auth?.currentUser || null,
+  signInWithGooglePopup,
+  signOutFirebaseUser,
+  saveActivityLogToFirestore,
+  deleteSingleActivityLogInFirestore,
+  clearUserActivityLogsInFirestore,
+  updatePreferredSkinInFirestore,
+  handleFirestoreError,
+  OperationType
+};
+
 async function bootFirebaseIntegration() {
   try {
-    const res = await fetch('/firebase-applet-config.json');
-    if (!res.ok) {
-      console.warn('firebase-applet-config.json not found');
-      return;
-    }
-    const firebaseConfig = await res.json();
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-    auth = getAuth(app);
-
-    // Validate Firestore connection on boot
-    await testConnection();
-
-    onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        let profile = null;
-        if (firebaseUser.emailVerified) {
-          try {
-            profile = await ensureUserProfileInFirestore(firebaseUser);
-          } catch (err) {
-            console.warn('Profile sync warning:', err);
-          }
-          subscribeToUserActivityLogs(firebaseUser.uid);
-        }
-
-        const userDetail = {
-          uid: firebaseUser.uid,
-          name: profile?.displayName || firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'विकिपीडिया संपादक'),
-          email: firebaseUser.email || 'editor@wikipedia.org',
-          emailVerified: firebaseUser.emailVerified,
-          role: 'Firebase क्लाउड संपादक',
-          preferredSkin: profile?.preferredSkin || null,
-          isFirebaseUser: true
-        };
-
-        window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: userDetail } }));
-      } else {
-        if (unsubscribeLogsSnapshot) {
-          unsubscribeLogsSnapshot();
-          unsubscribeLogsSnapshot = null;
-        }
-        window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: null } }));
+    // Also check relative './firebase-applet-config.json' (works on both '/' and '/wikilink-tool/')
+    try {
+      const res = await fetch('./firebase-applet-config.json');
+      if (res.ok) {
+        const fetchedConfig = await res.json();
+        initFirebaseInstances({ ...DEFAULT_FIREBASE_CONFIG, ...fetchedConfig });
       }
-    });
+    } catch (fetchErr) {
+      // Fallback config is already active
+    }
 
-    window.WikiFirebase = {
-      isReady: true,
-      getCurrentUser: () => auth?.currentUser || null,
-      signInWithGooglePopup,
-      signOutFirebaseUser,
-      saveActivityLogToFirestore,
-      deleteSingleActivityLogInFirestore,
-      clearUserActivityLogsInFirestore,
-      updatePreferredSkinInFirestore,
-      handleFirestoreError,
-      OperationType
-    };
+    if (!authListenerBound && auth) {
+      authListenerBound = true;
+      onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          let profile = null;
+          if (firebaseUser.emailVerified) {
+            try {
+              profile = await ensureUserProfileInFirestore(firebaseUser);
+            } catch (err) {
+              console.warn('Profile sync warning:', err);
+            }
+            subscribeToUserActivityLogs(firebaseUser.uid);
+          }
+
+          const userDetail = {
+            uid: firebaseUser.uid,
+            name:
+              profile?.displayName ||
+              firebaseUser.displayName ||
+              (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'विकिपीडिया संपादक'),
+            email: firebaseUser.email || 'editor@wikipedia.org',
+            emailVerified: firebaseUser.emailVerified,
+            role: `${TOOL_DISPLAY_NAME} • क्लाउड संपादक`,
+            preferredSkin: profile?.preferredSkin || null,
+            isFirebaseUser: true
+          };
+
+          window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: userDetail } }));
+        } else {
+          if (unsubscribeLogsSnapshot) {
+            unsubscribeLogsSnapshot();
+            unsubscribeLogsSnapshot = null;
+          }
+          window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: null } }));
+        }
+      });
+    }
 
     window.dispatchEvent(new CustomEvent('wikilink:firebase-ready'));
+
+    // Validate Firestore connection non-blockingly in the background
+    testConnection();
   } catch (err) {
     console.error('Firebase initialization error:', err);
   }
