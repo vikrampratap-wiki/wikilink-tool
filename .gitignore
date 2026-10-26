@@ -1,3 +1,25 @@
+# Environment & API Keys (Never commit to GitHub)
+.env
+.env.*
+!.env.example
+
+# Firebase & Google Cloud Local Config / Credentials
+firebase-applet-config.json
+firebase-debug.log
+firestore-debug.log
+service-account*.json
+credentials*.json
+*.pem
+*.key
+
+# Dependencies & Build Artifacts
+node_modules/
+_site/
+dist/
+.aistudio/
+.agents/
+
+# OS & Logs
 __pycache__/
 *.pyc
 .DS_Store

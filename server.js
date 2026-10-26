@@ -19,30 +19,72 @@ const MIME_TYPES = {
   '.jpeg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
   '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
 
+// संवेदनशील और आंतरिक सर्वर फ़ाइलों की सूची जिन्हें कभी भी ब्राउज़र पर सार्वजनिक रूप से सर्व नहीं किया जाएगा
+const BLOCKED_FILES = new Set([
+  '/server.js',
+  '/server.py',
+  '/package.json',
+  '/bun.lock',
+  '/firestore.rules',
+  '/firestore.rules.test.ts',
+  '/firebase-blueprint.json',
+  '/security_spec.md',
+  '/eslint.config.mjs',
+  '/open_tool.sh',
+  '/.env',
+  '/.env.local',
+  '/.env.example',
+  '/.gitignore'
+]);
+
+function isAllowedWikiProxyTarget(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== 'https:') return false;
+    const host = parsed.hostname.toLowerCase();
+    return (
+      host.endsWith('.wikipedia.org') ||
+      host === 'wikipedia.org' ||
+      host.endsWith('.wikimedia.org') ||
+      host.endsWith('.wiktionary.org')
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
 const server = http.createServer((req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Api-User-Agent');
+  // सुरक्षा हेडर्स (Security Hardening Headers)
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Service-Worker-Allowed', '/');
 
   if (req.method === 'OPTIONS') {
-    res.writeHead(200);
+    res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Method Not Allowed');
     return;
   }
 
   const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
+  // केवल वैध विकिमीडिया डोमेन के लिए सुरक्षित प्रॉक्सी (SSRF सुरक्षा सहित)
   if (parsedUrl.pathname.startsWith('/api/wiki-proxy')) {
     const targetUrl = parsedUrl.searchParams.get('url');
-    if (!targetUrl) {
-      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: 'Missing url parameter' }));
+    if (!targetUrl || !isAllowedWikiProxyTarget(targetUrl)) {
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Forbidden: Only official Wikimedia HTTPS endpoints are permitted.' }));
       return;
     }
 
@@ -50,7 +92,7 @@ const server = http.createServer((req, res) => {
       targetUrl,
       {
         headers: {
-          'User-Agent': 'WikiLinkAssistant/2.1 (https://github.com/vikrampratap-wiki/wikilink-tool)'
+          'User-Agent': 'WikiLinkAssistant/2.5'
         }
       },
       (proxyRes) => {
@@ -64,9 +106,9 @@ const server = http.createServer((req, res) => {
           res.end(rawData);
         });
       }
-    ).on('error', (err) => {
-      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: String(err.message || err) }));
+    ).on('error', () => {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Upstream Wikimedia request failed' }));
     });
     return;
   }
@@ -84,7 +126,21 @@ const server = http.createServer((req, res) => {
     '/about': '/about.html',
     '/about.html': '/about.html'
   };
+
   let reqPath = ROUTE_MAP[parsedUrl.pathname] || parsedUrl.pathname;
+  const normalizedPathname = reqPath.toLowerCase();
+
+  // डॉट-फ़ाइलों (.git, .env, .agents, .aistudio) और आंतरिक सर्वर फ़ाइलों तक पहुँच प्रतिबंधित करें
+  if (
+    BLOCKED_FILES.has(normalizedPathname) ||
+    normalizedPathname.startsWith('/.') ||
+    normalizedPathname.includes('/.')
+  ) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('403 Forbidden');
+    return;
+  }
+
   const safePath = path.normalize(reqPath).replace(/^(\.\.[/\\])+/, '');
   const filePath = path.join(ROOT_DIR, safePath);
 

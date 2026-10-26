@@ -26,14 +26,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare static site bundle for GitHub Pages
+      - name: Prepare secure static site bundle (No raw secrets or server files)
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_FIRESTORE_DATABASE_ID: ${{ secrets.FIREBASE_FIRESTORE_DATABASE_ID }}
         run: |
           mkdir -p _site
           cp index.html logs.html about.html login.html _site/
-          cp app.js firebase-client.js firebase-applet-config.json words_blacklist.js style.css sw.js manifest.json _site/
+          cp app.js firebase-client.js words_blacklist.js style.css sw.js manifest.json _site/
           cp icon.svg apple-touch-icon.png pwa-192x192.png pwa-512x512.png pwa-maskable-512x512.png _site/
           cp index.html _site/404.html
           touch _site/.nojekyll
+          if [ -n "$FIREBASE_API_KEY" ]; then
+            cat <<EOF > _site/firebase-applet-config.json
+          {
+            "projectId": "${FIREBASE_PROJECT_ID:-gen-lang-client-0146349956}",
+            "appId": "${FIREBASE_APP_ID:-1:1062954952450:web:c467b46bb36677d9f7841b}",
+            "apiKey": "${FIREBASE_API_KEY}",
+            "authDomain": "${FIREBASE_AUTH_DOMAIN:-gen-lang-client-0146349956.firebaseapp.com}",
+            "firestoreDatabaseId": "${FIREBASE_FIRESTORE_DATABASE_ID:-ai-studio-wikilinktool-5bf407c8-9bb8-439f-9c90-090f39ca9f91}"
+          }
+          EOF
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

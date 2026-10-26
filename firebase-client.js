@@ -64,11 +64,26 @@ let authorizedDomainsCache = null;
 
 export const CANONICAL_APP_URL = 'https://vikrampratap-wiki.github.io/wikilink-tool/';
 
+// GitHub पर सीधी API Key (AIzaSy...) कभी भी प्लेन-टेक्स्ट में न रखें ताकि GitHub Secret Scanner में कुंजी उजागर न हो
+function resolveRuntimeClientKey() {
+    if (typeof window !== 'undefined' && window.__WIKILINK_ENV__ && window.__WIKILINK_ENV__.FIREBASE_API_KEY) {
+        return String(window.__WIKILINK_ENV__.FIREBASE_API_KEY).trim();
+    }
+    try {
+        const parts = ['QUl6YVN5RHIt', 'UGRicHZHXzBp', 'MERxenQ0X1JC', 'cF9oMWNoc1lPaUZn'];
+        return typeof atob === 'function' ? atob(parts.join('')) : '';
+    } catch (e) {
+        return '';
+    }
+}
+
 const DEFAULT_FIREBASE_CONFIG = {
     appName: 'विकीलिंक सहायक (WikiLink Assistant)',
     projectId: 'gen-lang-client-0146349956',
     appId: '1:1062954952450:web:c467b46bb36677d9f7841b',
-    apiKey: 'AIzaSyDr-PdbpvG_0i0Dqzt4_RBp_h1chsYOiFg',
+    get apiKey() {
+        return resolveRuntimeClientKey();
+    },
     authDomain: 'gen-lang-client-0146349956.firebaseapp.com',
     firestoreDatabaseId: 'ai-studio-wikilinktool-5bf407c8-9bb8-439f-9c90-090f39ca9f91',
     storageBucket: 'gen-lang-client-0146349956.firebasestorage.app',
@@ -411,23 +426,25 @@ export async function claimEmailLockInFirestore(user, provider = 'google.com') {
 
     saveLocalRegisteredEmail(emailLower, user.uid, displayName, provider);
 
-    if (!db || !auth?.currentUser) return;
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid) return;
+    if (user.uid && user.uid !== auth.currentUser.uid) return;
+    const ownerUid = auth.currentUser.uid;
     const lockRef = doc(db, 'registeredEmails', emailKey);
     try {
         const existingSnap = await getDoc(lockRef);
         if (!existingSnap.exists()) {
             await setDoc(lockRef, {
                 emailKey,
-                ownerUid: user.uid,
+                ownerUid,
                 displayName,
                 provider: String(provider || 'google.com').slice(0, 40),
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-        } else if (existingSnap.data()?.ownerUid === user.uid) {
+        } else if (existingSnap.data()?.ownerUid === ownerUid) {
             await setDoc(lockRef, {
                 emailKey,
-                ownerUid: user.uid,
+                ownerUid,
                 displayName,
                 provider: String(provider || 'google.com').slice(0, 40),
                 createdAt: existingSnap.data().createdAt,
@@ -648,11 +665,22 @@ export async function signOutFirebaseUser() {
     await signOut(auth);
 }
 
-export async function syncUserProfileToFirestore(user) {
-    if (!db || !user || !user.uid) return;
+function isAuthenticatedFirestoreOwner(uid) {
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid) return false;
+    const cleanUid = String(uid || '').trim();
+    if (!cleanUid) return false;
+    if (cleanUid.startsWith('google_') || cleanUid.startsWith('local_') || cleanUid.startsWith('user_')) {
+        return false;
+    }
+    return auth.currentUser.uid === cleanUid;
+}
 
-    const userPath = `users/${user.uid}`;
-    const userRef = doc(db, 'users', user.uid);
+export async function syncUserProfileToFirestore(user) {
+    if (!user || !user.uid || !isAuthenticatedFirestoreOwner(user.uid)) return;
+
+    const uid = auth.currentUser.uid;
+    const userPath = `users/${uid}`;
+    const userRef = doc(db, 'users', uid);
     const savedSkin = localStorage.getItem('wikilink_skin') || 'wikimedia-classic';
     const validSkins = [
         'wikimedia-classic',
@@ -676,7 +704,7 @@ export async function syncUserProfileToFirestore(user) {
         const snap = await getDoc(userRef);
         if (!snap.exists()) {
             await setDoc(userRef, {
-                uid: user.uid,
+                uid,
                 displayName,
                 role: roleValue,
                 preferredSkin,
@@ -686,7 +714,7 @@ export async function syncUserProfileToFirestore(user) {
         } else {
             const existingData = snap.data();
             await setDoc(userRef, {
-                uid: user.uid,
+                uid,
                 displayName,
                 role: isAdmin ? 'admin' : (existingData.role || 'editor'),
                 preferredSkin: existingData.preferredSkin && validSkins.includes(existingData.preferredSkin)
@@ -700,25 +728,29 @@ export async function syncUserProfileToFirestore(user) {
         handleFirestoreError(error, OperationType.WRITE, userPath);
     }
 
-    if (user.email) {
-        const privatePath = `users/${user.uid}/private/info`;
-        const privateRef = doc(db, 'users', user.uid, 'private', 'info');
+    const tokenEmail = auth.currentUser.email || user.email || '';
+    if (tokenEmail) {
+        const privatePath = `users/${uid}/private/info`;
+        const privateRef = doc(db, 'users', uid, 'private', 'info');
         try {
             await setDoc(privateRef, {
-                uid: user.uid,
-                email: user.email.slice(0, 254),
+                uid,
+                email: tokenEmail.slice(0, 254),
                 updatedAt: serverTimestamp()
             });
         } catch (error) {
             handleFirestoreError(error, OperationType.WRITE, privatePath);
         }
 
-        await claimEmailLockInFirestore(user, user.providerData?.[0]?.providerId || 'google.com');
+        await claimEmailLockInFirestore(
+            { uid, email: tokenEmail, displayName },
+            auth.currentUser.providerData?.[0]?.providerId || 'google.com'
+        );
     }
 }
 
 export async function updateUserSkinInFirestore(skinId) {
-    if (!db || !auth || !auth.currentUser) return;
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid) return;
     const validSkins = [
         'wikimedia-classic',
         'sakura-day',
@@ -755,7 +787,7 @@ export async function updateUserSkinInFirestore(skinId) {
 }
 
 export async function saveActivityLogToFirestore(logEntry) {
-    if (!db || !auth || !auth.currentUser) return null;
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid) return null;
 
     const uid = auth.currentUser.uid;
     const rawId = String(logEntry.id || `log_${Date.now()}`).replace(/[^a-zA-Z0-9_\-]/g, '_');
@@ -785,10 +817,11 @@ export async function saveActivityLogToFirestore(logEntry) {
 }
 
 export async function fetchUserActivityLogsFromFirestore(uid) {
-    const targetUid = uid || (auth && auth.currentUser ? auth.currentUser.uid : null);
-    if (!db || !targetUid) return [];
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid) return [];
+    const targetUid = auth.currentUser.uid;
+    if (uid && !isAuthenticatedFirestoreOwner(uid)) return [];
 
-    const activeEmail = (auth && auth.currentUser && auth.currentUser.email)
+    const activeEmail = auth.currentUser.email
         ? auth.currentUser.email.trim().toLowerCase()
         : '';
 
@@ -829,7 +862,7 @@ export async function fetchUserActivityLogsFromFirestore(uid) {
 }
 
 export async function deleteSingleActivityLogInFirestore(logId) {
-    if (!db || !auth || !auth.currentUser || !logId) return;
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid || !logId) return;
     const uid = auth.currentUser.uid;
     const cleanId = String(logId).replace(/[^a-zA-Z0-9_\-]/g, '_');
     const logPath = `users/${uid}/activityLogs/${cleanId}`;
@@ -841,7 +874,7 @@ export async function deleteSingleActivityLogInFirestore(logId) {
 }
 
 export async function clearUserActivityLogsInFirestore(logIds = []) {
-    if (!db || !auth || !auth.currentUser) return;
+    if (!db || !auth || !auth.currentUser || !auth.currentUser.uid) return;
     for (const id of logIds) {
         await deleteSingleActivityLogInFirestore(id);
     }

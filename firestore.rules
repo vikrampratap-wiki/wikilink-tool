@@ -25,6 +25,9 @@ service cloud.firestore {
     function isValidSkin(skin) {
       return skin in [
         'wikimedia-classic',
+        'sakura-day',
+        'anime-spirit',
+        'cyber-shonen',
         'anime-sakura',
         'anime-mecha',
         'anime-shinkai',

@@ -3,9 +3,9 @@
  * Supports both root (/) and GitHub Pages subpath (/wikilink-tool/) deployments.
  */
 
-const SHELL_CACHE_NAME = 'wikilink-shell-v13';
-const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v13';
-const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v13';
+const SHELL_CACHE_NAME = 'wikilink-shell-v15';
+const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v15';
+const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v15';
 
 const RELATIVE_WORKBENCH_ASSETS = [
   './',
@@ -17,7 +17,6 @@ const RELATIVE_WORKBENCH_ASSETS = [
   './words_blacklist.js',
   './app.js',
   './firebase-client.js',
-  './firebase-applet-config.json',
   './manifest.json',
   './icon.svg',
   './apple-touch-icon.png',
