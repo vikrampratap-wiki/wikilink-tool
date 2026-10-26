@@ -3,9 +3,9 @@
  * Supports both root (/) and GitHub Pages subpath (/wikilink-tool/) deployments.
  */
 
-const SHELL_CACHE_NAME = 'wikilink-shell-v11';
-const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v11';
-const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v11';
+const SHELL_CACHE_NAME = 'wikilink-shell-v12';
+const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v12';
+const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v12';
 
 const RELATIVE_WORKBENCH_ASSETS = [
   './',

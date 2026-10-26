@@ -662,6 +662,9 @@ export async function syncUserProfileToFirestore(user) {
     const savedSkin = localStorage.getItem('wikilink_skin') || 'wikimedia-classic';
     const validSkins = [
         'wikimedia-classic',
+        'sakura-day',
+        'anime-spirit',
+        'cyber-shonen',
         'anime-sakura',
         'anime-mecha',
         'anime-shinkai',
@@ -724,6 +727,9 @@ export async function updateUserSkinInFirestore(skinId) {
     if (!db || !auth || !auth.currentUser) return;
     const validSkins = [
         'wikimedia-classic',
+        'sakura-day',
+        'anime-spirit',
+        'cyber-shonen',
         'anime-sakura',
         'anime-mecha',
         'anime-shinkai',
@@ -788,6 +794,10 @@ export async function fetchUserActivityLogsFromFirestore(uid) {
     const targetUid = uid || (auth && auth.currentUser ? auth.currentUser.uid : null);
     if (!db || !targetUid) return [];
 
+    const activeEmail = (auth && auth.currentUser && auth.currentUser.email)
+        ? auth.currentUser.email.trim().toLowerCase()
+        : '';
+
     const logsPath = `users/${targetUid}/activityLogs`;
     try {
         const logsCol = collection(db, 'users', targetUid, 'activityLogs');
@@ -796,9 +806,13 @@ export async function fetchUserActivityLogsFromFirestore(uid) {
         const list = [];
         snap.forEach((docSnap) => {
             const d = docSnap.data();
+            if (d.ownerId && d.ownerId !== targetUid) return;
             list.push({
                 id: d.logId || docSnap.id,
                 logId: d.logId || docSnap.id,
+                ownerId: d.ownerId || targetUid,
+                user: activeEmail,
+                userEmail: activeEmail,
                 timestamp: d.timestampDisplay || '',
                 action: d.action || '',
                 title: d.title || '',
@@ -811,7 +825,7 @@ export async function fetchUserActivityLogsFromFirestore(uid) {
         });
 
         window.dispatchEvent(new CustomEvent('wikilink:firebase-logs', {
-            detail: { logs: list }
+            detail: { uid: targetUid, email: activeEmail, logs: list }
         }));
         return list;
     } catch (error) {

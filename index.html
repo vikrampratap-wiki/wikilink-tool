@@ -25,7 +25,7 @@
         .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
         .workbench-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px}
     </style>
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -313,15 +313,15 @@
                                     सभी नियम सक्रिय करें
                                 </button>
                                 <span class="workbench-meta-sep" aria-hidden="true">·</span>
-                                <button type="button" id="toggle-settings-btn" class="btn btn-text btn-sm btn-settings-toggle">
+                                <button type="button" id="toggle-settings-btn" class="btn btn-text btn-sm btn-settings-toggle" aria-expanded="false" aria-controls="logical-filter-groups settings-body">
                                     विस्तृत नियम व विवरण <span class="accordion-arrow">▼</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- वर्गीकृत तार्किक नियम चिप्स (Categorized Policy Toggles) -->
+                        <!-- वर्गीकृत तार्किक नियम चिप्स (Categorized Policy Toggles — केवल 'विस्तृत नियम व विवरण' पर क्लिक करने पर प्रदर्शित) -->
                         <div class="active-filters-toolbar">
-                            <div class="logical-filter-groups">
+                            <div class="logical-filter-groups" id="logical-filter-groups" style="display: none;">
                                 <!-- समूह क: शब्द पात्रता एवं आवृत्ति नियम -->
                                 <div class="logical-filter-group">
                                     <span class="filter-group-label">क. शब्द पात्रता व आवृत्ति (Word &amp; Scope):</span>
@@ -594,6 +594,28 @@
                 <div class="density-meter-track" aria-hidden="true">
                     <div class="density-meter-fill" id="density-meter-fill" style="width: 0%;"></div>
                 </div>
+            </div>
+
+            <!-- D3.js शब्द लंबाई बनाम जोड़ी गई कड़ियाँ चार्ट (Word Length vs. Added Links Over-Linking Pattern Chart) -->
+            <div class="d3-overlink-chart-card" id="d3-overlink-chart-card">
+                <div class="d3-chart-header">
+                    <div>
+                        <h3 class="d3-chart-title">📊 शब्द लंबाई बनाम जोड़ी गई कड़ियाँ — अति-कड़ीकरण पैटर्न विश्लेषण (D3.js)</h3>
+                        <p class="d3-chart-subtitle">छोटे सामान्य शब्दों (2–3 अक्षर) में अत्यधिक कड़ियाँ होना अति-कड़ीकरण (WP:OVERLINKING) का संकेत हो सकता है। बार पर क्लिक करके उस लंबाई के शब्दों को नीचे तालिका में छाँटें:</p>
+                    </div>
+                    <div class="d3-chart-meta">
+                        <span class="badge badge-blue" id="d3-overlink-insight-badge">संतुलित वितरण</span>
+                        <button type="button" id="btn-reset-d3-length-filter" class="btn btn-outline btn-sm" style="display: none;">
+                            ✕ लंबाई छन्नी हटाएँ
+                        </button>
+                    </div>
+                </div>
+                <div class="d3-chart-legend">
+                    <span class="d3-legend-item"><span class="d3-legend-swatch swatch-added"></span> चयनित / जोड़ी गई कड़ियाँ (Added Links)</span>
+                    <span class="d3-legend-item"><span class="d3-legend-swatch swatch-skipped"></span> अचयनित उम्मीदवार (Unchecked Candidates)</span>
+                    <span class="d3-legend-item"><span class="d3-legend-swatch swatch-warning"></span> छोटे शब्द अति-कड़ीकरण चेतावनी क्षेत्र (≤3 अक्षर)</span>
+                </div>
+                <div id="d3-word-length-chart" class="d3-word-length-chart-container" role="img" aria-label="शब्द लंबाई बनाम जोड़ी गई कड़ियाँ वितरण चार्ट"></div>
             </div>
 
             <!-- उन्नत छन्नी पट्टी -->
@@ -948,7 +970,8 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js?v=11"></script>
-    <script src="app.js?v=11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
+    <script type="module" src="firebase-client.js?v=12"></script>
+    <script src="app.js?v=12" defer></script>
 </body>
 </html>

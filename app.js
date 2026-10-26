@@ -355,6 +355,113 @@
         ensureExtendedBlacklistLoaded();
     }
 
+    // सम्मानसूचक उपसर्ग (Honorific Prefixes) — इन्हें अकेले 1-शब्द की कड़ी कभी न बनाएं (ताकि '[[महर्षि]] वाल्मीकि' जैसी अधूरी कड़ी न बने)
+    const HONORIFIC_PREFIXES = new Set([
+        'महर्षि', 'गोस्वामी', 'सन्त', 'संत', 'मुंशी', 'पंडित', 'सरदार', 'नेताजी', 'आचार्य', 'सम्राट',
+        'महात्मा', 'भगवान', 'स्वामी', 'गुरु', 'श्री', 'श्रीमती', 'सुश्री', 'डॉ', 'डॉ.', 'डॉ॰', 'डॉक्टर',
+        'प्रोफेसर', 'प्रो', 'प्रो.', 'जनरल', 'कर्नल', 'मेजर', 'कैप्टन', 'बाबा', 'ठाकुर', 'सेठ', 'मौलाना',
+        'हज़रत', 'हजरत', 'शेख', 'सुल्तान', 'बादशाह', 'नवाब', 'राजा', 'रानी', 'महाराजा', 'महारानी', 'युवराज'
+    ]);
+
+    // वाक्य-खंड विभाजक पद (Phrase-Breaker Words) — यदि बहु-शब्द N-gram में इनमें से कोई भी पद हो तो वह संयुक्त संज्ञा नहीं बल्कि अधूरा वाक्य-खंड है
+    const STRICT_PHRASE_BREAKER_WORDS = new Set([
+        // परसर्ग व कारक चिह्न (Postpositions)
+        'में', 'से', 'ने', 'को', 'पर', 'का', 'की', 'के', 'द्वारा', 'लिए', 'हेतु', 'तक', 'साथ', 'बाद', 'पहले',
+        'अनुसार', 'अंतर्गत', 'दौरान', 'बजाय', 'बिना', 'सहित', 'रहित', 'प्रति', 'ओर', 'तरफ', 'कारण', 'माध्यम',
+        'सामने', 'पीछे', 'ऊपर', 'नीचे', 'अंदर', 'बाहर', 'बीच', 'पास', 'निकट', 'समीप', 'दूर',
+        // समुच्चयबोधक व निपात (Conjunctions & Particles)
+        'तथा', 'एवं', 'और', 'या', 'अथवा', 'कि', 'जो', 'तो', 'भी', 'ही', 'नहीं', 'मत', 'ना', 'जब', 'तब',
+        'यदि', 'अगर', 'मगर', 'लेकिन', 'किंतु', 'परंतु', 'क्योंकि', 'इसलिए', 'अतः', 'फलस्वरूप', 'यद्यपि', 'तथापि',
+        'जैसे', 'वैसे', 'मानो', 'अर्थात', 'अर्थात्', 'यानी', 'लगभग', 'करीब', 'केवल', 'सिर्फ', 'मात्र',
+        // सर्वनाम (Pronouns)
+        'यह', 'वह', 'ये', 'वे', 'इस', 'उस', 'इन', 'उन', 'उन्हें', 'उन्होंने', 'इन्हें', 'इन्होंने', 'जिन्हें', 'जिन्होंने',
+        'जिसने', 'जिसको', 'जिससे', 'जिसमें', 'जिसका', 'जिसकी', 'जिसके', 'जिनका', 'जिनकी', 'जिनके',
+        'अपना', 'अपनी', 'अपने', 'उनका', 'उनकी', 'उनके', 'इसका', 'इसकी', 'इसके', 'हमारा', 'हमारी', 'हमारे',
+        'मेरा', 'मेरी', 'मेरे', 'आपका', 'आपकी', 'आपके', 'स्वयं', 'खुद', 'कोई', 'किसी', 'कुछ', 'सब', 'सभी', 'प्रत्येक', 'हर',
+        // सामान्य विशेषण व संख्यावाचक जो संज्ञा पद के साथ जुड़कर गलत N-gram बनाते हैं
+        'महान', 'प्रमुख', 'प्रसिद्ध', 'विशाल', 'समृद्ध', 'ऐतिहासिक', 'प्राचीन', 'आधुनिक', 'मुख्य', 'विशेष',
+        'सामान्य', 'विभिन्न', 'अनेक', 'कई', 'अधिक', 'कम', 'बहुत', 'अत्यंत', 'अति', 'काफी', 'पर्याप्त',
+        'बड़ा', 'बड़ी', 'बड़े', 'छोटा', 'छोटी', 'छोटे', 'अच्छा', 'अच्छी', 'अच्छे', 'नया', 'नई', 'नए',
+        'पुराना', 'पुरानी', 'पुराने', 'सुंदर', 'महत्वपूर्ण', 'अमूल्य', 'संपूर्ण', 'समस्त', 'प्रथम', 'द्वितीय', 'तृतीय', 'अंतिम',
+        'स्थित', 'शामिल', 'संबंधित', 'आधारित', 'प्रचलित', 'उपलब्ध', 'निर्मित', 'स्थापित', 'संचालित', 'विभाजित', 'समर्पित',
+        'जाना', 'जानी', 'जाने', 'माना', 'मानी', 'माने', 'कहा', 'कही', 'कहे', 'रखा', 'रखी', 'रखे', 'बना', 'बनी', 'बने',
+        'नामक', 'रचयिता', 'अवतार', 'नेतृत्व', 'मार्ग', 'चलकर', 'पैदल', 'चले', 'किया', 'किए', 'हुआ', 'हुई', 'हुए',
+        'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ', 'दस', 'सौ', 'हजार', 'लाख', 'करोड़'
+    ]);
+
+    // ऑफ़लाइन मोड के लिए सत्यापित विकिपीडिया शीर्षक कोष (ताकि ऑफ़लाइन/त्रुटि स्थिति में कभी भी अधूरे वाक्य-खंडों की गलत कड़ी न बने)
+    const OFFLINE_VERIFIED_WIKI_TITLES = new Map([
+        ['भारत', 'भारत'],
+        ['भारत गणराज्य', 'भारत'],
+        ['दक्षिण एशिया', 'दक्षिण एशिया'],
+        ['एशिया', 'एशिया'],
+        ['नई दिल्ली', 'नई दिल्ली'],
+        ['हिमालय', 'हिमालय'],
+        ['हिन्द महासागर', 'हिन्द महासागर'],
+        ['गंगा', 'गंगा नदी'],
+        ['यमुना', 'यमुना नदी'],
+        ['ब्रह्मपुत्र', 'ब्रह्मपुत्र नदी'],
+        ['नर्मदा', 'नर्मदा नदी'],
+        ['गोदावरी', 'गोदावरी नदी'],
+        ['भारतीय संविधान', 'भारतीय संविधान'],
+        ['हिन्दी', 'हिन्दी'],
+        ['संस्कृत', 'संस्कृत'],
+        ['महात्मा गांधी', 'महात्मा गांधी'],
+        ['मोहनदास करमचन्द गांधी', 'महात्मा गांधी'],
+        ['राष्ट्रपिता', 'राष्ट्रपिता'],
+        ['सत्य', 'सत्य'],
+        ['अहिंसा', 'अहिंसा'],
+        ['भारतीय राष्ट्रीय कांग्रेस', 'भारतीय राष्ट्रीय कांग्रेस'],
+        ['दांडी मार्च', 'दांडी मार्च'],
+        ['असहयोग आंदोलन', 'असहयोग आन्दोलन'],
+        ['भारत छोड़ो आंदोलन', 'भारत छोड़ो आन्दोलन'],
+        ['गुजरात', 'गुजरात'],
+        ['पोरबंदर', 'पोरबंदर'],
+        ['हिन्दी साहित्य', 'हिन्दी साहित्य'],
+        ['भारतीय साहित्य', 'भारतीय साहित्य'],
+        ['आदिकाल', 'आदिकाल'],
+        ['भक्तिकाल', 'भक्तिकाल'],
+        ['रीतिकाल', 'रीतिकाल'],
+        ['आधुनिक काल', 'आधुनिक काल'],
+        ['तुलसीदास', 'तुलसीदास'],
+        ['कबीरदास', 'कबीर'],
+        ['सूरदास', 'सूरदास'],
+        ['मीराबाई', 'मीराबाई'],
+        ['भारतेंदु हरिश्चंद्र', 'भारतेन्दु हरिश्चन्द्र'],
+        ['मुंशी प्रेमचंद', 'प्रेमचंद'],
+        ['प्रेमचंद', 'प्रेमचंद'],
+        ['जयशंकर प्रसाद', 'जयशंकर प्रसाद'],
+        ['सूर्यकांत त्रिपाठी निराला', 'सूर्यकान्त त्रिपाठी \'निराला\''],
+        ['महादेवी वर्मा', 'महादेवी वर्मा'],
+        ['गद्य', 'गद्य'],
+        ['पद्य', 'पद्य'],
+        ['अंतरिक्ष विज्ञान', 'अंतरिक्ष विज्ञान'],
+        ['ब्रह्मांड', 'ब्रह्माण्ड'],
+        ['भारतीय अंतरिक्ष अनुसंधान संगठन', 'भारतीय अंतरिक्ष अनुसंधान संगठन'],
+        ['इसरो', 'भारतीय अंतरिक्ष अनुसंधान संगठन'],
+        ['आर्यभट्ट', 'आर्यभट्ट'],
+        ['चंद्रयान', 'चन्द्रयान'],
+        ['मंगलयान', 'मंगलयान'],
+        ['पृथ्वी', 'पृथ्वी'],
+        ['कृत्रिम उपग्रह', 'कृत्रिम उपग्रह'],
+        ['मौसम विज्ञान', 'मौसम विज्ञान'],
+        ['राजापुर', 'राजापुर'],
+        ['रामायण', 'रामायण'],
+        ['महर्षि वाल्मीकि', 'वाल्मीकि'],
+        ['वाल्मीकि', 'वाल्मीकि'],
+        ['रामचरितमानस', 'रामचरितमानस'],
+        ['रत्नावली', 'रत्नावली']
+    ]);
+
+    function isInflectedHindiPluralOrOblique(word) {
+        if (!word || word.length < 4) return false;
+        // देवनागरी बहुवचन या तिर्यक रूप (जैसे: ग्रन्थों, नदियों, भाषाएँ, पिंडों, उपग्रहों, कवियों, रचनाएँ, श्रृंखला, राज्यों)
+        if (/(?:ियों|ओं|ों|एँ|एं|इयाँ|ाइयाँ)$/u.test(word)) {
+            return true;
+        }
+        return false;
+    }
+
     function isNonLinkableWord(term, lang = 'hi') {
         if (!term) return false;
         ensureExtendedBlacklistLoaded();
@@ -366,30 +473,44 @@
             return true;
         }
 
-        // यदि पूरा शब्द या पद स्वयं बहिष्कार सूची में है
-        if (langSet.has(clean)) return true;
-
-        // महत्वपूर्ण सुधार: बहु-शब्द संयुक्त संज्ञा पदों (जैसे 'जनता दल', 'लोक सभा', 'राज्य सभा', 'उत्तर प्रदेश', 'विश्व युद्ध')
-        // को केवल इसलिए अस्वीकार न करें कि उनके अलग-अलग घटक शब्द ('जनता', 'दल', 'लोक', 'सभा') एकल-शब्द बहिष्कार सूची में हैं।
-        // केवल तभी अस्वीकार करें जब सभी घटक शब्द केवल संख्यावाचक या स्टॉपवर्ड्स हों।
         const hiStop = STOPWORDS.hi || new Set();
         const enStop = STOPWORDS.en || new Set();
         const rawParts = clean.split(' ').filter(Boolean);
+
         if (rawParts.length === 1) {
-            return langSet.has(rawParts[0]) || hiStop.has(rawParts[0]) || enStop.has(rawParts[0]);
+            const w = rawParts[0];
+            if (langSet.has(w) || hiStop.has(w) || enStop.has(w)) return true;
+            if (HONORIFIC_PREFIXES.has(w) || STRICT_PHRASE_BREAKER_WORDS.has(w)) return true;
+            if (lang === 'hi' && isInflectedHindiPluralOrOblique(w)) return true;
+            return false;
         }
 
-        // यदि बहु-शब्द पद में केवल स्टॉपवर्ड्स हैं तो कड़ी न बनाएं
-        if (rawParts.every(p => hiStop.has(p) || enStop.has(p))) return true;
+        // यदि पूरा बहु-शब्द पद स्वयं बहिष्कार सूची में है
+        if (langSet.has(clean)) return true;
+
+        // यदि बहु-शब्द पद में केवल स्टॉपवर्ड्स या सामान्य शब्द हैं तो कड़ी न बनाएं
+        if (rawParts.every(p => hiStop.has(p) || enStop.has(p) || langSet.has(p))) return true;
 
         return false;
     }
 
     function isSelfLink(term, pageTitle) {
-        if (!term || !pageTitle) return false;
-        const normTerm = term.trim().toLowerCase().replace(/[_\s\-–—]/g, '');
-        const normTitle = pageTitle.trim().toLowerCase().replace(/[_\s\-–—]/g, '');
-        return normTerm === normTitle;
+        if (!term) return false;
+        const normTerm = term.trim().toLowerCase().replace(/[_\s\-–—'"`]/g, '');
+        if (!normTerm) return false;
+
+        if (pageTitle) {
+            const normTitle = pageTitle.trim().toLowerCase().replace(/[_\s\-–—'"`]/g, '');
+            if (normTerm === normTitle) return true;
+        }
+
+        if (state.selfTitleAliases && state.selfTitleAliases.size > 0) {
+            for (const alias of state.selfTitleAliases) {
+                const normAlias = String(alias).trim().toLowerCase().replace(/[_\s\-–—'"`]/g, '');
+                if (normAlias && normTerm === normAlias) return true;
+            }
+        }
+        return false;
     }
 
     // ================== अनुप्रयोग स्थिति (State) ==================
@@ -401,6 +522,7 @@
         sanitizedWikitext: '',
         processedWikitext: '',
         existingLinks: new Set(),
+        selfTitleAliases: new Set(),
         suggestions: [],
         customBlacklist: new Set(),
         approvedGlobalBlacklist: new Set(),
@@ -414,7 +536,12 @@
         // छन्नी
         filterStatus: 'all',
         filterType: 'all',
+        filterLengthBucket: null,
         searchQuery: '',
+        adminReqStatusFilter: 'all',
+        adminReqSearchQuery: '',
+        adminApprovedSearchQuery: '',
+        adminApprovedLangFilter: 'all',
 
         // दूषित लेख रिपोर्ट
         contaminations: {
@@ -636,11 +763,11 @@
             showToast('ऑफ़लाइन मोड सक्रिय: मुख्य कार्यपटल बिना इंटरनेट के कार्यशील है');
         });
 
-        // Service Worker पंजीकरण (./sw.js?v=9 को अपडेट करें ताकि पुराना कैश तुरंत हटे)
+        // Service Worker पंजीकरण (./sw.js?v=12 को अपडेट करें ताकि पुराना कैश तुरंत हटे)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 setTimeout(() => {
-                    navigator.serviceWorker.register('./sw.js?v=9', { scope: './' }).then((reg) => {
+                    navigator.serviceWorker.register('./sw.js?v=12', { scope: './' }).then((reg) => {
                         reg.update().catch(() => {});
                         if (reg.waiting) {
                             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -777,12 +904,19 @@
         // फ़ाइल अपलोड
         safeAddListener(DOM.fileUploadInput, 'change', handleFileUpload);
 
-        // सेटिंग्स टॉगल
+        // सेटिंग्स टॉगल: केवल 'विस्तृत नियम व विवरण' पर क्लिक करने पर ही क. शब्द पात्रता व आवृत्ति तथा ख. लक्ष्य सत्यापन व सिंटेक्स और विस्तृत नियम दिखाएँ
         safeAddListener(DOM.toggleSettingsBtn, 'click', () => {
             const body = $('settings-body');
+            const filterGroups = $('logical-filter-groups');
             if (body) {
                 const isHidden = (body.style.display === 'none' || !body.style.display);
                 body.style.display = isHidden ? 'block' : 'none';
+                if (filterGroups) {
+                    filterGroups.style.display = isHidden ? 'grid' : 'none';
+                }
+                if (DOM.toggleSettingsBtn) {
+                    DOM.toggleSettingsBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                }
                 const arrow = DOM.toggleSettingsBtn ? DOM.toggleSettingsBtn.querySelector('.accordion-arrow') : null;
                 if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
             }
@@ -969,7 +1103,20 @@
             DOM.btnToggleAuxGuide.addEventListener('click', () => {
                 const isHidden = DOM.auxGuideDetails.style.display === 'none';
                 DOM.auxGuideDetails.style.display = isHidden ? 'block' : 'none';
+                const auxCard = DOM.auxGuideDetails.closest('.aux-tools-card');
+                if (auxCard) auxCard.classList.toggle('mobile-guide-expanded', isHidden);
                 DOM.btnToggleAuxGuide.textContent = isHidden ? 'निर्देश छिपाएं' : 'उपयोग विधि निर्देश देखें';
+            });
+        }
+
+        const btnResetD3LengthFilter = $('btn-reset-d3-length-filter');
+        if (btnResetD3LengthFilter) {
+            btnResetD3LengthFilter.addEventListener('click', () => {
+                state.filterLengthBucket = null;
+                btnResetD3LengthFilter.style.display = 'none';
+                renderSuggestionsTable();
+                renderD3WordLengthChart();
+                showToast('शब्द लंबाई छन्नी हटाई गई');
             });
         }
 
@@ -1305,48 +1452,70 @@
         };
     }
 
-    async function verifyBatchTitles(lang, titles) {
-        const BATCH_SIZE = 40;
-        const results = new Map();
-
-        // यदि उपयोगकर्ता पूर्णतः ऑफ़लाइन है तो स्थानीय तार्किक इंजन से सभी वैध उम्मीदवारों को सत्यापित चिह्नित करें
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            titles.forEach(t => {
-                results.set(t, {
+    function applySafeOfflineVerification(chunk, resultsMap) {
+        chunk.forEach(t => {
+            const clean = t.trim();
+            const verifiedTarget = OFFLINE_VERIFIED_WIKI_TITLES.get(clean);
+            if (verifiedTarget) {
+                resultsMap.set(t, {
                     exists: true,
+                    isRedirect: verifiedTarget !== clean,
+                    isDisambig: false,
+                    target: verifiedTarget,
+                    originalTerm: t,
+                    offlineVerified: true
+                });
+            } else {
+                // कभी भी असत्यापित वाक्य-खंडों को अंधाधुंध exists: true न मानें!
+                resultsMap.set(t, {
+                    exists: false,
                     isRedirect: false,
                     isDisambig: false,
                     target: t,
                     originalTerm: t,
                     offlineVerified: true
                 });
-            });
+            }
+        });
+    }
+
+    async function verifyBatchTitles(lang, titles) {
+        // देवनागरी UTF-8 URL लंबाई सीमा (HTTP 414) से बचने के लिए 25 का सुरक्षित बैच और POST अनुरोध उपयोग करें
+        const BATCH_SIZE = 25;
+        const results = new Map();
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            applySafeOfflineVerification(titles, results);
             return results;
         }
 
+        const endpoint = `https://${lang}.wikipedia.org/w/api.php`;
+
         for (let i = 0; i < titles.length; i += BATCH_SIZE) {
             const chunk = titles.slice(i, i + BATCH_SIZE);
-            const titlesParam = chunk.map(t => encodeURIComponent(t)).join('|');
-            const endpoint = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${titlesParam}&prop=pageprops&ppprop=disambiguation&redirects=1&format=json&origin=*`;
+            const bodyParams = new URLSearchParams({
+                action: 'query',
+                titles: chunk.join('|'),
+                prop: 'pageprops',
+                ppprop: 'disambiguation',
+                redirects: '1',
+                format: 'json',
+                origin: '*'
+            });
 
             try {
                 const response = await fetch(endpoint, {
-                    headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'Api-User-Agent': 'WikiLinkAssistant/2.5'
+                    },
+                    body: bodyParams.toString()
                 });
                 const data = await response.json();
 
-                // यदि सर्विस वर्कर ने ऑफ़लाइन फ़ॉलबैक लौटाया है
                 if (data && data.offline) {
-                    chunk.forEach(t => {
-                        results.set(t, {
-                            exists: true,
-                            isRedirect: false,
-                            isDisambig: false,
-                            target: t,
-                            originalTerm: t,
-                            offlineVerified: true
-                        });
-                    });
+                    applySafeOfflineVerification(chunk, results);
                     continue;
                 }
 
@@ -1376,7 +1545,12 @@
                 chunk.forEach(originalTerm => {
                     let norm = normalMap.get(originalTerm) || originalTerm;
                     let redirectedTo = redirectMap.get(norm) || redirectMap.get(originalTerm);
-                    const finalTarget = redirectedTo || norm;
+                    let finalTarget = redirectedTo || norm;
+
+                    // यदि बहु-स्तरीय रीडायरेक्ट हो तो उसे भी सुलझाएँ
+                    if (redirectMap.has(finalTarget)) {
+                        finalTarget = redirectMap.get(finalTarget);
+                    }
 
                     const pageData = pageInfoMap.get(finalTarget);
                     const exists = !!pageData;
@@ -1391,17 +1565,8 @@
                     });
                 });
             } catch (err) {
-                console.warn('Batch verification offline fallback:', err);
-                chunk.forEach(t => {
-                    results.set(t, {
-                        exists: true,
-                        isRedirect: false,
-                        isDisambig: false,
-                        target: t,
-                        originalTerm: t,
-                        offlineVerified: true
-                    });
-                });
+                console.warn('Batch verification fallback:', err);
+                applySafeOfflineVerification(chunk, results);
             }
         }
 
@@ -2080,7 +2245,12 @@
     function protectWikitextStructures(rawText) {
         const protectedTokens = [];
         const existingLinks = new Set();
+        const selfTitleAliases = new Set();
         let tokenIndex = 0;
+
+        if (state.pageTitle && state.pageTitle !== 'अशीर्षक लेख') {
+            selfTitleAliases.add(state.pageTitle.trim());
+        }
 
         function saveToken(match) {
             const placeholder = `\x01PROTECTED_${tokenIndex++}\x02`;
@@ -2094,11 +2264,14 @@
         text = text.replace(/<!--[\s\S]*?-->/g, saveToken);
 
         // टैग्स
-        text = text.replace(/<(nowiki|code|pre|syntaxhighlight|math|gallery)[\s\S]*?<\/\1>/gi, saveToken);
+        text = text.replace(/<(nowiki|code|pre|syntaxhighlight|math|gallery|timeline|score)[\s\S]*?<\/\1>/gi, saveToken);
 
         // संदर्भ
         text = text.replace(/<ref[\s\S]*?<\/ref>/gi, saveToken);
         text = text.replace(/<ref[^>]*\/>/gi, saveToken);
+
+        // विकि तालिकाएँ {| ... |}
+        text = text.replace(/\{\|[\s\S]*?\|\}/g, saveToken);
 
         // टेम्पलेट्स {{ ... }} (बहु-स्तरीय नेस्टेड साँचों की पूर्ण सुरक्षा)
         let templateLoop = 0;
@@ -2109,19 +2282,42 @@
         // अनुभाग शीर्षक
         text = text.replace(/^==+[^=]+==+\s*$/gm, saveToken);
 
-        // श्रेणियाँ व चित्र
-        text = text.replace(/\[\[(Category|श्रेणी|File|Image|चित्र|फ़ाइल):[^\]]+\]\]/gi, saveToken);
+        // श्रेणियाँ व चित्र (नेस्टेड कड़ियों सहित पूर्ण सुरक्षा)
+        text = text.replace(/\[\[(?:Category|श्रेणी|File|Image|चित्र|फ़ाइल):(?:[^\]]|\[\[[^\]]*\]\])+\]\]/gi, saveToken);
 
-        // पूर्व-मौजूदा आंतरिक कड़ियाँ
-        text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target) => {
-            const norm = target.trim().replace(/_/g, ' ');
-            existingLinks.add(norm.charAt(0).toUpperCase() + norm.slice(1));
+        // पूर्व-मौजूदा आंतरिक कड़ियाँ: लक्ष्य (target) और प्रदर्शित पाठ (display) दोनों को existingLinks में जोड़ें
+        text = text.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
+            const normTarget = target.trim().replace(/_/g, ' ');
+            if (normTarget) {
+                existingLinks.add(normTarget.charAt(0).toUpperCase() + normTarget.slice(1));
+                existingLinks.add(normTarget);
+            }
+            if (display && display.trim()) {
+                const normDisplay = display.trim().replace(/_/g, ' ');
+                existingLinks.add(normDisplay.charAt(0).toUpperCase() + normDisplay.slice(1));
+                existingLinks.add(normDisplay);
+            }
             return saveToken(match);
         });
 
-        // URL लिंक्स
+        // बोल्ड मुख्य शीर्षक पद '''...''' (WP:MOSBOLD / WP:CIRCULAR):
+        // लेख के मुख्य विषय (बोल्ड शब्दों) के भीतर कभी कड़ी न बनाएं और उन्हें स्व-शीर्षक उपनाम (selfTitleAliases) में जोड़ें
+        text = text.replace(/'''([^'\n]{2,80})'''/g, (match, boldInner) => {
+            const cleanBold = boldInner.trim();
+            if (cleanBold && !cleanBold.includes('\x01')) {
+                selfTitleAliases.add(cleanBold);
+                if (!state.pageTitle || state.pageTitle === 'अशीर्षक लेख') {
+                    state.pageTitle = cleanBold;
+                }
+            }
+            return saveToken(match);
+        });
+
+        // बाहरी कड़ियाँ [https://... ...] एवं सीधे URLs
+        text = text.replace(/\[https?:\/\/[^\]]+\]/g, saveToken);
         text = text.replace(/https?:\/\/[^\s\]]+/g, saveToken);
 
+        state.selfTitleAliases = selfTitleAliases;
         return { cleanText: text, protectedTokens, existingLinks };
     }
 
@@ -2166,7 +2362,8 @@
         'है', 'हैं', 'था', 'थी', 'थे', 'गा', 'गी', 'गे', 'रहा', 'रही', 'रहे', 'गया', 'गई', 'गए',
         'किया', 'किए', 'कीं', 'हुआ', 'हुई', 'हुए', 'दिया', 'दिए', 'लिया', 'लिए', 'जाता', 'जाती', 'जाते',
         'करता', 'करती', 'करते', 'होता', 'होती', 'होते', 'सकता', 'सकती', 'सकते', 'चुका', 'चुकी', 'चुके',
-        'कर', 'करके', 'होकर', 'जाकर', 'आकर', 'देकर', 'लेकर', 'वाला', 'वाली', 'वाले', 'तथा', 'एवं', 'और', 'या', 'अथवा'
+        'कर', 'करके', 'होकर', 'जाकर', 'आकर', 'देकर', 'लेकर', 'वाला', 'वाली', 'वाले', 'तथा', 'एवं', 'और', 'या', 'अथवा',
+        'बोली', 'बोले', 'जातीं', 'कहते', 'कहलाता', 'कहलाती', 'कहलाते', 'माना', 'मानी', 'माने', 'चलाया', 'चलाई', 'चले'
     ]);
 
     function extractCandidates(cleanText, lang) {
@@ -2181,21 +2378,21 @@
         const candidates = new Set();
 
         // विराम चिह्नों और संरक्षित टोकनों पर उपवाक्य विभाजित करें ताकि N-gram कभी विराम चिह्न के पार न बने
-        const clauses = cleanText.split(/[\x01\x02]?PROTECTED_\d+[\x01\x02]?|[।.!?,;:\n\r()\[\]{}"'«»“”‘’—–|\/]+/g);
+        const clauses = cleanText.split(/[\x01\x02]?PROTECTED_\d+[\x01\x02]?|[।.!?,;:\n\r()\[\]{}"'«»“”‘’—–|\/#*]+/g);
 
         for (let c = 0; c < clauses.length; c++) {
             const clause = clauses[c];
             if (!clause || !clause.trim()) continue;
 
             const words = [];
-            const wordRegex = /[\p{L}\p{M}\d_\-]+/gu;
+            const wordRegex = /[\p{L}\p{M}\d_॰\-]+/gu;
             let m;
             while ((m = wordRegex.exec(clause)) !== null) {
-                const token = m[0].replace(/^[\-_]+|[\-_]+$/g, '');
+                const token = m[0].replace(/^[\-_॰]+|[\-_]+$/g, '');
                 if (token) words.push(token);
             }
 
-            // N-grams (4, 3, 2, 1 शब्द - जैसे 'भारतीय जनता पार्टी', 'राष्ट्रीय जनता दल', 'जनता दल')
+            // N-grams (4, 3, 2, 1 शब्द - जैसे 'भारतीय राष्ट्रीय कांग्रेस', 'भारत छोड़ो आंदोलन', 'हिन्दी साहित्य', 'महर्षि वाल्मीकि')
             for (let i = 0; i < words.length; i++) {
                 for (let n = 4; n >= 1; n--) {
                     if (i + n <= words.length) {
@@ -2209,12 +2406,20 @@
             }
         }
 
-        return Array.from(candidates);
+        // पहले बहु-शब्द संयुक्त पदों को प्राथमिकता दें ताकि बैच सत्यापन में पूर्ण संयुक्त संज्ञाएँ हमेशा शामिल रहें
+        const sortedList = Array.from(candidates).sort((a, b) => {
+            const wA = a.split(/\s+/).length;
+            const wB = b.split(/\s+/).length;
+            if (wB !== wA) return wB - wA;
+            return b.length - a.length;
+        });
+
+        return sortedList.slice(0, 220);
     }
 
     function isValidCandidate(phrase, minLength, skipDates, skipUnits, filterStopwords, stopwordSet, lang = 'hi', filterCommonWords = true, preventSelfLink = true) {
         if (!phrase || phrase.length < minLength) return false;
-        if (/^[\d०-९\s\-.,]+$/.test(phrase)) return false;
+        if (/^[\d०-९\s\-.,॰]+$/.test(phrase)) return false;
 
         const lower = phrase.toLowerCase().trim();
 
@@ -2223,34 +2428,58 @@
         if (state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(lower)) return false;
 
         // 2. स्व-कड़ीकरण रोकें (WP:CIRCULAR / WP:SELFREF)
-        if (preventSelfLink && state.pageTitle && isSelfLink(phrase, state.pageTitle)) {
+        if (preventSelfLink && isSelfLink(phrase, state.pageTitle)) {
             return false;
         }
 
-        // 3. सामान्य दैनिक शब्द जिनकी विकिपीडिया पर कड़ी नहीं बनाई जाती (WP:NOTLINKED / WP:COMMONWORDS)
-        if (filterCommonWords && isNonLinkableWord(phrase, lang)) {
-            return false;
-        }
-
-        // 4. सामान्य तिथियाँ व 4-अंकीय वर्ष (WP:DATELINK)
+        // 3. सामान्य तिथियाँ व 4-अंकीय वर्ष (WP:DATELINK)
         if (skipDates && (DATE_WORDS.has(lower) || /^\d{4}$/.test(phrase) || /^[०-९]{4}$/.test(phrase))) return false;
 
-        // 5. माप व इकाइयाँ
+        // 4. माप व इकाइयाँ
         if (skipUnits && UNITS_OF_MEASURE.has(lower)) return false;
 
-        // 6. स्टॉपवर्ड्स व व्याकरणिक सीमा जाँच
-        const parts = lower.split(' ').filter(Boolean);
+        // 5. शब्द-स्तरीय एवं संयुक्त संज्ञा (Compound Noun) तार्किक नियम
+        const parts = lower.split(/\s+/).filter(Boolean);
+
+        // किसी भी घटक में यदि केवल अंक हों तो छोड़ें
+        if (parts.some(p => /^\d+$/.test(p) || /^[०-९]+$/.test(p))) return false;
+
         if (parts.length > 1) {
             const firstWord = parts[0];
             const lastWord = parts[parts.length - 1];
-            // बहु-शब्द पद का पहला या अंतिम शब्द कभी भी परसर्ग, स्टॉपवर्ड या सहायक क्रिया नहीं होना चाहिए
-            if (stopwordSet.has(firstWord) || stopwordSet.has(lastWord)) return false;
-            if (HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(firstWord) || HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(lastWord)) return false;
-            // यदि बीच में सहायक क्रिया ('है', 'था', 'गया', 'किया') आती है तो यह संज्ञा पद नहीं बल्कि वाक्य खंड है
-            if (parts.some(p => HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p))) return false;
-            if (parts.some(p => /^\d+$/.test(p) || /^[०-९]+$/.test(p))) return false;
-        } else if (filterStopwords) {
-            if (stopwordSet.has(lower) || HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(lower)) return false;
+
+            // बहु-शब्द पद में कोई भी शब्द परसर्ग, क्रिया, सर्वनाम या सामान्य विशेषण (STRICT_PHRASE_BREAKER_WORDS) नहीं होना चाहिए
+            if (parts.some(p => stopwordSet.has(p) || HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p) || STRICT_PHRASE_BREAKER_WORDS.has(p))) {
+                return false;
+            }
+
+            // बहु-शब्द पद का अंतिम शब्द कभी भी सम्मानसूचक उपसर्ग ('महर्षि', 'मुंशी', 'पंडित') नहीं हो सकता
+            if (HONORIFIC_PREFIXES.has(lastWord)) return false;
+
+            // बहु-शब्द पद में यदि अंतिम शब्द बहुवचन तिर्यक रूप (जैसे 'ग्रन्थों', 'अभियानों', 'आंदोलनों') है तो छोड़ें
+            if (lang === 'hi' && isInflectedHindiPluralOrOblique(lastWord)) return false;
+
+            // यदि कोई घटक बहुत छोटा (1 अक्षर) है तो छोड़ें
+            if (parts.some(p => p.length < 2)) return false;
+
+            // सामान्य दैनिक शब्द जाँच
+            if (filterCommonWords && isNonLinkableWord(phrase, lang)) {
+                return false;
+            }
+        } else {
+            const singleWord = parts[0];
+            if (filterStopwords && (stopwordSet.has(singleWord) || HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(singleWord))) {
+                return false;
+            }
+            if (HONORIFIC_PREFIXES.has(singleWord) || STRICT_PHRASE_BREAKER_WORDS.has(singleWord)) {
+                return false;
+            }
+            if (lang === 'hi' && isInflectedHindiPluralOrOblique(singleWord)) {
+                return false;
+            }
+            if (filterCommonWords && isNonLinkableWord(singleWord, lang)) {
+                return false;
+            }
         }
 
         return true;
@@ -2270,7 +2499,6 @@
         const preventSelfLink = DOM.optPreventSelfLink ? DOM.optPreventSelfLink.checked : true;
 
         // 1. पहले शब्द-संख्या (4-gram -> 3-gram -> 2-gram -> 1-gram) और फिर अक्षर लंबाई के अनुसार अवरोही क्रम
-        // इससे 'भारतीय जनता दल' / 'राष्ट्रीय जनता दल' / 'जनता दल' हमेशा 'जनता' या 'दल' से पहले संसाधित होंगे!
         const candidateArray = Array.from(candidateMap.keys());
         candidateArray.sort((a, b) => {
             const wordsA = a.trim().split(/\s+/).length;
@@ -2289,7 +2517,7 @@
         function claimAllOccurrencesInText(phrase) {
             if (!phrase || phrase.length < 2) return;
             const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const rgx = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\x01\x02]|$)`, 'gu');
+            const rgx = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\\-॰'\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\\-॰'\x01\x02]|$)`, 'gu');
             let m;
             while ((m = rgx.exec(cleanText)) !== null) {
                 const pfx = m[1] || '';
@@ -2301,14 +2529,19 @@
             }
         }
 
-        // यदि लेख में पहले से कोई बहु-शब्द कड़ी (जैसे [[जनता दल]]) मौजूद है, तो लेख में आगे आने वाले सभी 'जनता दल'
-        // स्थानों को भी सुरक्षित (Claim) करें ताकि उनके भीतर 'जनता' या 'दल' की टूटी हुई कड़ी न बने!
+        // स्व-शीर्षक उपनामों (Self-title aliases जैसे 'तुलसीदास', 'महात्मा गांधी') के सभी स्थानों को पहले ही सुरक्षित करें
+        if (state.selfTitleAliases && state.selfTitleAliases.size > 0) {
+            state.selfTitleAliases.forEach(alias => {
+                seenTargets.add(alias.trim().toLowerCase());
+                claimAllOccurrencesInText(alias);
+            });
+        }
+
+        // पहले से मौजूद कड़ियों (Existing Links) के लक्ष्यों व पदों को सुरक्षित करें
         if (state.existingLinks && state.existingLinks.size > 0) {
             state.existingLinks.forEach(existingTarget => {
                 seenTargets.add(existingTarget.trim().toLowerCase());
-                if (existingTarget.includes(' ')) {
-                    claimAllOccurrencesInText(existingTarget);
-                }
+                claimAllOccurrencesInText(existingTarget);
             });
         }
 
@@ -2317,19 +2550,14 @@
             if (!info) continue;
 
             const isMulti = term.trim().includes(' ');
+            const resolvedWikiTarget = (info.target || term).trim();
 
-            // यदि कोई बहु-शब्द पद (जैसे 'जनता दल') विकिपीडिया पर सत्यापित रूप से अस्तित्व में है,
-            // और पहले से existingLinks में था, तो उसकी सभी आवृत्तियों को सुरक्षित रखें
-            if (isMulti && info.exists && !info.isDisambig && seenTargets.has((info.target || term).trim().toLowerCase())) {
+            // यदि कोई पद या उसका रीडायरेक्ट लक्ष्य स्वयं वर्तमान लेख का शीर्षक है (WP:CIRCULAR)
+            if (preventSelfLink && (isSelfLink(term, state.pageTitle) || isSelfLink(resolvedWikiTarget, state.pageTitle))) {
                 claimAllOccurrencesInText(term);
                 continue;
             }
 
-            // सुरक्षा जाँच: सामान्य दैनिक शब्द व स्व-कड़ीकरण का बहिष्कार
-            if (preventSelfLink && state.pageTitle && isSelfLink(term, state.pageTitle)) {
-                if (isMulti) claimAllOccurrencesInText(term);
-                continue;
-            }
             if (filterCommonWords && isNonLinkableWord(term, state.lang)) {
                 continue;
             }
@@ -2343,7 +2571,7 @@
             const exists = info.exists;
             const isRedirect = info.isRedirect;
             const isDisambig = info.isDisambig;
-            let target = resolveRedirects && isRedirect ? info.target : term;
+            let target = resolveRedirects && isRedirect ? resolvedWikiTarget : term;
 
             let status = 'blue';
             if (!exists) {
@@ -2357,16 +2585,17 @@
             if (status === 'red' && skipRed) continue;
             if (status === 'disambig' && skipDisambig) continue;
 
-            // यदि इस लक्ष्य पृष्ठ की कड़ी पहले ही लेख में या सुझावों में चुनी जा चुकी है (WP:OVERLINKING)
+            // यदि इस लक्ष्य पृष्ठ (या रीडायरेक्ट लक्ष्य) की कड़ी पहले ही लेख में या सुझावों में चुनी जा चुकी है (WP:OVERLINKING)
             const normTargetKey = (target || term).trim().toLowerCase();
-            if (seenTargets.has(normTargetKey)) {
-                if (isMulti && exists) claimAllOccurrencesInText(term);
+            const normResolvedKey = resolvedWikiTarget.toLowerCase();
+            if (seenTargets.has(normTargetKey) || seenTargets.has(normResolvedKey)) {
+                if (exists) claimAllOccurrencesInText(term);
                 continue;
             }
 
-            // पाठ में इस पद की सभी आवृत्तियाँ खोजें
+            // पाठ में इस पद की सभी स्वतंत्र अनाच्छादित आवृत्तियाँ खोजें (हाइफ़न, संक्षिप्त चिह्न '॰' व कोट्स के भीतर आधी कड़ी न बने)
             const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\x01\x02]|$)`, 'gu');
+            const regex = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\\-॰'\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\\-॰'\x01\x02]|$)`, 'gu');
             let match;
             let standaloneMatch = null;
             const allTermSpans = [];
@@ -2384,18 +2613,13 @@
                 }
             }
 
-            // केवल तभी सुझाव में जोड़ें जब इसकी कोई स्वतंत्र अनाच्छादित आवृत्ति उपलब्ध हो
             if (standaloneMatch && !seenTerms.has(term.toLowerCase())) {
                 seenTerms.add(term.toLowerCase());
                 seenTargets.add(normTargetKey);
+                seenTargets.add(normResolvedKey);
 
-                // महत्वपूर्ण: यदि यह बहु-शब्द संयुक्त पद है (उदा: 'जनता दल'), तो लेख में इसकी सभी आवृत्तियों को
-                // claimedIntervals में सुरक्षित करें ताकि दूसरी या तीसरी बार आने वाले 'जनता दल' में 'जनता' या 'दल' अलग से लिंक न हो!
-                if (isMulti) {
-                    allTermSpans.forEach(sp => claimedIntervals.push(sp));
-                } else {
-                    claimedIntervals.push({ start: standaloneMatch.start, end: standaloneMatch.end, term: term });
-                }
+                // इस पद की सभी आवृत्तियों को claimedIntervals में सुरक्षित करें ताकि बाद में कोई छोटा शब्द इसे तोड़कर अधूरी कड़ी न बनाए!
+                allTermSpans.forEach(sp => claimedIntervals.push(sp));
 
                 const index = standaloneMatch.matchIndex;
                 const start = Math.max(0, index - 35);
@@ -2406,7 +2630,7 @@
                     id: idCounter++,
                     term: term,
                     target: target,
-                    resolvedTarget: info.target,
+                    resolvedTarget: resolvedWikiTarget,
                     status: status,
                     isDisambig: isDisambig,
                     isMultiWord: isMulti,
@@ -2421,10 +2645,20 @@
 
     function createTermRegex(term) {
         const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return new RegExp(`(^|[^\\p{L}\\p{M}\\d_])(${escaped})([^\\p{L}\\p{M}\\d_]|$)`, 'u');
+        return new RegExp(`(^|[^\\p{L}\\p{M}\\d_\\-॰'])(${escaped})([^\\p{L}\\p{M}\\d_\\-॰']|$)`, 'u');
     }
 
     // ================== छन्नी एवं तालिका रेंडरिंग ==================
+    function getWordLengthBucketKey(term) {
+        const cleanLen = Array.from(String(term || '').replace(/\s+/g, '')).length;
+        if (cleanLen <= 3) return '2-3';
+        if (cleanLen <= 5) return '4-5';
+        if (cleanLen <= 7) return '6-7';
+        if (cleanLen <= 9) return '8-9';
+        if (cleanLen <= 12) return '10-12';
+        return '13+';
+    }
+
     function getFilteredSuggestions() {
         return state.suggestions.filter(s => {
             if (state.filterStatus === 'blue' && s.status !== 'blue') return false;
@@ -2434,6 +2668,10 @@
 
             if (state.filterType === 'multi' && !s.isMultiWord) return false;
             if (state.filterType === 'single' && s.isMultiWord) return false;
+
+            if (state.filterLengthBucket && getWordLengthBucketKey(s.term) !== state.filterLengthBucket) {
+                return false;
+            }
 
             if (state.searchQuery) {
                 const q = state.searchQuery;
@@ -2681,6 +2919,208 @@
                 DOM.densityRating.className = 'density-rating badge-red';
             }
         }
+
+        renderD3WordLengthChart();
+    }
+
+    // ================== D3.js शब्द लंबाई बनाम जोड़ी गई कड़ियाँ चार्ट (Over-Linking Pattern Visualizer) ==================
+    function renderD3WordLengthChart() {
+        const container = $('d3-word-length-chart');
+        const insightBadge = $('d3-overlink-insight-badge');
+        const resetBtn = $('btn-reset-d3-length-filter');
+        if (!container) return;
+
+        const buckets = [
+            { key: '2-3', label: '2–3 अक्षर', shortDesc: 'अति-लघु शब्द', added: 0, skipped: 0, isWarningZone: true },
+            { key: '4-5', label: '4–5 अक्षर', shortDesc: 'लघु शब्द', added: 0, skipped: 0, isWarningZone: false },
+            { key: '6-7', label: '6–7 अक्षर', shortDesc: 'मध्यम पद', added: 0, skipped: 0, isWarningZone: false },
+            { key: '8-9', label: '8–9 अक्षर', shortDesc: 'विशिष्ट पद', added: 0, skipped: 0, isWarningZone: false },
+            { key: '10-12', label: '10–12 अक्षर', shortDesc: 'संयुक्त पद', added: 0, skipped: 0, isWarningZone: false },
+            { key: '13+', label: '13+ अक्षर', shortDesc: 'दीर्घ वाक्यांश', added: 0, skipped: 0, isWarningZone: false }
+        ];
+        const bucketMap = new Map(buckets.map(b => [b.key, b]));
+
+        (state.suggestions || []).forEach(s => {
+            const bKey = getWordLengthBucketKey(s.term);
+            const bucket = bucketMap.get(bKey);
+            if (bucket) {
+                if (s.checked) bucket.added++;
+                else bucket.skipped++;
+            }
+        });
+
+        buckets.forEach(b => {
+            b.total = b.added + b.skipped;
+        });
+
+        const totalAdded = buckets.reduce((acc, b) => acc + b.added, 0);
+        const shortAdded = buckets[0].added;
+        const shortRatio = totalAdded > 0 ? (shortAdded / totalAdded) : 0;
+
+        if (insightBadge) {
+            if (totalAdded === 0) {
+                insightBadge.textContent = 'कोई कड़ी चयनित नहीं';
+                insightBadge.className = 'badge badge-total';
+            } else if (shortAdded >= 4 && shortRatio > 0.32) {
+                insightBadge.textContent = `⚠️ छोटे शब्दों में अधिक कड़ियाँ (${Math.round(shortRatio * 100)}%) — जाँच करें`;
+                insightBadge.className = 'badge badge-disambig';
+            } else {
+                insightBadge.textContent = '✓ संतुलित शब्द-लंबाई वितरण';
+                insightBadge.className = 'badge badge-blue';
+            }
+        }
+
+        if (resetBtn) {
+            resetBtn.style.display = state.filterLengthBucket ? 'inline-flex' : 'none';
+        }
+
+        container.innerHTML = '';
+
+        const width = Math.max(container.clientWidth || 640, 300);
+        const height = 220;
+        const margin = { top: 24, right: 18, bottom: 44, left: 40 };
+        const innerW = Math.max(width - margin.left - margin.right, 200);
+        const innerH = height - margin.top - margin.bottom;
+        const maxVal = Math.max(4, ...buckets.map(b => b.total));
+
+        if (typeof window.d3 !== 'undefined') {
+            const d3 = window.d3;
+            const svg = d3.select(container)
+                .append('svg')
+                .attr('viewBox', `0 0 ${width} ${height}`)
+                .attr('width', '100%')
+                .attr('height', height)
+                .style('overflow', 'visible');
+
+            const g = svg.append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(buckets.map(d => d.key))
+                .range([0, innerW])
+                .padding(0.28);
+
+            const y = d3.scaleLinear()
+                .domain([0, maxVal])
+                .nice()
+                .range([innerH, 0]);
+
+            // क्षैतिज ग्रिड रेखाएँ
+            g.append('g')
+                .attr('class', 'd3-grid-lines')
+                .selectAll('line')
+                .data(y.ticks(4))
+                .join('line')
+                .attr('x1', 0)
+                .attr('x2', innerW)
+                .attr('y1', d => y(d))
+                .attr('y2', d => y(d))
+                .attr('stroke', 'var(--border-light)')
+                .attr('stroke-dasharray', '3,3');
+
+            // Y-अक्ष
+            g.append('g')
+                .call(d3.axisLeft(y).ticks(4).tickFormat(d3.format('d')))
+                .call(axis => axis.select('.domain').attr('stroke', 'var(--border-color)'))
+                .call(axis => axis.selectAll('text').attr('fill', 'var(--text-secondary)').style('font-size', '11px'));
+
+            // X-अक्ष
+            g.append('g')
+                .attr('transform', `translate(0,${innerH})`)
+                .call(d3.axisBottom(x).tickFormat(key => {
+                    const found = bucketMap.get(key);
+                    return found ? found.label : key;
+                }))
+                .call(axis => axis.select('.domain').attr('stroke', 'var(--border-color)'))
+                .call(axis => axis.selectAll('text')
+                    .attr('fill', 'var(--text-primary)')
+                    .style('font-size', '11.5px')
+                    .style('font-weight', '600'));
+
+            // बार समूह (Stacked: Added + Skipped)
+            const barGroups = g.selectAll('.d3-bucket-group')
+                .data(buckets)
+                .join('g')
+                .attr('class', 'd3-bucket-group')
+                .attr('transform', d => `translate(${x(d.key)},0)`)
+                .style('cursor', 'pointer')
+                .on('click', (event, d) => {
+                    if (state.filterLengthBucket === d.key) {
+                        state.filterLengthBucket = null;
+                        showToast('शब्द लंबाई छन्नी हटाई गई');
+                    } else {
+                        state.filterLengthBucket = d.key;
+                        showToast(`'${d.label}' लंबाई के शब्द छाँटे गए`);
+                    }
+                    renderSuggestionsTable();
+                    renderD3WordLengthChart();
+                });
+
+            // कुल उम्मीदवार पृष्ठभूमि बार (Skipped/Unchecked)
+            barGroups.append('rect')
+                .attr('x', 0)
+                .attr('y', d => y(d.total))
+                .attr('width', x.bandwidth())
+                .attr('height', d => Math.max(0, innerH - y(d.total)))
+                .attr('rx', 5)
+                .attr('fill', 'var(--border-color)')
+                .attr('opacity', d => (state.filterLengthBucket && state.filterLengthBucket !== d.key) ? 0.35 : 0.65);
+
+            // जोड़ी गई कड़ियाँ (Added Links Bar)
+            barGroups.append('rect')
+                .attr('x', 0)
+                .attr('y', d => y(d.added))
+                .attr('width', x.bandwidth())
+                .attr('height', d => Math.max(0, innerH - y(d.added)))
+                .attr('rx', 5)
+                .attr('fill', d => {
+                    if (d.isWarningZone && d.added > 0) return 'var(--accent-orange)';
+                    return 'var(--primary-color)';
+                })
+                .attr('stroke', d => state.filterLengthBucket === d.key ? 'var(--text-primary)' : 'none')
+                .attr('stroke-width', 2)
+                .attr('opacity', d => (state.filterLengthBucket && state.filterLengthBucket !== d.key) ? 0.45 : 1);
+
+            // बार के ऊपर संख्या लेबल
+            barGroups.append('text')
+                .attr('x', x.bandwidth() / 2)
+                .attr('y', d => y(d.total) - 6)
+                .attr('text-anchor', 'middle')
+                .attr('fill', 'var(--text-primary)')
+                .style('font-size', '11px')
+                .style('font-weight', '700')
+                .text(d => d.total > 0 ? `+${d.added}${d.skipped > 0 ? `/${d.total}` : ''}` : '0');
+        } else {
+            // यदि ऑफ़लाइन मोड में D3 स्क्रिप्ट उपलब्ध न हो तो स्वच्छ SVG बार चार्ट फ़ॉलबैक
+            const barW = Math.floor(innerW / buckets.length) - 14;
+            const svgParts = [`<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">`];
+            buckets.forEach((b, idx) => {
+                const bx = margin.left + idx * (barW + 14) + 6;
+                const totalH = Math.round((b.total / maxVal) * innerH);
+                const addedH = Math.round((b.added / maxVal) * innerH);
+                const byTotal = margin.top + (innerH - totalH);
+                const byAdded = margin.top + (innerH - addedH);
+                const fillCol = (b.isWarningZone && b.added > 0) ? 'var(--accent-orange)' : 'var(--primary-color)';
+                svgParts.push(`
+                    <g class="d3-fallback-bar" data-bucket="${b.key}" style="cursor:pointer">
+                        <rect x="${bx}" y="${byTotal}" width="${barW}" height="${totalH}" rx="5" fill="var(--border-color)" opacity="0.55"></rect>
+                        <rect x="${bx}" y="${byAdded}" width="${barW}" height="${addedH}" rx="5" fill="${fillCol}"></rect>
+                        <text x="${bx + barW / 2}" y="${byTotal - 6}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary)">+${b.added}</text>
+                        <text x="${bx + barW / 2}" y="${margin.top + innerH + 18}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-primary)">${b.label}</text>
+                    </g>
+                `);
+            });
+            svgParts.push('</svg>');
+            container.innerHTML = svgParts.join('');
+            container.querySelectorAll('.d3-fallback-bar').forEach(el => {
+                el.addEventListener('click', () => {
+                    const key = el.getAttribute('data-bucket');
+                    state.filterLengthBucket = (state.filterLengthBucket === key) ? null : key;
+                    renderSuggestionsTable();
+                    renderD3WordLengthChart();
+                });
+            });
+        }
     }
 
     // ================== संशोधित विकिटेक्स्ट एवं डिफ़ का पुनः परिकलन ==================
@@ -2741,26 +3181,42 @@
         let tokenIndex = 0;
         let plainIndex = 0;
 
-        // 0. पहले से मौजूद बहु-शब्द कड़ियों (जैसे [[जनता दल]]) के अन्य अlinked उल्लेखों को सुरक्षित करें
+        // 0. पहले से मौजूद बहु-शब्द कड़ियों (जैसे [[जनता दल]]) तथा लेख के स्वयं के शीर्षक उपनामों (selfTitleAliases) के अन्य उल्लेखों को सुरक्षित करें
+        const phrasesToKeepIntact = new Set();
         if (state.existingLinks && state.existingLinks.size > 0) {
-            state.existingLinks.forEach(existingPhrase => {
-                if (existingPhrase && existingPhrase.includes(' ') && existingPhrase.length >= 4) {
-                    const esc = existingPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const rgx = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\x01\x02])(${esc})([^\\p{L}\\p{M}\\d_\x01\x02]|$)`, 'gu');
-                    result = result.replace(rgx, (m, pfx, matchedTerm, sfx) => {
-                        const ph = `\x01KEEPPLAIN_${plainIndex++}\x02`;
-                        keepPlainTokens.push({ placeholder: ph, original: matchedTerm });
-                        return `${pfx}${ph}${sfx}`;
-                    });
+            state.existingLinks.forEach(p => {
+                if (p && p.includes(' ') && p.length >= 4) phrasesToKeepIntact.add(p);
+            });
+        }
+        if (state.selfTitleAliases && state.selfTitleAliases.size > 0) {
+            state.selfTitleAliases.forEach(p => {
+                if (p && p.length >= 3) phrasesToKeepIntact.add(p);
+            });
+        }
+        // सभी पहचाने गए बहु-शब्द सुझावों (चाहे वे अचयनित भी किए गए हों) को भी आधी कड़ी में टूटने से बचाएं
+        if (Array.isArray(state.suggestions)) {
+            state.suggestions.forEach(sug => {
+                if (!sug.checked && sug.term && sug.term.includes(' ') && sug.term.length >= 4) {
+                    phrasesToKeepIntact.add(sug.term);
                 }
             });
         }
 
+        phrasesToKeepIntact.forEach(existingPhrase => {
+            const esc = existingPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rgx = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\\-॰'\x01\x02])(${esc})([^\\p{L}\\p{M}\\d_\\-॰'\x01\x02]|$)`, 'giu');
+            result = result.replace(rgx, (m, pfx, matchedTerm, sfx) => {
+                const ph = `\x01KEEPPLAIN_${plainIndex++}\x02`;
+                keepPlainTokens.push({ placeholder: ph, original: matchedTerm });
+                return `${pfx}${ph}${sfx}`;
+            });
+        });
+
         sorted.forEach(s => {
             const escaped = s.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            // हमेशा 'gu' फ्लैग का प्रयोग करें ताकि बहु-शब्द पद (उदा: 'जनता दल') के प्रथम उल्लेख पर कड़ी बने
-            // और शेष सभी उल्लेखों को KEEPPLAIN टोकन से सुरक्षित किया जा सके जिससे 'जनता' या 'दल' कभी अलग से न टूटे!
-            const pattern = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\x01\x02]|$)`, 'gu');
+            // हमेशा 'gu' फ्लैग और सख्त शब्द-सीमा (हाइफ़न '-', संक्षिप्त चिह्न '॰', सिंगल कोट आदि) का प्रयोग करें
+            // ताकि कोई भी संयुक्त शब्द बीच से टूटकर गलत या अधूरी कड़ी न बने!
+            const pattern = new RegExp(`(^|[^\\p{L}\\p{M}\\d_\\-॰'\x01\x02])(${escaped})([^\\p{L}\\p{M}\\d_\\-॰'\x01\x02]|$)`, 'gu');
 
             let wikilink = '';
             if (cleanPipes && s.target.toLowerCase() === s.term.toLowerCase()) {
@@ -2776,8 +3232,8 @@
 
             result = result.replace(pattern, (match, prefix, termMatch, suffix) => {
                 if (firstOnly && replaced) {
-                    // यदि यह संयुक्त पद (जैसे 'जनता दल') दूसरी या तीसरी बार आया है, तो इसे सादा (Plain) सुरक्षित रखें
-                    // ताकि बाद में कोई एकल शब्द ('जनता' या 'दल') इसे तोड़कर आधी कड़ी न बना सके
+                    // यदि यह संयुक्त पद दूसरी या तीसरी बार आया है, तो इसे सादा (Plain) सुरक्षित रखें
+                    // ताकि बाद में कोई एकल शब्द इसे तोड़कर आधी कड़ी न बना सके
                     if (isMultiWord) {
                         const plainPh = `\x01KEEPPLAIN_${plainIndex++}\x02`;
                         keepPlainTokens.push({ placeholder: plainPh, original: termMatch });
@@ -4808,45 +5264,92 @@
         }
     }
 
+    // प्रत्येक यूज़र को सख्ती से केवल उसी के खाते के लॉग दिखाने के लिए फ़िल्टर (Strict Per-User Log Isolation)
+    function filterLogsStrictlyForUser(logsArray, userObj = currentUser) {
+        if (!Array.isArray(logsArray)) return [];
+        if (!userObj || !userObj.email) {
+            // अतिथि (Guest) सत्र के लिए केवल guest लॉग रखें
+            return logsArray.filter(item => {
+                if (!item) return false;
+                const itemEmail = String(item.userEmail || item.user || '').trim().toLowerCase();
+                return !itemEmail || itemEmail === 'guest';
+            });
+        }
+        const targetEmail = String(userObj.email).trim().toLowerCase();
+        const targetUid = String(userObj.uid || '').trim();
+        return logsArray.filter(item => {
+            if (!item) return false;
+            // प्रारंभिक उदाहरण (sample) लॉग किसी वास्तविक लॉगिन यूज़र के निजी लॉग में न मिलाएँ
+            if (item.id === 'log_sample_tulsidas' || item.logId === 'log_sample_tulsidas') return false;
+            const itemUid = String(item.ownerId || '').trim();
+            const itemEmail = String(item.userEmail || item.user || '').trim().toLowerCase();
+            if (targetUid && itemUid && itemUid === targetUid) return true;
+            if (itemEmail && itemEmail === targetEmail) return true;
+            return false;
+        });
+    }
+
     function saveUserAccountSnapshot(userObj, logsList) {
         try {
             if (userObj && userObj.email) {
-                const emailKey = getEmailArchiveKey(userObj.email);
+                const normEmail = String(userObj.email).trim().toLowerCase();
+                const emailKey = getEmailArchiveKey(normEmail);
                 const archiveMap = getUserProfilesArchiveMap();
                 const prev = archiveMap[emailKey] || {};
                 const chosenIcon = userObj.avatarIcon || prev.avatarIcon || localStorage.getItem('wikilink_profile_icon') || '📚';
                 archiveMap[emailKey] = {
-                    email: String(userObj.email).trim().toLowerCase(),
-                    name: String(userObj.name || prev.name || userObj.email.split('@')[0]).trim(),
+                    email: normEmail,
+                    name: String(userObj.name || prev.name || normEmail.split('@')[0]).trim(),
                     avatarIcon: chosenIcon,
                     role: userObj.role || prev.role || 'विकिपीडिया संपादक',
                     uid: userObj.uid || prev.uid || '',
                     updatedAt: new Date().toISOString()
                 };
                 localStorage.setItem('wikilink_user_profiles_archive_v1', JSON.stringify(archiveMap));
-                localStorage.setItem('wikilink_last_login_email', String(userObj.email).trim().toLowerCase());
+                localStorage.setItem('wikilink_last_login_email', normEmail);
 
                 if (Array.isArray(logsList)) {
-                    const existingUserLogs = getSavedUserLogsByEmail(userObj.email);
-                    const merged = mergeUniqueLogsList(logsList, existingUserLogs);
-                    localStorage.setItem(`wikilink_user_logs_${emailKey}`, JSON.stringify(merged.slice(0, 80)));
+                    const existingUserLogs = getSavedUserLogsByEmail(normEmail, userObj.uid);
+                    const strictlyOwned = filterLogsStrictlyForUser(
+                        mergeUniqueLogsList(logsList, existingUserLogs),
+                        { email: normEmail, uid: userObj.uid || prev.uid || '' }
+                    ).map(item => ({
+                        ...item,
+                        user: normEmail,
+                        userEmail: normEmail,
+                        ownerId: item.ownerId || userObj.uid || prev.uid || ''
+                    }));
+                    localStorage.setItem(`wikilink_user_logs_${emailKey}`, JSON.stringify(strictlyOwned.slice(0, 80)));
                 }
-            }
-            if (Array.isArray(logsList)) {
-                localStorage.setItem('wikilink_activity_logs', JSON.stringify(logsList.slice(0, 80)));
             }
         } catch (e) {
             console.warn('Snapshot save warning:', e);
         }
     }
 
-    function getSavedUserLogsByEmail(email) {
+    function getSavedUserLogsByEmail(email, uid = '') {
         if (!email) return [];
         try {
-            const emailKey = getEmailArchiveKey(email);
+            const normEmail = String(email).trim().toLowerCase();
+            const emailKey = getEmailArchiveKey(normEmail);
             const raw = localStorage.getItem(`wikilink_user_logs_${emailKey}`);
             const parsed = raw ? JSON.parse(raw) : [];
-            return Array.isArray(parsed) ? parsed : [];
+            if (!Array.isArray(parsed)) return [];
+            // यदि आर्काइव में पुराने समय के बिना टैग वाले लॉग हैं जो इसी ईमेल की कुंजी में थे, तो उन्हें इस ईमेल से संबद्ध मानें, परंतु किसी दूसरे ईमेल के लॉग को तुरंत हटाएँ
+            return parsed.filter(item => {
+                if (!item) return false;
+                if (item.id === 'log_sample_tulsidas' || item.logId === 'log_sample_tulsidas') return false;
+                const itemEmail = String(item.userEmail || item.user || '').trim().toLowerCase();
+                const itemUid = String(item.ownerId || '').trim();
+                if (uid && itemUid && itemUid !== uid && itemEmail && itemEmail !== normEmail) return false;
+                if (itemEmail && itemEmail !== 'guest' && itemEmail !== normEmail) return false;
+                return true;
+            }).map(item => ({
+                ...item,
+                user: normEmail,
+                userEmail: normEmail,
+                ownerId: item.ownerId || uid || ''
+            }));
         } catch (e) {
             return [];
         }
@@ -4869,11 +5372,9 @@
 
     async function performLogout() {
         const oldName = currentUser ? currentUser.name : 'सदस्य';
-        // लॉगआउट से पहले वर्तमान यूज़र की संपूर्ण प्रोफ़ाइल जानकारी (नाम, आइकन) व सभी पुराने लॉग सुरक्षित रूप से आर्काइव में सहेजें
+        // लॉगआउट से पहले वर्तमान यूज़र की संपूर्ण प्रोफ़ाइल जानकारी (नाम, आइकन) व केवल उसी के निजी लॉग सुरक्षित रूप से उसके ईमेल आर्काइव में सहेजें
         if (currentUser) {
-            saveUserAccountSnapshot(currentUser, userActivityLogs);
-        } else {
-            saveLogsToStorage();
+            saveUserAccountSnapshot(currentUser, filterLogsStrictlyForUser(userActivityLogs, currentUser));
         }
 
         if (window.WikiFirebase && window.WikiFirebase.signOutFirebaseUser) {
@@ -4883,8 +5384,9 @@
                 console.warn('Firebase signOut error:', err);
             }
         }
-        // केवल सक्रिय सत्र हटाएँ — यूज़र की जानकारी, आइकन, थीम और पुराने लॉग्स बिल्कुल न हटाएँ!
+        // सक्रिय सत्र और इन-मेमोरी लॉग्स साफ़ करें ताकि अगला लॉगिन करने वाला यूज़र कभी पिछले यूज़र के लॉग न देखे!
         currentUser = null;
+        userActivityLogs = [];
         localStorage.removeItem('wikilink_current_user');
         localStorage.removeItem('wikilink_google_account');
         updateAuthHeaderUI();
@@ -5419,9 +5921,8 @@
             localStorage.setItem('wikilink_profile_icon', resolvedIcon);
             recordLocalRegisteredEmail(currentUser.email, currentUser.name, currentUser.uid);
 
-            // लॉगआउट से पहले के सभी पुराने लॉग्स (इस ईमेल के आर्काइव + स्थानीय लॉग्स) को मर्ज करें ताकि कोई पुराना लॉग न खोए
-            const oldUserLogs = getSavedUserLogsByEmail(normEmail);
-            userActivityLogs = mergeUniqueLogsList(oldUserLogs, userActivityLogs);
+            // सख्त नियम: केवल इसी यूज़र (normEmail / uid) के निजी लॉग लोड करें — किसी अन्य यूज़र के लॉग कभी न मिलाएँ!
+            userActivityLogs = getSavedUserLogsByEmail(normEmail, currentUser.uid);
 
             logUserActivity('यूज़र लॉगिन', {
                 title: currentUser.name,
@@ -5450,7 +5951,7 @@
                 renderSuggestionsTable();
             }
             refreshAdminAndApprovedBlacklist();
-            showToast(`स्वागत है, ${currentUser.name}! आपके प्रोफ़ाइल व पुराने लॉग लोड किए जा रहे हैं...`);
+            showToast(`स्वागत है, ${currentUser.name}! आपके निजी प्रोफ़ाइल व लॉग लोड किए जा रहे हैं...`);
 
             // लॉगिन करते ही यूज़र को उसके विशेष प्रोफ़ाइल पेज (logs.html) में ले जाएँ
             const isAlreadyOnProfilePage = Boolean($('anime-profile-authenticated-shell') || window.location.pathname.endsWith('logs.html'));
@@ -5536,9 +6037,9 @@
                 localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: normEmail, avatarIcon: resolvedIcon }));
                 recordLocalRegisteredEmail(normEmail, resolvedName, fbUser.uid);
 
-                // पुराने संग्रहीत लॉग्स को भी मर्ज करें
-                const oldUserLogs = getSavedUserLogsByEmail(normEmail);
-                userActivityLogs = mergeUniqueLogsList(oldUserLogs, userActivityLogs);
+                // सख्त नियम: केवल इसी लॉगिन यूज़र के संग्रहीत लॉग्स लोड करें
+                const oldUserLogs = getSavedUserLogsByEmail(normEmail, fbUser.uid);
+                userActivityLogs = filterLogsStrictlyForUser(mergeUniqueLogsList(oldUserLogs, userActivityLogs), currentUser);
                 saveUserAccountSnapshot(currentUser, userActivityLogs);
 
                 if (fbUser.preferredSkin) {
@@ -5556,9 +6057,21 @@
 
         window.addEventListener('wikilink:firebase-logs', (e) => {
             const cloudLogs = e.detail?.logs;
-            if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
-                const oldUserLogs = currentUser && currentUser.email ? getSavedUserLogsByEmail(currentUser.email) : [];
-                userActivityLogs = mergeUniqueLogsList(userActivityLogs, oldUserLogs, cloudLogs);
+            const eventUid = e.detail?.uid || '';
+            if (!currentUser || !currentUser.email) return;
+            if (eventUid && currentUser.uid && eventUid !== currentUser.uid) return;
+            if (Array.isArray(cloudLogs)) {
+                const taggedCloudLogs = cloudLogs.map(l => ({
+                    ...l,
+                    user: currentUser.email,
+                    userEmail: currentUser.email,
+                    ownerId: l.ownerId || currentUser.uid || ''
+                }));
+                const oldUserLogs = getSavedUserLogsByEmail(currentUser.email, currentUser.uid);
+                userActivityLogs = filterLogsStrictlyForUser(
+                    mergeUniqueLogsList(taggedCloudLogs, oldUserLogs, userActivityLogs),
+                    currentUser
+                );
                 saveLogsToStorage();
                 updateAuthHeaderUI();
                 renderUserDashboard();
@@ -5705,6 +6218,36 @@
             });
         }
 
+        const btnAdminTestWord = $('btn-admin-test-word');
+        if (btnAdminTestWord) {
+            btnAdminTestWord.addEventListener('click', () => {
+                const wordInput = $('admin-direct-word-input');
+                const langSel = $('admin-direct-lang-select');
+                const diagBox = $('admin-word-diagnostic-box');
+                const rawWord = wordInput ? wordInput.value.trim() : '';
+                const langVal = langSel ? langSel.value : 'hi';
+                if (!rawWord) {
+                    showToast('कृपया नीति परीक्षण हेतु शब्द दर्ज करें');
+                    if (wordInput) wordInput.focus();
+                    return;
+                }
+                const diag = evaluateWordLogicalPolicyForAdmin(rawWord, langVal);
+                if (diagBox) {
+                    diagBox.style.display = 'block';
+                    diagBox.innerHTML = `
+                        <div class="admin-diag-header">
+                            <strong>🔍 शब्द नीति निदान: "${escapeHtml(rawWord)}" (${escapeHtml(langVal)})</strong>
+                            <span class="badge ${diag.shouldBlacklist ? 'badge-disambig' : 'badge-blue'}">${escapeHtml(diag.verdictLabel)}</span>
+                        </div>
+                        <p class="admin-diag-summary">${escapeHtml(diag.summary)}</p>
+                        <div class="admin-diag-rules-row">
+                            ${diag.rules.map(r => `<span class="admin-diag-chip ${r.passed ? 'chip-pass' : 'chip-fail'}">${r.passed ? '✓' : '✕'} ${escapeHtml(r.name)}</span>`).join('')}
+                        </div>
+                    `;
+                }
+            });
+        }
+
         const btnAdminDirectAdd = $('btn-admin-direct-add');
         if (btnAdminDirectAdd) {
             btnAdminDirectAdd.addEventListener('click', async () => {
@@ -5714,8 +6257,11 @@
                 }
                 const wordInput = $('admin-direct-word-input');
                 const langSel = $('admin-direct-lang-select');
+                const reasonSel = $('admin-direct-reason-select');
+                const diagBox = $('admin-word-diagnostic-box');
                 const rawWord = wordInput ? wordInput.value.trim() : '';
                 const langVal = langSel ? langSel.value : 'hi';
+                const policyReason = reasonSel ? reasonSel.value : 'WP:NOTLINKED (सामान्य दैनिक शब्द)';
                 if (!rawWord) {
                     showToast('कृपया जोड़ने के लिए शब्द लिखें');
                     return;
@@ -5725,29 +6271,149 @@
                     if (window.WikiFirebase && window.WikiFirebase.addApprovedBlacklistWordByAdmin) {
                         await window.WikiFirebase.addApprovedBlacklistWordByAdmin(rawWord, langVal);
                     }
-                    // स्थानीय कैश में भी जोड़ें
                     addWordToLocalApprovedBlacklist({
                         word: rawWord.toLowerCase(),
                         lang: langVal,
+                        reason: policyReason,
                         approvedBy: 'amankumar.wikimedian@gmail.com'
                     });
                     if (wordInput) wordInput.value = '';
-                    showToast(`'${rawWord}' को एडमिन द्वारा वैश्विक बहिष्कार सूची में जोड़ दिया गया!`);
+                    if (diagBox) diagBox.style.display = 'none';
+                    showToast(`'${rawWord}' (${policyReason}) को एडमिन द्वारा वैश्विक बहिष्कार सूची में जोड़ दिया गया!`);
                     await refreshAdminAndApprovedBlacklist();
                 } catch (err) {
                     console.warn('Admin direct add error:', err);
                     addWordToLocalApprovedBlacklist({
                         word: rawWord.toLowerCase(),
                         lang: langVal,
+                        reason: policyReason,
                         approvedBy: 'amankumar.wikimedian@gmail.com'
                     });
                     if (wordInput) wordInput.value = '';
+                    if (diagBox) diagBox.style.display = 'none';
                     renderApprovedBlacklistStrip();
                     renderAdminPanelUI();
                     showToast(`'${rawWord}' बहिष्कार सूची में जोड़ा गया`);
                 } finally {
                     btnAdminDirectAdd.disabled = false;
                 }
+            });
+        }
+
+        // एडमिन पैनल अनुरोध स्थिति फ़िल्टर चिप्स
+        document.querySelectorAll('.admin-req-filter-chip[data-admin-req-status]').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.admin-req-filter-chip[data-admin-req-status]').forEach(c => c.classList.remove('active-chip'));
+                chip.classList.add('active-chip');
+                state.adminReqStatusFilter = chip.dataset.adminReqStatus || 'all';
+                renderAdminPanelUI();
+            });
+        });
+
+        const adminReqSearchInput = $('admin-req-search-input');
+        if (adminReqSearchInput) {
+            adminReqSearchInput.addEventListener('input', (e) => {
+                state.adminReqSearchQuery = (e.target.value || '').trim().toLowerCase();
+                renderAdminPanelUI();
+            });
+        }
+
+        // एडमिन सामूहिक सहमति / अस्वीकृति बटन
+        const btnApproveAllPending = $('btn-admin-approve-all-pending');
+        if (btnApproveAllPending) {
+            btnApproveAllPending.addEventListener('click', async () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const pendingList = (state.blacklistRequestsList || []).filter(r => r.status === 'pending');
+                if (pendingList.length === 0) {
+                    showToast('कोई लंबित अनुरोध नहीं है');
+                    return;
+                }
+                btnApproveAllPending.disabled = true;
+                try {
+                    for (const req of pendingList) {
+                        const reqWord = String(req.word || req.term || '');
+                        if (window.WikiFirebase && window.WikiFirebase.approveBlacklistRequestInFirestore) {
+                            try { await window.WikiFirebase.approveBlacklistRequestInFirestore(req); } catch (e) {}
+                        }
+                        req.status = 'approved';
+                        addWordToLocalApprovedBlacklist({
+                            word: reqWord,
+                            lang: req.lang || 'hi',
+                            approvedBy: 'amankumar.wikimedian@gmail.com'
+                        });
+                    }
+                    renderApprovedBlacklistStrip();
+                    renderAdminPanelUI();
+                    showToast(`✓ सभी ${pendingList.length} लंबित अनुरोध स्वीकृत किए गए!`);
+                } finally {
+                    btnApproveAllPending.disabled = false;
+                }
+            });
+        }
+
+        const btnRejectAllPending = $('btn-admin-reject-all-pending');
+        if (btnRejectAllPending) {
+            btnRejectAllPending.addEventListener('click', async () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const pendingList = (state.blacklistRequestsList || []).filter(r => r.status === 'pending');
+                if (pendingList.length === 0) {
+                    showToast('कोई लंबित अनुरोध नहीं है');
+                    return;
+                }
+                btnRejectAllPending.disabled = true;
+                try {
+                    for (const req of pendingList) {
+                        const rId = String(req.id || req.requestId || '');
+                        if (rId && window.WikiFirebase && window.WikiFirebase.rejectBlacklistRequestInFirestore) {
+                            try { await window.WikiFirebase.rejectBlacklistRequestInFirestore(rId); } catch (e) {}
+                        }
+                        req.status = 'rejected';
+                    }
+                    renderAdminPanelUI();
+                    showToast(`सभी ${pendingList.length} लंबित अनुरोध अस्वीकृत किए गए`);
+                } finally {
+                    btnRejectAllPending.disabled = false;
+                }
+            });
+        }
+
+        // एडमिन स्वीकृत शब्द खोज, भाषा फ़िल्टर व JSON निर्यात
+        const adminApprovedSearchInput = $('admin-approved-search-input');
+        if (adminApprovedSearchInput) {
+            adminApprovedSearchInput.addEventListener('input', (e) => {
+                state.adminApprovedSearchQuery = (e.target.value || '').trim().toLowerCase();
+                renderAdminPanelUI();
+            });
+        }
+
+        const adminApprovedLangFilter = $('admin-approved-lang-filter');
+        if (adminApprovedLangFilter) {
+            adminApprovedLangFilter.addEventListener('change', (e) => {
+                state.adminApprovedLangFilter = e.target.value || 'all';
+                renderAdminPanelUI();
+            });
+        }
+
+        const btnAdminExportBl = $('btn-admin-export-blacklist');
+        if (btnAdminExportBl) {
+            btnAdminExportBl.addEventListener('click', () => {
+                const payload = {
+                    exportedAt: new Date().toISOString(),
+                    exportedBy: 'विक्रम प्रताप (amankumar.wikimedian@gmail.com)',
+                    totalApprovedCommunityWords: (state.approvedGlobalBlacklistList || []).length,
+                    builtInPolicyWordsCount: (NEVER_LINK_WORDS.hi ? NEVER_LINK_WORDS.hi.size : 0) + (NEVER_LINK_WORDS.en ? NEVER_LINK_WORDS.en.size : 0),
+                    words: state.approvedGlobalBlacklistList || []
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `wikilink_approved_blacklist_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('स्वीकृत वैश्विक बहिष्कार सूची JSON डाउनलोड हुई');
             });
         }
 
@@ -5774,7 +6440,7 @@
                 }
                 updateAuthHeaderUI();
                 renderUserDashboard();
-                showToast('सभी गतिविधि लॉग्स साफ़ किए गए');
+                showToast('आपके सभी गतिविधि लॉग्स साफ़ किए गए');
             });
         }
 
@@ -5786,6 +6452,62 @@
     }
 
     // ================== एडमिन पैनल एवं स्वीकृत सामुदायिक बहिष्कार सूची प्रबंधन ==================
+    function evaluateWordLogicalPolicyForAdmin(rawWord, lang = 'hi') {
+        const w = String(rawWord || '').trim();
+        const lower = w.toLowerCase();
+        const isStop = isStopword(w, lang) || STRICT_PHRASE_BREAKER_WORDS.has(lower);
+        const isCommon = isNonLinkableWord(w, lang);
+        const isDateOrNum = isDateOrYear(w) || /^\d+$/.test(w);
+        const isUnit = isUnitOrMeasure(w);
+        const isInflected = isInflectedHindiPluralOrOblique(w) || HONORIFIC_PREFIXES.has(lower);
+        const isAlreadyApproved = state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(lower);
+        const lenOk = w.length >= 3;
+
+        const rules = [
+            { name: 'WP:STOP (अव्यय/कारक मुक्त)', passed: !isStop },
+            { name: 'WP:NOTLINKED (सामान्य शब्द मुक्त)', passed: !isCommon },
+            { name: 'WP:DATELINK (तिथि/अंक मुक्त)', passed: !isDateOrNum },
+            { name: 'WP:UNITS (इकाई मुक्त)', passed: !isUnit },
+            { name: 'व्याकरणिक एकवचन/मानक रूप', passed: !isInflected },
+            { name: 'न्यूनतम लंबाई (≥3 अक्षर)', passed: lenOk },
+            { name: 'पूर्व-बहिष्कार मुक्त', passed: !isAlreadyApproved }
+        ];
+
+        let verdictLabel = '✓ विश्वकोशीय पद (कड़ी योग्य)';
+        let summary = 'यह पद विकिपीडिया के 7 प्राथमिक तार्किक नियमों में उत्तीर्ण है। केवल विशेष संपादकीय कारण होने पर ही बहिष्कृत करें।';
+        let shouldBlacklist = false;
+        let shortBadge = '✓ कड़ी योग्य पद';
+
+        if (isAlreadyApproved) {
+            verdictLabel = '🚫 पहले से वैश्विक बहिष्कृत';
+            summary = 'यह शब्द पहले से ही स्वीकृत वैश्विक बहिष्कार सूची में शामिल है।';
+            shouldBlacklist = true;
+            shortBadge = '🚫 पूर्व-बहिष्कृत';
+        } else if (isStop) {
+            verdictLabel = '⚠️ बहिष्कार अनुशंसित (व्याकरणिक अव्यय)';
+            summary = 'यह व्याकरणिक अव्यय/सहायक क्रिया है। इसकी आंतरिक कड़ी कभी नहीं बननी चाहिए।';
+            shouldBlacklist = true;
+            shortBadge = '⚠️ व्याकरणिक पद';
+        } else if (isCommon) {
+            verdictLabel = '⚠️ बहिष्कार अनुशंसित (WP:NOTLINKED)';
+            summary = 'यह सामान्य बोलचाल/क्रियात्मक शब्द है। WP:OVERLINKING रोकने हेतु बहिष्कार उपयुक्त है।';
+            shouldBlacklist = true;
+            shortBadge = '⚠️ WP:NOTLINKED';
+        } else if (isInflected) {
+            verdictLabel = '⚠️ बहिष्कार अनुशंसित (तिर्यक बहुवचन/आदरसूचक)';
+            summary = 'यह तिर्यक बहुवचन या आदरसूचक उपसर्ग है जो अधूरी कड़ी बना सकता है।';
+            shouldBlacklist = true;
+            shortBadge = '⚠️ तिर्यक/उपसर्ग';
+        } else if (isDateOrNum || isUnit || !lenOk) {
+            verdictLabel = '⚠️ बहिष्कार अनुशंसित (माप/तिथि/अति-लघु)';
+            summary = 'यह तिथि, मात्रक या अति-लघु शब्द है। इसे बहिष्कृत करना तार्किक है।';
+            shouldBlacklist = true;
+            shortBadge = '⚠️ तिथि/माप/लघु';
+        }
+
+        return { shouldBlacklist, verdictLabel, summary, shortBadge, rules };
+    }
+
     function loadLocalApprovedBlacklistCache() {
         try {
             const cached = JSON.parse(localStorage.getItem('wikilink_approved_global_blacklist_v1') || '[]');
@@ -5806,6 +6528,7 @@
                 id: `${wordObj.lang || 'hi'}_${clean}`,
                 word: clean,
                 lang: wordObj.lang || 'hi',
+                reason: wordObj.reason || 'WP:NOTLINKED',
                 approvedBy: wordObj.approvedBy || 'amankumar.wikimedian@gmail.com',
                 approvedAt: new Date().toISOString()
             });
@@ -5934,23 +6657,61 @@
 
         const requests = state.blacklistRequestsList || [];
         const pendingReqs = requests.filter(r => r.status === 'pending');
+        const approvedReqs = requests.filter(r => r.status === 'approved');
+        const rejectedReqs = requests.filter(r => r.status === 'rejected');
+        const approvedList = state.approvedGlobalBlacklistList || [];
 
         if (pendingBadge) pendingBadge.textContent = String(pendingReqs.length);
         if (pendingCountSpan) pendingCountSpan.textContent = String(pendingReqs.length);
 
+        // तार्किक सारांश KPI कार्ड अपडेट करें
+        safeSetText('admin-stat-pending', String(pendingReqs.length));
+        safeSetText('admin-stat-approved', String(approvedList.length || approvedReqs.length));
+        safeSetText('admin-stat-rejected', String(rejectedReqs.length));
+        const builtInCount = (NEVER_LINK_WORDS.hi ? NEVER_LINK_WORDS.hi.size : 7479) + approvedList.length;
+        safeSetText('admin-stat-global-total', `${builtInCount.toLocaleString('hi-IN')}+`);
+
+        // सामूहिक एक्शन बटन केवल तभी सक्रिय हों जब लंबित अनुरोध हों
+        const btnApproveAll = $('btn-admin-approve-all-pending');
+        const btnRejectAll = $('btn-admin-reject-all-pending');
+        if (btnApproveAll) btnApproveAll.disabled = (pendingReqs.length === 0);
+        if (btnRejectAll) btnRejectAll.disabled = (pendingReqs.length === 0);
+
         if (requestsTbody) {
-            if (requests.length === 0) {
+            const statusFilter = state.adminReqStatusFilter || 'all';
+            const reqQuery = (state.adminReqSearchQuery || '').trim().toLowerCase();
+
+            const filteredRequests = requests.filter(req => {
+                if (statusFilter !== 'all' && req.status !== statusFilter) return false;
+                if (reqQuery) {
+                    const w = String(req.word || req.term || '').toLowerCase();
+                    const art = String(req.articleTitle || '').toLowerCase();
+                    const sender = String(req.requestedByName || '').toLowerCase();
+                    const email = String(req.requestedByEmail || '').toLowerCase();
+                    if (!w.includes(reqQuery) && !art.includes(reqQuery) && !sender.includes(reqQuery) && !email.includes(reqQuery)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            if (filteredRequests.length === 0) {
                 requestsTbody.innerHTML = `
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
-                            वर्तमान में सदस्यों द्वारा कोई बहिष्कार अनुरोध लंबित नहीं है।
+                        <td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                            ${requests.length === 0
+                                ? 'वर्तमान में सदस्यों द्वारा कोई बहिष्कार अनुरोध लंबित नहीं है।'
+                                : 'चयनित स्थिति/खोज छन्नी के अंतर्गत कोई अनुरोध नहीं मिला।'}
                         </td>
                     </tr>
                 `;
             } else {
-                requestsTbody.innerHTML = requests.map(req => {
+                requestsTbody.innerHTML = filteredRequests.map(req => {
                     const reqId = escapeHtml(String(req.id || req.requestId || ''));
                     const wordDisplay = String(req.word || req.term || '');
+                    const reqLang = req.lang || 'hi';
+                    const policyDiag = evaluateWordLogicalPolicyForAdmin(wordDisplay, reqLang);
+
                     const statusPill = req.status === 'approved'
                         ? '<span class="status-pill status-pill-blue">✓ स्वीकृत</span>'
                         : req.status === 'rejected'
@@ -5960,7 +6721,12 @@
                     return `
                         <tr>
                             <td data-label="शब्द"><strong>${escapeHtml(wordDisplay)}</strong></td>
-                            <td data-label="भाषा"><span class="compact-lang-badge">${escapeHtml(req.lang || 'hi')}</span></td>
+                            <td data-label="भाषा"><span class="compact-lang-badge">${escapeHtml(reqLang)}</span></td>
+                            <td data-label="तार्किक नीति निदान">
+                                <span class="admin-policy-verdict-badge ${policyDiag.shouldBlacklist ? 'verdict-warn' : 'verdict-ok'}" title="${escapeHtml(policyDiag.summary)}">
+                                    ${escapeHtml(policyDiag.shortBadge)}
+                                </span>
+                            </td>
                             <td data-label="लेख संदर्भ" style="font-size: 0.8rem;">
                                 <strong>${escapeHtml(req.articleTitle || '-')}</strong>
                                 ${req.reason ? `<div style="color: var(--text-muted); font-size: 0.76rem;">${escapeHtml(req.reason)}</div>` : ''}
@@ -6000,7 +6766,6 @@
                                 lang: targetReq.lang || 'hi',
                                 approvedBy: 'amankumar.wikimedian@gmail.com'
                             });
-                            // यदि वर्तमान लेख में यह शब्द सुझाव में है तो हटा दें
                             state.suggestions = state.suggestions.filter(s => s.term.toLowerCase() !== reqWord.toLowerCase());
                             renderSuggestionsTable();
                             if (state.originalWikitext) recalculateModifiedWikitext();
@@ -6039,13 +6804,22 @@
             }
         }
 
-        const approvedList = state.approvedGlobalBlacklistList || [];
         if (approvedCountSpan) approvedCountSpan.textContent = String(approvedList.length);
         if (approvedListEl) {
-            if (approvedList.length === 0) {
-                approvedListEl.innerHTML = `<span style="font-size: 0.82rem; color: var(--text-muted);">अभी कोई अतिरिक्त सामुदायिक शब्द नहीं जोड़ा गया है (अंतर्निर्मित 8,100+ शब्द सक्रिय हैं)।</span>`;
+            const appSearch = (state.adminApprovedSearchQuery || '').trim().toLowerCase();
+            const appLang = state.adminApprovedLangFilter || 'all';
+            const filteredApproved = approvedList.filter(item => {
+                const wText = String(item.word || item.term || '').toLowerCase();
+                const lCode = String(item.lang || 'hi');
+                if (appLang !== 'all' && lCode !== appLang) return false;
+                if (appSearch && !wText.includes(appSearch)) return false;
+                return true;
+            });
+
+            if (filteredApproved.length === 0) {
+                approvedListEl.innerHTML = `<span style="font-size: 0.82rem; color: var(--text-muted);">${approvedList.length === 0 ? 'अभी कोई अतिरिक्त सामुदायिक शब्द नहीं जोड़ा गया है (अंतर्निर्मित 8,100+ शब्द सक्रिय हैं)।' : 'इस खोज/भाषा छन्नी में कोई शब्द नहीं मिला।'}</span>`;
             } else {
-                approvedListEl.innerHTML = approvedList.map(item => {
+                approvedListEl.innerHTML = filteredApproved.map(item => {
                     const wText = String(item.word || item.term || '');
                     const wId = String(item.id || item.wordId || `${item.lang || 'hi'}__${wText}`);
                     return `
@@ -6125,6 +6899,7 @@
                     const normName = String((archivedProfile && archivedProfile.name) || parsed.name || '').trim() || normEmail.split('@')[0];
                     parsed.name = normName;
                     parsed.email = normEmail;
+                    parsed.uid = parsed.uid || (archivedProfile && archivedProfile.uid) || '';
                     parsed.avatarIcon = parsed.avatarIcon || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
                     parsed.isAdmin = (
                         normEmail === 'amankumar.wikimedian@gmail.com' &&
@@ -6138,27 +6913,14 @@
         }
 
         try {
-            const savedLogsRaw = localStorage.getItem('wikilink_activity_logs');
-            const globalSavedLogs = savedLogsRaw ? JSON.parse(savedLogsRaw) : [];
-            const emailSavedLogs = currentUser && currentUser.email ? getSavedUserLogsByEmail(currentUser.email) : [];
-            const combined = mergeUniqueLogsList(emailSavedLogs, globalSavedLogs);
-            if (combined.length > 0) {
-                userActivityLogs = combined;
+            if (currentUser && currentUser.email) {
+                // जब यूज़र लॉगिन हो, तो सख्ती से केवल उसी यूज़र के ईमेल/UID के लॉग लोड करें — किसी अन्य यूज़र या साझा लॉग को कदापि न दिखाएँ!
+                userActivityLogs = getSavedUserLogsByEmail(currentUser.email, currentUser.uid);
             } else {
-                userActivityLogs = [
-                    {
-                        id: 'log_sample_tulsidas',
-                        logId: 'log_sample_tulsidas',
-                        timestamp: new Date(Date.now() - 3600000).toLocaleString('hi-IN'),
-                        action: 'तार्किक विश्लेषण (उदाहरण)',
-                        title: 'तुलसीदास',
-                        lang: 'hi',
-                        newLinks: 8,
-                        contaminationsFixed: 4,
-                        note: 'प्रारंभिक उदाहरण सत्र',
-                        wikitext: `'''तुलसीदास''' (१५३२ - १६२३) [[हिन्दी साहित्य]] के महान [[कवि]] और [[सन्त]] थे। उनका जन्म [[राजापुर]] में हुआ था। उन्हें आदि काव्य [[रामायण]] के रचयिता [[महर्षि वाल्मीकि]] का अवतार माना जाता है।`
-                    }
-                ];
+                // अतिथि (Guest) सत्र के लिए केवल अतिथि लॉग लोड करें
+                const guestLogsRaw = localStorage.getItem('wikilink_guest_activity_logs');
+                const guestLogs = guestLogsRaw ? JSON.parse(guestLogsRaw) : [];
+                userActivityLogs = Array.isArray(guestLogs) ? filterLogsStrictlyForUser(guestLogs, null) : [];
             }
         } catch (e) {
             userActivityLogs = [];
@@ -6167,11 +6929,19 @@
 
     function saveLogsToStorage() {
         try {
-            const trimmed = userActivityLogs.slice(0, 80);
-            localStorage.setItem('wikilink_activity_logs', JSON.stringify(trimmed));
             if (currentUser && currentUser.email) {
-                const emailKey = getEmailArchiveKey(currentUser.email);
-                localStorage.setItem(`wikilink_user_logs_${emailKey}`, JSON.stringify(trimmed));
+                const normEmail = String(currentUser.email).trim().toLowerCase();
+                const emailKey = getEmailArchiveKey(normEmail);
+                const strictlyOwned = filterLogsStrictlyForUser(userActivityLogs, currentUser).map(item => ({
+                    ...item,
+                    user: normEmail,
+                    userEmail: normEmail,
+                    ownerId: item.ownerId || currentUser.uid || ''
+                }));
+                localStorage.setItem(`wikilink_user_logs_${emailKey}`, JSON.stringify(strictlyOwned.slice(0, 80)));
+            } else {
+                const guestOnly = filterLogsStrictlyForUser(userActivityLogs, null);
+                localStorage.setItem('wikilink_guest_activity_logs', JSON.stringify(guestOnly.slice(0, 50)));
             }
         } catch (e) {
             console.warn('Could not save activity logs:', e);
@@ -6180,11 +6950,15 @@
 
     function logUserActivity(actionType, details = {}) {
         const strId = `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const userEmail = currentUser && currentUser.email ? String(currentUser.email).trim().toLowerCase() : 'guest';
+        const userUid = currentUser && currentUser.uid ? String(currentUser.uid).trim() : '';
         const entry = {
             id: strId,
             logId: strId,
             timestamp: new Date().toLocaleString('hi-IN'),
-            user: currentUser ? currentUser.email : 'guest',
+            user: userEmail,
+            userEmail: userEmail,
+            ownerId: userUid,
             action: actionType,
             title: details.title || state.pageTitle || 'अशीर्षक लेख',
             lang: details.lang || state.lang || 'hi',
@@ -6195,11 +6969,12 @@
         };
 
         userActivityLogs.unshift(entry);
+        userActivityLogs = filterLogsStrictlyForUser(userActivityLogs, currentUser);
         if (userActivityLogs.length > 80) userActivityLogs.pop();
         saveLogsToStorage();
         updateAuthHeaderUI();
 
-        if (window.WikiFirebase && window.WikiFirebase.saveActivityLogToFirestore) {
+        if (currentUser && window.WikiFirebase && window.WikiFirebase.saveActivityLogToFirestore) {
             window.WikiFirebase.saveActivityLogToFirestore(entry).catch((err) => {
                 console.warn('Firestore log sync warning:', err);
             });
@@ -6316,24 +7091,38 @@
             if (logoutBtn) logoutBtn.style.display = 'none';
         }
 
+        const ownerTagEl = $('user-logs-owner-tag');
+        const ownerSubEl = $('user-logs-owner-subtext');
+        if (currentUser && currentUser.email) {
+            if (ownerTagEl) ownerTagEl.textContent = `🔒 निजी लॉग: ${currentUser.name} (${currentUser.email})`;
+            if (ownerSubEl) ownerSubEl.textContent = `${currentUser.name} द्वारा कार्यपटल में विश्लेषित लेखों एवं संशोधनों का व्यक्तिगत इतिहास (केवल आपके खाते हेतु दृश्यमान):`;
+        } else {
+            if (ownerTagEl) ownerTagEl.textContent = '🔒 केवल वर्तमान सत्र के लॉग';
+            if (ownerSubEl) ownerSubEl.textContent = 'कार्यपटल में आपके द्वारा विश्लेषित लेखों का व्यक्तिगत इतिहास:';
+        }
+
         const tbody = $('user-logs-tbody');
         if (!tbody) return;
 
+        // सख्त सत्यापन: रेंडर करते समय भी केवल वर्तमान यूज़र के स्वामित्व वाले लॉग ही दिखाएँ
+        const strictlyUserLogs = filterLogsStrictlyForUser(userActivityLogs, currentUser);
         const q = (searchQuery || '').trim().toLowerCase();
         const filtered = q
-            ? userActivityLogs.filter(l =>
+            ? strictlyUserLogs.filter(l =>
                 (l.title || '').toLowerCase().includes(q) ||
                 (l.action || '').toLowerCase().includes(q) ||
                 (l.lang || '').toLowerCase().includes(q) ||
                 (l.note || '').toLowerCase().includes(q)
             )
-            : userActivityLogs;
+            : strictlyUserLogs;
 
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">
-                        कोई गतिविधि लॉग नहीं मिला। जब आप कार्यपटल में लेखों का विश्लेषण करेंगे, तो उनका रिकॉर्ड यहाँ स्वतः सहेजा जाएगा।
+                        ${currentUser
+                            ? `सदस्य <strong>${escapeHtml(currentUser.name)}</strong> (${escapeHtml(currentUser.email)}) के खाते में अभी कोई गतिविधि लॉग नहीं है। जब आप कार्यपटल में लेखों का विश्लेषण करेंगे, तो केवल आपके लॉग यहाँ सहेजे जाएंगे।`
+                            : 'कोई गतिविधि लॉग नहीं मिला। जब आप कार्यपटल में लेखों का विश्लेषण करेंगे, तो उनका रिकॉर्ड यहाँ स्वतः सहेजा जाएगा।'}
                     </td>
                 </tr>
             `;
