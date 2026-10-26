@@ -111,7 +111,7 @@
         "lang": {
           "type": "string",
           "description": "Wikipedia language code (e.g. hi, en, sa).",
-          "minLength": 2,
+          "minLength": 1,
           "maxLength": 16
         },
         "newLinks": {

@@ -49,6 +49,7 @@ let app = null;
 let db = null;
 let auth = null;
 let unsubscribeLogsSnapshot = null;
+const profileEnsurePromises = new Map();
 
 function sanitizeId(rawId) {
   const cleaned = String(rawId || '')
@@ -99,61 +100,75 @@ async function testConnection() {
 async function ensureUserProfileInFirestore(user) {
   if (!db || !user || !user.uid) return null;
   const uid = sanitizeId(user.uid);
-  const userPath = `users/${uid}`;
 
-  const userRef = doc(db, 'users', uid);
-  const privateRef = doc(db, 'users', uid, 'private', 'info');
-
-  let existingSnap = null;
-  try {
-    existingSnap = await getDoc(userRef);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.GET, userPath);
+  if (profileEnsurePromises.has(uid)) {
+    return profileEnsurePromises.get(uid);
   }
 
-  const savedLocalSkin = localStorage.getItem('wikilink_skin_v3') || 'wikimedia-classic';
-  const validSkin = ALLOWED_SKINS.includes(savedLocalSkin) ? savedLocalSkin : 'wikimedia-classic';
-  const displayName = clampString(
-    user.displayName || (user.email ? user.email.split('@')[0] : 'Wikipedia Editor'),
-    100,
-    'Wikipedia Editor'
-  );
-  const email = clampString(user.email || 'editor@wikipedia.org', 254, 'editor@wikipedia.org');
+  const ensurePromise = (async () => {
+    const userPath = `users/${uid}`;
+    const userRef = doc(db, 'users', uid);
+    const privateRef = doc(db, 'users', uid, 'private', 'info');
 
-  if (!existingSnap || !existingSnap.exists()) {
+    let existingSnap = null;
     try {
-      const batch = writeBatch(db);
-      batch.set(userRef, {
-        uid,
-        displayName,
-        role: 'editor',
-        preferredSkin: validSkin,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      if (user.emailVerified && email.length >= 3) {
-        batch.set(privateRef, {
+      existingSnap = await getDoc(userRef);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, userPath);
+    }
+
+    const savedLocalSkin = localStorage.getItem('wikilink_skin_v3') || 'wikimedia-classic';
+    const validSkin = ALLOWED_SKINS.includes(savedLocalSkin) ? savedLocalSkin : 'wikimedia-classic';
+    const displayName = clampString(
+      user.displayName || (user.email ? user.email.split('@')[0] : 'Wikipedia Editor'),
+      100,
+      'Wikipedia Editor'
+    );
+    const email = clampString(user.email || 'editor@wikipedia.org', 254, 'editor@wikipedia.org');
+
+    if (!existingSnap || !existingSnap.exists()) {
+      try {
+        const batch = writeBatch(db);
+        batch.set(userRef, {
           uid,
-          email,
+          displayName,
+          role: 'editor',
+          preferredSkin: validSkin,
+          createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+        if (user.emailVerified && email.length >= 3) {
+          batch.set(privateRef, {
+            uid,
+            email,
+            updatedAt: serverTimestamp()
+          });
+        }
+        await batch.commit();
+        return { uid, displayName, role: 'editor', preferredSkin: validSkin, email };
+      } catch (error) {
+        handleFirestoreError(error, OperationType.CREATE, userPath);
       }
-      await batch.commit();
-      return { uid, displayName, role: 'editor', preferredSkin: validSkin, email };
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, userPath);
+    } else {
+      const data = existingSnap.data();
+      return {
+        uid,
+        displayName: data.displayName || displayName,
+        role: data.role || 'editor',
+        preferredSkin: ALLOWED_SKINS.includes(data.preferredSkin) ? data.preferredSkin : 'wikimedia-classic',
+        email
+      };
     }
-  } else {
-    const data = existingSnap.data();
-    return {
-      uid,
-      displayName: data.displayName || displayName,
-      role: data.role || 'editor',
-      preferredSkin: ALLOWED_SKINS.includes(data.preferredSkin) ? data.preferredSkin : 'wikimedia-classic',
-      email
-    };
+    return null;
+  })();
+
+  profileEnsurePromises.set(uid, ensurePromise);
+  try {
+    return await ensurePromise;
+  } catch (err) {
+    profileEnsurePromises.delete(uid);
+    throw err;
   }
-  return null;
 }
 
 function subscribeToUserActivityLogs(uid, onLogsUpdated) {
@@ -213,6 +228,9 @@ async function saveActivityLogToFirestore(entry) {
   const logId = sanitizeId(entry.logId || entry.id || `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`);
   const docPath = `users/${uid}/activityLogs/${logId}`;
 
+  // Ensure the parent /users/{uid} document exists before creating subcollection documents
+  await ensureUserProfileInFirestore(user);
+
   const payload = {
     logId,
     ownerId: uid,
@@ -244,6 +262,7 @@ async function deleteSingleActivityLogInFirestore(rawId) {
   const uid = sanitizeId(user.uid);
   const logId = sanitizeId(rawId);
   const docPath = `users/${uid}/activityLogs/${logId}`;
+  await ensureUserProfileInFirestore(user);
   try {
     await deleteDoc(doc(db, 'users', uid, 'activityLogs', logId));
     return true;
@@ -259,6 +278,7 @@ async function clearUserActivityLogsInFirestore(logIds = []) {
   if (!user.emailVerified) return false;
 
   const uid = sanitizeId(user.uid);
+  await ensureUserProfileInFirestore(user);
   for (const rawId of logIds) {
     const logId = sanitizeId(rawId);
     const docPath = `users/${uid}/activityLogs/${logId}`;
@@ -279,6 +299,7 @@ async function updatePreferredSkinInFirestore(skinId) {
 
   const uid = sanitizeId(user.uid);
   const userPath = `users/${uid}`;
+  await ensureUserProfileInFirestore(user);
   const displayName = clampString(
     user.displayName || (user.email ? user.email.split('@')[0] : 'Wikipedia Editor'),
     100,
@@ -303,6 +324,13 @@ async function signInWithGooglePopup() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   const result = await signInWithPopup(auth, provider);
+  if (result.user && result.user.emailVerified) {
+    try {
+      await ensureUserProfileInFirestore(result.user);
+    } catch (err) {
+      console.warn('Profile initialization on sign-in:', err);
+    }
+  }
   return result.user;
 }
 
@@ -311,6 +339,7 @@ async function signOutFirebaseUser() {
     unsubscribeLogsSnapshot();
     unsubscribeLogsSnapshot = null;
   }
+  profileEnsurePromises.clear();
   if (auth && auth.currentUser) {
     await signOut(auth);
   }

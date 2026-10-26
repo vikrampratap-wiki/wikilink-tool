@@ -81,9 +81,9 @@ service cloud.firestore {
         && data.ownerId == request.auth.uid
         && data.action is string && data.action.size() >= 1 && data.action.size() <= 120
         && data.title is string && data.title.size() >= 1 && data.title.size() <= 300
-        && data.lang is string && data.lang.size() >= 2 && data.lang.size() <= 16
-        && data.newLinks is int && data.newLinks >= 0 && data.newLinks <= 10000
-        && data.contaminationsFixed is int && data.contaminationsFixed >= 0 && data.contaminationsFixed <= 10000
+        && data.lang is string && data.lang.size() >= 1 && data.lang.size() <= 16
+        && (data.newLinks is int || data.newLinks is number) && data.newLinks >= 0 && data.newLinks <= 10000
+        && (data.contaminationsFixed is int || data.contaminationsFixed is number) && data.contaminationsFixed >= 0 && data.contaminationsFixed <= 10000
         && data.note is string && data.note.size() <= 500
         && data.wikitext is string && data.wikitext.size() <= 50000
         && data.timestampDisplay is string && data.timestampDisplay.size() >= 1 && data.timestampDisplay.size() <= 100
@@ -156,7 +156,7 @@ service cloud.firestore {
         allow get: if isOwner(userId)
           && isValidId(userId)
           && isValidId(logId)
-          && existing().ownerId == request.auth.uid
+          && (resource == null || existing().ownerId == request.auth.uid)
           && exists(/databases/$(database)/documents/users/$(userId));
 
         allow list: if isOwner(userId)
@@ -174,7 +174,22 @@ service cloud.firestore {
             existsAfter(/databases/$(database)/documents/users/$(userId))
           );
 
-        allow update: if false;
+        allow update: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(logId)
+          && isValidActivityLog(incoming())
+          && incoming().logId == existing().logId
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == request.time
+          && (
+            // Action: Sync Activity Log Snapshot
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'action', 'title', 'lang', 'newLinks', 'contaminationsFixed',
+              'note', 'wikitext', 'timestampDisplay', 'createdAt'
+            ])
+          )
+          && exists(/databases/$(database)/documents/users/$(userId));
 
         allow delete: if isVerifiedUser()
           && isOwner(userId)
