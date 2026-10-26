@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>विकीलिंक सहायक (WikiLink Assistant) - विकिपीडिया आंतरिक कड़ी टूल</title>
+    <title>विकीलिंक सहायक (WikiLink Assistant)</title>
+    <meta name="description" content="विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, अति-कड़ीकरण शोधन एवं मीडियाविकी डिफ़ समीक्षा का स्वतंत्र उपकरण">
+    <meta property="og:title" content="विकीलिंक सहायक (WikiLink Assistant)">
+    <meta property="og:description" content="विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, अति-कड़ीकरण शोधन एवं मीडियाविकी डिफ़ समीक्षा का स्वतंत्र उपकरण">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,19 +60,24 @@
 
         <!-- तार्किक कार्यप्रवाह पट्टी (Workbench Workflow Stepper) -->
         <div class="workbench-flow-strip" id="workbench-flow-strip">
-            <div class="flow-step step-1 active" id="flow-step-1">
-                <span class="flow-num">1</span>
-                <span class="flow-label">बॉक्स 1: मूल लेख एवं तार्किक छन्नी</span>
+            <div class="flow-steps-row">
+                <div class="flow-step step-1 active" id="flow-step-1">
+                    <span class="flow-num">1</span>
+                    <span class="flow-label">बॉक्स 1: मूल लेख एवं तार्किक छन्नी</span>
+                </div>
+                <div class="flow-arrow" aria-hidden="true">→</div>
+                <div class="flow-step step-2" id="flow-step-2">
+                    <span class="flow-num">2</span>
+                    <span class="flow-label">बॉक्स 2: दूषित लेख एवं तार्किक निदान</span>
+                </div>
+                <div class="flow-arrow" aria-hidden="true">→</div>
+                <div class="flow-step step-3" id="flow-step-3">
+                    <span class="flow-num">3</span>
+                    <span class="flow-label">समीक्षा एवं विकिपीडिया डिफ़</span>
+                </div>
             </div>
-            <div class="flow-arrow" aria-hidden="true">→</div>
-            <div class="flow-step step-2" id="flow-step-2">
-                <span class="flow-num">2</span>
-                <span class="flow-label">बॉक्स 2: दूषित लेख एवं तार्किक निदान</span>
-            </div>
-            <div class="flow-arrow" aria-hidden="true">→</div>
-            <div class="flow-step step-3" id="flow-step-3">
-                <span class="flow-num">3</span>
-                <span class="flow-label">समीक्षा एवं विकिपीडिया डिफ़</span>
+            <div class="flow-progress-track" aria-hidden="true">
+                <div class="flow-progress-fill" id="flow-progress-fill" style="width: 33.33%;"></div>
             </div>
         </div>
 
@@ -552,6 +560,9 @@
                         <strong id="stat-link-density">0.0%</strong>
                         <span class="density-rating badge-blue" id="density-rating">संतुलित</span>
                     </div>
+                </div>
+                <div class="density-meter-track" aria-hidden="true">
+                    <div class="density-meter-fill" id="density-meter-fill" style="width: 0%;"></div>
                 </div>
             </div>
 

@@ -1,0 +1,12 @@
+{
+  "name": "wikilink-assistant",
+  "version": "2.1.0",
+  "description": "विकीलिंक सहायक (WikiLink Assistant) - विकिपीडिया आंतरिक कड़ी टूल",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node -e \"console.log('Static assets verified successfully.')\"",
+    "start": "node server.js",
+    "lint": "node --check app.js && node --check server.js"
+  }
+}

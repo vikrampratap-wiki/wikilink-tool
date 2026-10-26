@@ -59,6 +59,77 @@
         if (el) el.addEventListener(event, handler);
     }
 
+    function animateStatValue(idOrEl, targetVal, options = {}) {
+        const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+        if (!el) return;
+        const prefix = options.prefix || '';
+        const suffix = options.suffix || '';
+        const decimals = options.decimals || 0;
+        const locale = options.locale || null;
+        const numTarget = Number(targetVal);
+
+        if (isNaN(numTarget)) {
+            el.textContent = `${prefix}${targetVal}${suffix}`;
+            return;
+        }
+
+        const prevRaw = parseFloat(el.dataset.numericVal || '0');
+        const startVal = isNaN(prevRaw) ? 0 : prevRaw;
+        el.dataset.numericVal = String(numTarget);
+
+        el.classList.remove('stat-pop');
+        void el.offsetWidth;
+        el.classList.add('stat-pop');
+
+        if (startVal === numTarget) {
+            const formatted = decimals > 0
+                ? numTarget.toFixed(decimals)
+                : (locale ? Math.round(numTarget).toLocaleString(locale) : String(Math.round(numTarget)));
+            el.textContent = `${prefix}${formatted}${suffix}`;
+            return;
+        }
+
+        const duration = 420;
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = startVal + (numTarget - startVal) * eased;
+
+            const formatted = decimals > 0
+                ? current.toFixed(decimals)
+                : (locale ? Math.round(current).toLocaleString(locale) : String(Math.round(current)));
+            el.textContent = `${prefix}${formatted}${suffix}`;
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            }
+        }
+
+        requestAnimationFrame(step);
+    }
+
+    function setupInteractiveRipples() {
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn, .filter-chip-toggle');
+            if (!btn || btn.disabled) return;
+            const rect = btn.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'btn-ripple';
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = `${size}px`;
+            ripple.style.height = `${size}px`;
+            ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+            ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+            btn.appendChild(ripple);
+            setTimeout(() => {
+                if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+            }, 600);
+        });
+    }
+
     // ================== भाषा-विशिष्ट आम स्टॉपवर्ड्स ==================
     const STOPWORDS = {
         hi: new Set([
@@ -440,6 +511,7 @@
         try {
             initDOM();
             setupTheme();
+            setupInteractiveRipples();
             loadSavedBlacklist();
             bindEvents();
             updateCharCount();
@@ -764,6 +836,11 @@
             const el = $(id);
             if (el) el.classList.toggle('active', idx + 1 <= stepNum);
         });
+        const progressFill = $('flow-progress-fill');
+        if (progressFill) {
+            const pct = stepNum === 1 ? 33.33 : (stepNum === 2 ? 66.66 : 100);
+            progressFill.style.width = `${pct}%`;
+        }
     }
 
     function toggleInputControlCard() {
@@ -840,12 +917,21 @@
 
     function openModal(modalId) {
         const el = document.getElementById(modalId);
-        if (el) el.style.display = 'flex';
+        if (el) {
+            el.classList.remove('modal-closing');
+            el.style.display = 'flex';
+        }
     }
 
     function closeModal(modalId) {
         const el = document.getElementById(modalId);
-        if (el) el.style.display = 'none';
+        if (el) {
+            el.classList.add('modal-closing');
+            setTimeout(() => {
+                el.style.display = 'none';
+                el.classList.remove('modal-closing');
+            }, 170);
+        }
         state.editingSuggestionId = null;
     }
 
@@ -1200,6 +1286,10 @@
             box2Badge.className = 'workbench-badge badge-analyzing';
             box2Badge.textContent = 'परीक्षण जारी है...';
         }
+        if (DOM.contaminatedBoxCard) {
+            DOM.contaminatedBoxCard.classList.add('is-analyzing');
+            DOM.contaminatedBoxCard.classList.remove('has-contaminations', 'is-sanitized');
+        }
         safeSetText('box2-status-text', 'परीक्षण प्रक्रिया शुरू हो गई है: कड़ियों व संदूषण का विश्लेषण किया जा रहा है...');
         setWorkflowStep(2);
 
@@ -1252,6 +1342,9 @@
             if (DOM.analyzeBtn) {
                 DOM.analyzeBtn.disabled = false;
                 DOM.analyzeBtn.textContent = 'तार्किक विश्लेषण एवं दूषित तत्व पहचान (Analyze & Detect)';
+            }
+            if (DOM.contaminatedBoxCard) {
+                DOM.contaminatedBoxCard.classList.remove('is-analyzing');
             }
             safeSetDisplay('analyze-status-banner', 'none');
         }
@@ -1437,11 +1530,12 @@
         state.contaminations = report;
         safeSetValue('contaminated-wikitext-output', wikitext);
 
-        safeSetText('stat-total-contaminations', report.total);
-        safeSetText('stat-overlinks', report.overlinks.length);
-        safeSetText('stat-disambigs', report.disambigs.length);
-        safeSetText('stat-red-links', report.redLinks.length);
-        safeSetText('stat-syntax-issues', report.syntaxIssues.length + report.dateUnitIssues.length + report.commonWordIssues.length + report.selfLinkIssues.length);
+        const syntaxCount = report.syntaxIssues.length + report.dateUnitIssues.length + report.commonWordIssues.length + report.selfLinkIssues.length;
+        animateStatValue('stat-total-contaminations', report.total);
+        animateStatValue('stat-overlinks', report.overlinks.length);
+        animateStatValue('stat-disambigs', report.disambigs.length);
+        animateStatValue('stat-red-links', report.redLinks.length);
+        animateStatValue('stat-syntax-issues', syntaxCount);
         safeSetText('logic-rule-count', `${report.arguments.length} तार्किक नियम सक्रिय`);
 
         const badge = $('box2-status-badge');
@@ -1452,7 +1546,11 @@
 
         const card = $('contaminated-box-card');
         if (card) {
-            card.classList.remove('is-sanitized');
+            card.classList.remove('is-sanitized', 'has-contaminations');
+            if (report.total > 0) {
+                void card.offsetWidth;
+                card.classList.add('has-contaminations');
+            }
         }
 
         const sanitizeBtn = $('btn-sanitize-contaminated');
@@ -1463,8 +1561,8 @@
 
         const container = $('contamination-arguments-container');
         if (container) {
-            container.innerHTML = report.arguments.map(arg => `
-                <div class="logic-argument-item logic-${arg.type}">
+            container.innerHTML = report.arguments.map((arg, idx) => `
+                <div class="logic-argument-item logic-${arg.type}" style="animation-delay: ${Math.min(idx * 55, 300)}ms;">
                     <div class="logic-argument-title">${escapeHtml(arg.title)}</div>
                     <div class="logic-argument-desc">${escapeHtml(arg.desc)}</div>
                 </div>
@@ -1670,11 +1768,11 @@
             sanitizeBtn.textContent = 'तार्किक शुद्धिकरण पूर्ण हुआ';
         }
 
-        safeSetText('stat-total-contaminations', '0');
-        safeSetText('stat-overlinks', '0');
-        safeSetText('stat-disambigs', '0');
-        safeSetText('stat-red-links', '0');
-        safeSetText('stat-syntax-issues', '0');
+        animateStatValue('stat-total-contaminations', 0);
+        animateStatValue('stat-overlinks', 0);
+        animateStatValue('stat-disambigs', 0);
+        animateStatValue('stat-red-links', 0);
+        animateStatValue('stat-syntax-issues', 0);
 
         const statusText = $('box2-status-text');
         if (statusText) {
@@ -2028,8 +2126,9 @@
             return;
         }
 
-        visibleList.forEach(s => {
+        visibleList.forEach((s, idx) => {
             const tr = document.createElement('tr');
+            tr.style.animationDelay = `${Math.min(idx * 24, 320)}ms`;
             if (!s.checked) tr.classList.add('row-deselected');
 
             let statusBadge = '';
@@ -2149,18 +2248,26 @@
         const words = state.originalWikitext.trim() ? state.originalWikitext.trim().split(/\s+/).length : 0;
         const existingCount = state.existingLinks.size;
         const totalLinks = existingCount + activeCount;
-        const density = words > 0 ? ((totalLinks / words) * 100).toFixed(1) : '0.0';
+        const densityNum = words > 0 ? ((totalLinks / words) * 100) : 0;
+        const density = densityNum.toFixed(1);
 
-        safeSetText(DOM.statTotalWords, words.toLocaleString('hi-IN'));
-        safeSetText(DOM.statExistingLinks, existingCount.toLocaleString('hi-IN'));
-        safeSetText(DOM.statNewLinks, `+${activeCount}`);
-        safeSetText(DOM.statLinkDensity, `${density}%`);
+        animateStatValue(DOM.statTotalWords, words, { locale: 'hi-IN' });
+        animateStatValue(DOM.statExistingLinks, existingCount, { locale: 'hi-IN' });
+        animateStatValue(DOM.statNewLinks, activeCount, { prefix: '+' });
+        animateStatValue(DOM.statLinkDensity, densityNum, { decimals: 1, suffix: '%' });
+
+        const densityMeterFill = $('density-meter-fill');
+        if (densityMeterFill) {
+            const barWidth = Math.min(100, Math.max(0, (densityNum / 8) * 100));
+            densityMeterFill.style.width = `${barWidth.toFixed(1)}%`;
+            densityMeterFill.classList.toggle('density-warning', densityNum > 5.5);
+        }
 
         if (DOM.densityRating) {
-            if (density < 1.5) {
+            if (densityNum < 1.5) {
                 DOM.densityRating.textContent = 'अपेक्षाकृत कम कड़ियाँ';
                 DOM.densityRating.className = 'density-rating badge-total';
-            } else if (density <= 5.5) {
+            } else if (densityNum <= 5.5) {
                 DOM.densityRating.textContent = 'संतुलित घनत्व';
                 DOM.densityRating.className = 'density-rating badge-blue';
             } else {
