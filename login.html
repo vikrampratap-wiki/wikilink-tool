@@ -253,23 +253,25 @@
                         </div>
 
                         <form id="cute-auth-form" class="cute-auth-form" onsubmit="return false;">
+                            <div id="auth-error-alert-box" class="auth-error-alert-box" role="alert" style="display: none; padding: 10px 12px; border-radius: 8px; background: #fef2f2; border: 1px solid #f87171; color: #991b1b; font-size: 0.82rem; font-weight: 600; line-height: 1.45;"></div>
+
                             <div class="cute-field-group" id="auth-name-group" style="display: none;">
                                 <label for="auth-name-input" class="cute-label">आपका नाम / विकिपीडिया उपनाम (Name)</label>
-                                <input type="text" id="auth-name-input" class="cute-line-input" placeholder="उदा: विक्रम प्रताप" autocomplete="name">
+                                <input type="text" id="auth-name-input" class="cute-line-input" placeholder="अपना सदस्य नाम लिखें" autocomplete="name">
                             </div>
 
                             <div class="cute-field-group">
-                                <label for="auth-email-input" class="cute-label">ईमेल अथवा सदस्य नाम (Email / Username)</label>
-                                <input type="text" id="auth-email-input" class="cute-line-input" placeholder="editor@wikipedia.org या सदस्य नाम" autocomplete="username" required>
+                                <label for="auth-email-input" class="cute-label">पंजीकृत ईमेल पता (Registered Email)</label>
+                                <input type="email" id="auth-email-input" class="cute-line-input" placeholder="editor@wikipedia.org" autocomplete="username" required>
                             </div>
 
                             <div class="cute-field-group">
                                 <div class="cute-pass-label-row">
-                                    <label for="auth-password-input" class="cute-label">पासवर्ड (Password)</label>
+                                    <label for="auth-password-input" class="cute-label">पासवर्ड (Password — न्यूनतम 6 अक्षर अनिवार्य)</label>
                                     <span class="pass-eye-status-hint" id="pass-eye-status-hint">🔒 पासवर्ड छुपा है → आँखें खुली हैं 👀</span>
                                 </div>
                                 <div class="cute-password-wrap">
-                                    <input type="password" id="auth-password-input" class="cute-line-input" placeholder="••••••••" autocomplete="current-password" required>
+                                    <input type="password" id="auth-password-input" class="cute-line-input" placeholder="कम से कम 6 अक्षरों का पासवर्ड" minlength="6" autocomplete="current-password" required>
                                     <button type="button" id="auth-pass-toggle-btn" class="cute-pass-toggle" title="पासवर्ड दिखाएं (पात्र आँखें बंद करेंगे) / छिपाएं (पात्र आँखें खोलेंगे)">
                                         <span id="auth-eye-icon">👁</span>
                                         <span class="pass-toggle-text" id="auth-eye-text">दिखाएँ</span>
@@ -282,6 +284,7 @@
                                     <input type="checkbox" id="auth-remember-cb" checked>
                                     <span>सत्र याद रखें (Remember me)</span>
                                 </label>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">🔐 SHA-256 पासवर्ड लॉक सक्रिय</span>
                             </div>
 
                             <button type="submit" id="auth-submit-btn" class="cute-submit-btn">
@@ -361,7 +364,7 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js?v=15"></script>
-    <script src="app.js?v=15" defer></script>
+    <script type="module" src="firebase-client.js?v=16"></script>
+    <script src="app.js?v=16" defer></script>
 </body>
 </html>

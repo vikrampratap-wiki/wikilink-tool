@@ -545,6 +545,20 @@
         adminReqSearchQuery: '',
         adminApprovedSearchQuery: '',
         adminApprovedLangFilter: 'all',
+        adminUserSearchQuery: '',
+        adminWhitelist: new Set(),
+        adminWhitelistList: [],
+        adminAuditLogs: [],
+        adminEnginePolicy: {
+            maxDensityPercent: 10,
+            minWordLength: 3,
+            defaultScope: 'all',
+            forceFirstOnly: true,
+            forceSkipDisambig: true,
+            forceSkipDates: true,
+            forceBlueOnly: false,
+            broadcastMessage: ''
+        },
 
         // दूषित लेख रिपोर्ट
         contaminations: {
@@ -2505,6 +2519,12 @@
         if (state.existingLinks && state.existingLinks.has(phrase)) return false;
         if (state.existingLinksLower && state.existingLinksLower.has(lower)) return false;
 
+        // 0.5 एडमिन द्वारा सुरक्षित श्वेतसूची (Protected Whitelist — सदैव कड़ी योग्य विश्वकोशीय पद)
+        if (state.adminWhitelist && state.adminWhitelist.has(lower)) {
+            if (preventSelfLink && isSelfLink(phrase, state.pageTitle)) return false;
+            return true;
+        }
+
         // 1. उपयोगकर्ता कस्टम बहिष्कार सूची एवं एडमिन द्वारा स्वीकृत वैश्विक बहिष्कार सूची
         if (state.customBlacklist && state.customBlacklist.has(lower)) return false;
         if (state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(lower)) return false;
@@ -2747,6 +2767,30 @@
             }
         }
 
+        // एडमिन वैश्विक कड़ी घनत्व सीमा (Max Link Density Cap) का प्रवर्तन
+        const maxDensityPct = state.adminEnginePolicy ? Number(state.adminEnginePolicy.maxDensityPercent) || 0 : 0;
+        if (maxDensityPct > 0) {
+            const plainWords = (state.originalWikitext || cleanText)
+                .replace(/\[\[[^\]]+\]\]|\{\{[^}]+\}\}|<[^>]+>/g, ' ')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean).length;
+            if (plainWords > 30) {
+                const maxTotalLinks = Math.max(5, Math.floor((plainWords * maxDensityPct) / 100));
+                const existingCount = state.existingLinks ? Math.floor(state.existingLinks.size / 2) : 0;
+                const maxNewChecked = Math.max(3, maxTotalLinks - existingCount);
+                let checkedSoFar = 0;
+                suggestions.forEach(s => {
+                    if (s.checked) {
+                        checkedSoFar++;
+                        if (checkedSoFar > maxNewChecked) {
+                            s.checked = false;
+                        }
+                    }
+                });
+            }
+        }
+
         state.suggestions = suggestions;
     }
 
@@ -2799,10 +2843,12 @@
         const isLoggedIn = Boolean(currentUser && currentUser.email);
         const isUserAdmin = Boolean(
             currentUser &&
+            currentUser.vaultVerified === true &&
+            currentUser.isAdmin === true &&
             currentUser.email &&
             currentUser.email.trim().toLowerCase() === 'amankumar.wikimedian@gmail.com' &&
             currentUser.name &&
-            (currentUser.name.trim() === 'विक्रम प्रताप' || currentUser.name.trim().includes('विक्रम प्रताप'))
+            currentUser.name.trim() === 'विक्रम प्रताप'
         );
 
         if (visibleList.length === 0) {
@@ -5519,10 +5565,12 @@
         if (sectionId === 'sec-profile-admin') {
             const isAdmin = Boolean(
                 currentUser &&
+                currentUser.vaultVerified === true &&
+                currentUser.isAdmin === true &&
                 currentUser.email &&
                 currentUser.email.trim().toLowerCase() === 'amankumar.wikimedian@gmail.com' &&
                 currentUser.name &&
-                (currentUser.name.trim() === 'विक्रम प्रताप' || currentUser.name.trim().includes('विक्रम प्रताप'))
+                currentUser.name.trim() === 'विक्रम प्रताप'
             );
             if (!isAdmin) {
                 sectionId = 'sec-profile-overview';
@@ -5952,48 +6000,154 @@
             });
         }
 
-        // ================== ईमेल अद्वितीयता लॉक एवं एडमिन जाँच (Email Lock & Strict Admin Check) ==================
+        // ================== SHA-256 पासवर्ड वॉल्ट, ईमेल लॉक एवं सख्त एडमिन सत्यापन ==================
         const DESIGNATED_ADMIN_EMAIL = 'amankumar.wikimedian@gmail.com';
         const DESIGNATED_ADMIN_NAME = 'विक्रम प्रताप';
+        const ACCOUNT_VAULT_STORAGE_KEY = 'wikilink_account_vault_v3';
 
-        function isCurrentUserDesignatedAdmin(userObj = currentUser) {
-            if (!userObj || !userObj.email || !userObj.name) return false;
-            const normEmail = String(userObj.email).trim().toLowerCase();
-            const normName = String(userObj.name).trim();
-            if (normEmail !== DESIGNATED_ADMIN_EMAIL) return false;
-            return (
-                normName === DESIGNATED_ADMIN_NAME ||
-                normName.includes(DESIGNATED_ADMIN_NAME) ||
-                normName.toLowerCase() === 'vikram pratap'
-            );
+        async function computeAccountPasswordHash(email, plainPassword) {
+            const normalized = `${String(email || '').trim().toLowerCase()}::wikilink_salt_2026::${String(plainPassword || '')}`;
+            try {
+                if (window.crypto && window.crypto.subtle) {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(normalized);
+                    const digest = await window.crypto.subtle.digest('SHA-256', data);
+                    return Array.from(new Uint8Array(digest))
+                        .map(b => b.toString(16).padStart(2, '0'))
+                        .join('');
+                }
+            } catch (e) {}
+            // Fallback deterministic hash if WebCrypto is unavailable
+            let h1 = 0xdeadbeef ^ normalized.length;
+            let h2 = 0x41c6ce57 ^ normalized.length;
+            for (let i = 0, ch; i < normalized.length; i++) {
+                ch = normalized.charCodeAt(i);
+                h1 = Math.imul(h1 ^ ch, 2654435761);
+                h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
         }
 
-        function getLocalRegisteredEmailsMap() {
+        function getAccountVaultMap() {
             try {
-                const raw = localStorage.getItem('wikilink_registered_emails_v1');
+                const raw = localStorage.getItem(ACCOUNT_VAULT_STORAGE_KEY);
                 return raw ? JSON.parse(raw) : {};
             } catch (e) {
                 return {};
             }
         }
 
-        function recordLocalRegisteredEmail(email, name, uid = '') {
+        function saveAccountVaultMap(map) {
+            try {
+                localStorage.setItem(ACCOUNT_VAULT_STORAGE_KEY, JSON.stringify(map || {}));
+            } catch (e) {}
+        }
+
+        function isCurrentUserDesignatedAdmin(userObj = currentUser) {
+            if (!userObj || !userObj.email || !userObj.name) return false;
+            if (userObj.vaultVerified !== true) return false;
+            const normEmail = String(userObj.email).trim().toLowerCase();
+            const normName = String(userObj.name).trim();
+            if (normEmail !== DESIGNATED_ADMIN_EMAIL) return false;
+            if (normName !== DESIGNATED_ADMIN_NAME && normName.toLowerCase() !== 'vikram pratap') return false;
+
+            const vault = getAccountVaultMap();
+            const adminVault = vault[DESIGNATED_ADMIN_EMAIL];
+            if (userObj.firebaseAuthVerified === true) return true;
+            if (!adminVault || !adminVault.passwordHash || !userObj.passwordHashToken) return false;
+            return adminVault.passwordHash === userObj.passwordHashToken;
+        }
+
+        function getLocalRegisteredEmailsMap() {
+            return getAccountVaultMap();
+        }
+
+        function recordLocalRegisteredEmail(email, name, uid = '', passwordHash = '', role = '') {
             if (!email) return;
             try {
-                const map = getLocalRegisteredEmailsMap();
+                const map = getAccountVaultMap();
                 const normEmail = email.trim().toLowerCase();
-                if (!map[normEmail]) {
-                    map[normEmail] = {
-                        email: normEmail,
-                        name: name || normEmail.split('@')[0],
-                        uid: uid || '',
-                        firstSignedInAt: new Date().toISOString()
-                    };
-                } else if (name) {
-                    map[normEmail].name = name;
-                }
-                localStorage.setItem('wikilink_registered_emails_v1', JSON.stringify(map));
+                const prev = map[normEmail] || {};
+                map[normEmail] = {
+                    email: normEmail,
+                    name: name || prev.name || normEmail.split('@')[0],
+                    uid: uid || prev.uid || '',
+                    passwordHash: passwordHash || prev.passwordHash || '',
+                    role: role || prev.role || (normEmail === DESIGNATED_ADMIN_EMAIL ? 'मुख्य प्रशासक (Admin)' : 'विकिपीडिया संपादक'),
+                    blocked: Boolean(prev.blocked),
+                    firstSignedInAt: prev.firstSignedInAt || new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                saveAccountVaultMap(map);
             } catch (e) {}
+        }
+
+        function recordAdminAuditLog(actionTitle, detailText = '') {
+            try {
+                const entry = {
+                    id: `audit_${Date.now()}`,
+                    timestamp: new Date().toLocaleString('hi-IN'),
+                    action: actionTitle,
+                    detail: detailText,
+                    admin: `${DESIGNATED_ADMIN_NAME} (${DESIGNATED_ADMIN_EMAIL})`
+                };
+                state.adminAuditLogs.unshift(entry);
+                if (state.adminAuditLogs.length > 60) state.adminAuditLogs.pop();
+                localStorage.setItem('wikilink_admin_audit_logs_v1', JSON.stringify(state.adminAuditLogs));
+                renderAdminAuditLogUI();
+            } catch (e) {}
+        }
+
+        function loadAdminAuditLogsFromStorage() {
+            try {
+                const raw = localStorage.getItem('wikilink_admin_audit_logs_v1');
+                const parsed = raw ? JSON.parse(raw) : [];
+                state.adminAuditLogs = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                state.adminAuditLogs = [];
+            }
+        }
+
+        function renderAdminAuditLogUI() {
+            const container = $('admin-audit-log-container');
+            if (!container) return;
+            if (!Array.isArray(state.adminAuditLogs) || state.adminAuditLogs.length === 0) {
+                container.innerHTML = `<div style="color: var(--text-muted);">कोई प्रशासकीय ऑडिट प्रविष्टि नहीं है।</div>`;
+                return;
+            }
+            container.innerHTML = state.adminAuditLogs.map(item => `
+                <div style="padding: 5px 0; border-bottom: 1px dashed var(--border-color); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                    <div>
+                        <strong style="color: var(--primary-color);">🛡️ ${escapeHtml(item.action)}</strong>
+                        ${item.detail ? `<span style="color: var(--text-primary);"> — ${escapeHtml(item.detail)}</span>` : ''}
+                    </div>
+                    <small style="color: var(--text-muted); font-family: monospace;">${escapeHtml(item.timestamp)}</small>
+                </div>
+            `).join('');
+        }
+
+        function showAuthErrorAlert(msg) {
+            const alertBox = $('auth-error-alert-box');
+            if (alertBox) {
+                if (msg) {
+                    alertBox.textContent = msg;
+                    alertBox.style.display = 'block';
+                } else {
+                    alertBox.textContent = '';
+                    alertBox.style.display = 'none';
+                }
+            }
+            if (msg) {
+                showToast(msg);
+                if (stage) {
+                    stage.classList.add('is-covering-eyes');
+                }
+                if (speech) {
+                    speech.textContent = '❌ प्रवेश अस्वीकृत! कृपया सही पासवर्ड या पंजीकरण की जाँच करें 🔒';
+                }
+            }
         }
 
         // यदि लॉगिन पेज पर हैं और पिछली बार का ईमेल उपलब्ध है तो सुविधा के लिए भर दें
@@ -6004,41 +6158,60 @@
 
         function completeUserLogin(userObj) {
             const normEmail = String(userObj.email || '').trim().toLowerCase();
+            if (!normEmail || userObj.vaultVerified !== true) {
+                showAuthErrorAlert('❌ असत्यापित लॉगिन प्रयास निरस्त किया गया। कृपया सही पासवर्ड दर्ज करें।');
+                return;
+            }
+
             const emailKey = getEmailArchiveKey(normEmail);
             const archiveMap = getUserProfilesArchiveMap();
             const archivedProfile = archiveMap[emailKey] || null;
+            const vaultMap = getAccountVaultMap();
+            const vaultEntry = vaultMap[normEmail] || null;
 
-            // पूर्व में सहेजा गया कस्टम यूज़रनेम और आइकन प्राथमिकता से पुनर्स्थापित करें
-            let resolvedName = (userObj.name || '').trim();
-            if ((!resolvedName || resolvedName === normEmail.split('@')[0]) && archivedProfile && archivedProfile.name) {
-                resolvedName = archivedProfile.name;
+            if (vaultEntry && vaultEntry.blocked && normEmail !== DESIGNATED_ADMIN_EMAIL) {
+                showAuthErrorAlert('🚫 यह खाता मुख्य प्रशासक (Admin) द्वारा प्रतिबंधित (Blocked) किया गया है।');
+                return;
             }
-            if (normEmail === DESIGNATED_ADMIN_EMAIL && (!resolvedName || resolvedName.toLowerCase() === 'amankumar.wikimedian' || resolvedName.toLowerCase().includes('vikram'))) {
+
+            let resolvedName = String(userObj.name || (vaultEntry && vaultEntry.name) || (archivedProfile && archivedProfile.name) || normEmail.split('@')[0]).trim();
+            if (normEmail === DESIGNATED_ADMIN_EMAIL) {
                 resolvedName = DESIGNATED_ADMIN_NAME;
             }
+
             const resolvedIcon = userObj.avatarIcon || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
-            const isAdmin = isCurrentUserDesignatedAdmin({ email: normEmail, name: resolvedName });
+            const candidateUser = {
+                name: resolvedName,
+                email: normEmail,
+                uid: userObj.uid || (vaultEntry && vaultEntry.uid) || (archivedProfile && archivedProfile.uid) || '',
+                avatarIcon: resolvedIcon,
+                vaultVerified: true,
+                firebaseAuthVerified: Boolean(userObj.firebaseAuthVerified),
+                passwordHashToken: userObj.passwordHashToken || (vaultEntry && vaultEntry.passwordHash) || ''
+            };
+            const isAdmin = isCurrentUserDesignatedAdmin(candidateUser);
 
             currentUser = {
-                name: resolvedName || normEmail.split('@')[0],
-                email: normEmail,
-                uid: userObj.uid || (archivedProfile && archivedProfile.uid) || '',
-                avatarIcon: resolvedIcon,
-                role: isAdmin ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : (userObj.role || (archivedProfile && archivedProfile.role) || 'विकिपीडिया संपादक'),
+                ...candidateUser,
+                role: isAdmin
+                    ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)'
+                    : ((vaultEntry && vaultEntry.role) || userObj.role || (archivedProfile && archivedProfile.role) || 'विकिपीडिया संपादक'),
                 isAdmin: isAdmin,
                 loginTime: new Date().toISOString()
             };
+
+            showAuthErrorAlert('');
             localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
             localStorage.setItem('wikilink_profile_icon', resolvedIcon);
-            recordLocalRegisteredEmail(currentUser.email, currentUser.name, currentUser.uid);
+            recordLocalRegisteredEmail(currentUser.email, currentUser.name, currentUser.uid, currentUser.passwordHashToken, currentUser.role);
 
-            // सख्त नियम: केवल इसी यूज़र (normEmail / uid) के निजी लॉग लोड करें — किसी अन्य यूज़र के लॉग कभी न मिलाएँ!
+            // सख्त नियम: केवल इसी यूज़र (normEmail / uid) के निजी लॉग लोड करें
             userActivityLogs = getSavedUserLogsByEmail(normEmail, currentUser.uid);
 
             logUserActivity('यूज़र लॉगिन', {
                 title: currentUser.name,
                 lang: state.lang || 'hi',
-                note: `${currentUser.email} द्वारा लॉगिन`
+                note: `${currentUser.email} द्वारा प्रमाणित लॉगिन`
             });
 
             saveUserAccountSnapshot(currentUser, userActivityLogs);
@@ -6062,9 +6235,8 @@
                 renderSuggestionsTable();
             }
             refreshAdminAndApprovedBlacklist();
-            showToast(`स्वागत है, ${currentUser.name}! आपके निजी प्रोफ़ाइल व लॉग लोड किए जा रहे हैं...`);
+            showToast(`स्वागत है, ${currentUser.name}! आपका खाता सफलतापूर्वक सत्यापित हुआ।`);
 
-            // लॉगिन करते ही यूज़र को उसके विशेष प्रोफ़ाइल पेज (logs.html) में ले जाएँ
             const isAlreadyOnProfilePage = Boolean($('anime-profile-authenticated-shell') || window.location.pathname.endsWith('logs.html'));
             if (!isAlreadyOnProfilePage) {
                 setTimeout(() => {
@@ -6094,26 +6266,33 @@
 
                 try {
                     const fbUser = await window.WikiFirebase.signInWithGooglePopup();
-                    if (fbUser) {
-                        const resolvedEmail = (fbUser.email || 'editor@wikipedia.org').trim().toLowerCase();
-                        let resolvedName = fbUser.displayName || fbUser.name || (resolvedEmail ? resolvedEmail.split('@')[0] : 'Google संपादक');
+                    if (fbUser && fbUser.email) {
+                        const resolvedEmail = fbUser.email.trim().toLowerCase();
+                        let resolvedName = fbUser.displayName || fbUser.name || resolvedEmail.split('@')[0];
                         if (resolvedEmail === DESIGNATED_ADMIN_EMAIL) {
                             resolvedName = DESIGNATED_ADMIN_NAME;
                         }
+                        const oauthTokenHash = await computeAccountPasswordHash(resolvedEmail, `google_oauth_${fbUser.uid || resolvedEmail}`);
                         localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: resolvedEmail }));
+                        recordLocalRegisteredEmail(resolvedEmail, resolvedName, fbUser.uid || '', oauthTokenHash);
                         completeUserLogin({
                             name: resolvedName,
                             email: resolvedEmail,
                             uid: fbUser.uid || '',
+                            vaultVerified: true,
+                            firebaseAuthVerified: true,
+                            passwordHashToken: oauthTokenHash,
                             role: fbUser.role || 'विकीलिंक सहायक क्लाउड संपादक'
                         });
+                    } else {
+                        showAuthErrorAlert('⚠️ इस प्रीव्यू डोमेन पर Google पॉपअप उपलब्ध नहीं है। कृपया ऊपर ईमेल एवं पासवर्ड से साइन-अप / लॉगिन करें।');
                     }
                 } catch (err) {
                     const code = err && err.code ? String(err.code) : '';
                     if (code === 'auth/popup-blocked') {
-                        showToast('ब्राउज़र ने पॉपअप रोक दिया है। कृपया पॉपअप की अनुमति दें और पुनः प्रयास करें।');
+                        showAuthErrorAlert('ब्राउज़र ने पॉपअप रोक दिया है। कृपया पॉपअप की अनुमति दें अथवा ईमेल/पासवर्ड का उपयोग करें।');
                     } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-                        showToast('Google खाता साइन-इन रद्द या बाधित हुआ। कृपया पुनः प्रयास करें।');
+                        showAuthErrorAlert('Google खाता साइन-इन बाधित हुआ। कृपया ईमेल और पासवर्ड से लॉगिन करें।');
                     }
                 } finally {
                     googleFirebaseBtn.disabled = false;
@@ -6122,33 +6301,42 @@
             });
         }
 
-        window.addEventListener('wikilink:firebase-auth', (e) => {
+        window.addEventListener('wikilink:firebase-auth', async (e) => {
             const fbUser = e.detail?.user;
-            if (fbUser && fbUser.email) {
+            if (fbUser && fbUser.email && fbUser.uid && !String(fbUser.uid).startsWith('google_')) {
                 const normEmail = fbUser.email.trim().toLowerCase();
                 const emailKey = getEmailArchiveKey(normEmail);
                 const archivedProfile = getUserProfilesArchiveMap()[emailKey] || null;
+                const vaultMap = getAccountVaultMap();
+                const existingVault = vaultMap[normEmail] || null;
 
                 let resolvedName = (archivedProfile && archivedProfile.name) || fbUser.name || normEmail.split('@')[0];
-                if (normEmail === DESIGNATED_ADMIN_EMAIL && (!resolvedName || resolvedName.toLowerCase().includes('vikram') || resolvedName.toLowerCase().includes('amankumar'))) {
+                if (normEmail === DESIGNATED_ADMIN_EMAIL) {
                     resolvedName = DESIGNATED_ADMIN_NAME;
                 }
                 const resolvedIcon = (currentUser && currentUser.avatarIcon) || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
-                const isAdmin = isCurrentUserDesignatedAdmin({ email: normEmail, name: resolvedName });
-                currentUser = {
+                const tokenHash = (existingVault && existingVault.passwordHash) || await computeAccountPasswordHash(normEmail, `firebase_uid_${fbUser.uid}`);
+                recordLocalRegisteredEmail(normEmail, resolvedName, fbUser.uid, tokenHash);
+
+                const candidateUser = {
                     name: resolvedName,
                     email: normEmail,
                     avatarIcon: resolvedIcon,
+                    uid: fbUser.uid,
+                    vaultVerified: true,
+                    firebaseAuthVerified: true,
+                    passwordHashToken: tokenHash
+                };
+                const isAdmin = isCurrentUserDesignatedAdmin(candidateUser);
+                currentUser = {
+                    ...candidateUser,
                     role: isAdmin ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : (fbUser.role || 'Firebase क्लाउड संपादक'),
                     isAdmin: isAdmin,
-                    uid: fbUser.uid,
                     loginTime: new Date().toISOString()
                 };
                 localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
                 localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: normEmail, avatarIcon: resolvedIcon }));
-                recordLocalRegisteredEmail(normEmail, resolvedName, fbUser.uid);
 
-                // सख्त नियम: केवल इसी लॉगिन यूज़र के संग्रहीत लॉग्स लोड करें
                 const oldUserLogs = getSavedUserLogsByEmail(normEmail, fbUser.uid);
                 userActivityLogs = filterLogsStrictlyForUser(mergeUniqueLogsList(oldUserLogs, userActivityLogs), currentUser);
                 saveUserAccountSnapshot(currentUser, userActivityLogs);
@@ -6207,92 +6395,154 @@
         if (authForm) {
             authForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                showAuthErrorAlert('');
+
                 const rawEmail = emailInput ? emailInput.value.trim() : '';
                 const passwordVal = passInput ? passInput.value : '';
-                if (!rawEmail) {
-                    showToast('कृपया ईमेल पता दर्ज करें');
+                if (!rawEmail || !rawEmail.includes('@')) {
+                    showAuthErrorAlert('⚠️ कृपया वैध ईमेल पता दर्ज करें (उदा: editor@wikipedia.org)।');
                     if (emailInput) emailInput.focus();
                     return;
                 }
+                if (!passwordVal || passwordVal.length < 6) {
+                    showAuthErrorAlert('❌ पासवर्ड कम से कम 6 अक्षरों का होना अनिवार्य है! बिना वैध पासवर्ड के प्रवेश पूर्णतः वर्जित है।');
+                    if (passInput) passInput.focus();
+                    return;
+                }
+
                 const normEmail = rawEmail.toLowerCase();
                 const enteredName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : '';
-                const localRegistry = getLocalRegisteredEmailsMap();
-                const existingLocalLock = localRegistry[normEmail];
+                const vaultMap = getAccountVaultMap();
+                const existingVaultEntry = vaultMap[normEmail] || null;
+                const passwordHash = await computeAccountPasswordHash(normEmail, passwordVal);
 
-                // सुरक्षा नियम: यदि किसी ने इस ईमेल से पहले साइन-इन कर लिया है, तो कोई अन्य उसी ईमेल से नया खाता (Sign up) न बना सके
+                // ==================== मोड 1: साइन अप (Sign up — नया खाता व पासवर्ड लॉक) ====================
                 if (authMode === 'signup') {
-                    if (existingLocalLock) {
-                        showToast(`⚠️ इस ईमेल (${normEmail}) से पहले ही खाता पंजीकृत/साइन-इन हो चुका है! उसी ईमेल से नया खाता नहीं बनाया जा सकता। कृपया 'लॉगिन करें' विकल्प चुनें।`);
-                        if (speech) speech.textContent = 'यह ईमेल पहले से पंजीकृत है! कृपया लॉगिन मोड चुनें 🔒';
+                    if (!enteredName || enteredName.length < 2) {
+                        showAuthErrorAlert('⚠️ नया खाता बनाने के लिए कृपया अपना नाम / विकिपीडिया उपनाम दर्ज करें।');
+                        if (nameInput) nameInput.focus();
+                        return;
+                    }
+
+                    // एडमिन ईमेल सुरक्षा: कोई अन्य नाम डालकर एडमिन ईमेल पंजीकृत नहीं कर सकता, और न ही कोई अन्य ईमेल 'विक्रम प्रताप' नाम रख सकता है
+                    if (normEmail === DESIGNATED_ADMIN_EMAIL && enteredName !== DESIGNATED_ADMIN_NAME && enteredName.toLowerCase() !== 'vikram pratap') {
+                        showAuthErrorAlert('🚫 यह मुख्य प्रशासक (Admin) का आरक्षित ईमेल पता है। गलत नाम से पंजीकरण वर्जित है।');
+                        return;
+                    }
+                    if (normEmail !== DESIGNATED_ADMIN_EMAIL && (enteredName === DESIGNATED_ADMIN_NAME || enteredName.includes(DESIGNATED_ADMIN_NAME) || enteredName.toLowerCase() === 'vikram pratap')) {
+                        showAuthErrorAlert('🚫 "विक्रम प्रताप" मुख्य प्रशासक का आरक्षित नाम है। कृपया अपना वास्तविक सदस्य नाम लिखें।');
+                        return;
+                    }
+
+                    // यदि इस ईमेल का पासवर्ड पहले से वॉल्ट में लॉक है, तो दोबारा साइन-अप पूर्णतः वर्जित
+                    if (existingVaultEntry && existingVaultEntry.passwordHash) {
+                        showAuthErrorAlert(`🔒 इस ईमेल (${normEmail}) से खाता पहले से पंजीकृत है और पासवर्ड द्वारा सुरक्षित है! कृपया 'लॉगिन (Log in)' टैब में अपना सही पासवर्ड दर्ज करें।`);
                         setAuthModeUI('login');
                         return;
                     }
-                    if (window.WikiFirebase && window.WikiFirebase.checkEmailAlreadyRegistered) {
+
+                    const resolvedName = normEmail === DESIGNATED_ADMIN_EMAIL ? DESIGNATED_ADMIN_NAME : enteredName;
+                    let createdUid = `uid_${Date.now()}`;
+
+                    if (window.WikiFirebase && window.WikiFirebase.registerWithEmailAccount) {
                         try {
-                            const cloudLock = await window.WikiFirebase.checkEmailAlreadyRegistered(normEmail);
-                            if (cloudLock && cloudLock.registered) {
-                                recordLocalRegisteredEmail(normEmail, cloudLock.displayName || cloudLock.memberName || '', cloudLock.ownerUid || '');
-                                showToast(`⚠️ इस ईमेल (${normEmail}) से पहले ही साइन-इन किया जा चुका है। कोई अन्य उसी ईमेल से नया खाता नहीं बना सकता। कृपया 'लॉगिन करें' का उपयोग करें।`);
-                                if (speech) speech.textContent = 'यह ईमेल पहले से पंजीकृत है! कृपया लॉगिन करें 🔒';
+                            const fbUser = await window.WikiFirebase.registerWithEmailAccount(resolvedName, normEmail, passwordVal);
+                            if (fbUser && fbUser.uid) {
+                                createdUid = fbUser.uid;
+                            }
+                        } catch (fbErr) {
+                            const errCode = String(fbErr?.code || '');
+                            if (errCode === 'auth/email-already-in-use' && existingVaultEntry) {
+                                showAuthErrorAlert(`🔒 यह ईमेल (${normEmail}) पहले से पंजीकृत है। कृपया 'लॉगिन (Log in)' मोड में अपना पासवर्ड दर्ज करें।`);
                                 setAuthModeUI('login');
                                 return;
                             }
-                        } catch (checkErr) {
-                            console.warn('Email lock check warning:', checkErr);
                         }
                     }
-                } else {
-                    // लॉगिन मोड में भी यदि ईमेल पहले से किसी सदस्य नाम के साथ लॉक है और कोई भिन्न नाम से प्रवेश का प्रयास करे
-                    if (existingLocalLock && enteredName && existingLocalLock.name && existingLocalLock.name.toLowerCase() !== enteredName.toLowerCase()) {
-                        showToast(`⚠️ यह ईमेल (${normEmail}) सदस्य '${existingLocalLock.name}' के खाते से जुड़ा है। किसी अन्य नाम से इस ईमेल का उपयोग नहीं किया जा सकता।`);
-                        return;
-                    }
+
+                    recordLocalRegisteredEmail(
+                        normEmail,
+                        resolvedName,
+                        createdUid,
+                        passwordHash,
+                        normEmail === DESIGNATED_ADMIN_EMAIL ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : 'विकिपीडिया संपादक'
+                    );
+
+                    completeUserLogin({
+                        name: resolvedName,
+                        email: normEmail,
+                        uid: createdUid,
+                        vaultVerified: true,
+                        passwordHashToken: passwordHash,
+                        role: normEmail === DESIGNATED_ADMIN_EMAIL ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : 'विकिपीडिया संपादक'
+                    });
+                    return;
                 }
 
-                // यदि पासवर्ड कम से कम 6 अक्षरों का है और Firebase उपलब्ध है, तो वास्तविक Firebase Auth + ईमेल लॉक का भी प्रयास करें
-                const resolvedName = enteredName || (existingLocalLock ? existingLocalLock.name : (normEmail === DESIGNATED_ADMIN_EMAIL ? DESIGNATED_ADMIN_NAME : normEmail.split('@')[0]));
+                // ==================== मोड 2: लॉगिन (Log in — सख्त पासवर्ड मिलान अनिवार्य) ====================
+                if (existingVaultEntry && existingVaultEntry.blocked && normEmail !== DESIGNATED_ADMIN_EMAIL) {
+                    showAuthErrorAlert('🚫 यह खाता मुख्य प्रशासक (Admin) द्वारा प्रतिबंधित (Blocked) किया गया है। प्रवेश अस्वीकृत।');
+                    return;
+                }
 
-                if (window.WikiFirebase && passwordVal && passwordVal.length >= 6) {
+                // यदि खाता स्थानीय पासवर्ड वॉल्ट में मौजूद है, तो केवल और केवल सही पासवर्ड हैश मिलने पर ही प्रवेश दें!
+                if (existingVaultEntry && existingVaultEntry.passwordHash) {
+                    if (existingVaultEntry.passwordHash !== passwordHash) {
+                        showAuthErrorAlert('❌ पासवर्ड गलत है! आपके द्वारा दर्ज पासवर्ड इस खाते के सुरक्षित पासवर्ड से मेल नहीं खाता। किसी भी गलत पासवर्ड से प्रवेश पूर्णतः वर्जित है।');
+                        if (passInput) {
+                            passInput.value = '';
+                            passInput.focus();
+                        }
+                        return;
+                    }
+
+                    // पासवर्ड 100% सही है!
+                    const verifiedName = normEmail === DESIGNATED_ADMIN_EMAIL
+                        ? DESIGNATED_ADMIN_NAME
+                        : (existingVaultEntry.name || enteredName || normEmail.split('@')[0]);
+
+                    completeUserLogin({
+                        name: verifiedName,
+                        email: normEmail,
+                        uid: existingVaultEntry.uid || '',
+                        vaultVerified: true,
+                        passwordHashToken: passwordHash,
+                        role: existingVaultEntry.role || 'विकिपीडिया संपादक'
+                    });
+                    return;
+                }
+
+                // यदि स्थानीय वॉल्ट में खाता नहीं है, तो Firebase Auth से वास्तविक पासवर्ड जाँचें (कभी भी बिना पासवर्ड जाँच के लॉगिन न करें!)
+                if (window.WikiFirebase && window.WikiFirebase.signInWithEmailAccount) {
                     try {
-                        if (authMode === 'signup' && window.WikiFirebase.registerWithEmailAccount) {
-                            const fbProfile = await window.WikiFirebase.registerWithEmailAccount(resolvedName, normEmail, passwordVal);
+                        const fbProfile = await window.WikiFirebase.signInWithEmailAccount(normEmail, passwordVal, enteredName);
+                        if (fbProfile && fbProfile.uid) {
+                            const verifiedName = normEmail === DESIGNATED_ADMIN_EMAIL
+                                ? DESIGNATED_ADMIN_NAME
+                                : (fbProfile.displayName || fbProfile.name || enteredName || normEmail.split('@')[0]);
+                            recordLocalRegisteredEmail(normEmail, verifiedName, fbProfile.uid, passwordHash);
                             completeUserLogin({
-                                name: fbProfile.name || resolvedName,
+                                name: verifiedName,
                                 email: normEmail,
-                                uid: fbProfile.uid || '',
-                                role: fbProfile.role || 'नव-पंजीकृत विकिपीडिया संपादक'
-                            });
-                            return;
-                        } else if (authMode === 'login' && window.WikiFirebase.signInWithEmailAccount) {
-                            const fbProfile = await window.WikiFirebase.signInWithEmailAccount(normEmail, passwordVal, resolvedName);
-                            completeUserLogin({
-                                name: fbProfile.name || resolvedName,
-                                email: normEmail,
-                                uid: fbProfile.uid || '',
+                                uid: fbProfile.uid,
+                                vaultVerified: true,
+                                firebaseAuthVerified: true,
+                                passwordHashToken: passwordHash,
                                 role: fbProfile.role || 'विकिपीडिया संपादक'
                             });
                             return;
                         }
                     } catch (fbAuthErr) {
                         const errCode = String(fbAuthErr?.code || '');
-                        if (errCode === 'auth/email-already-in-use') {
-                            recordLocalRegisteredEmail(normEmail, resolvedName);
-                            showToast(`⚠️ इस ईमेल (${normEmail}) से पहले ही साइन-इन किया जा चुका है! कोई अन्य उसी ईमेल से नया खाता नहीं बना सकता।`);
-                            setAuthModeUI('login');
-                            return;
-                        }
                         if (errCode === 'auth/wrong-password' || errCode === 'auth/invalid-credential') {
-                            showToast('⚠️ पासवर्ड गलत है अथवा यह ईमेल किसी अन्य खाते द्वारा सुरक्षित है।');
+                            showAuthErrorAlert('❌ पासवर्ड गलत है! कृपया सही पासवर्ड दर्ज करें।');
                             return;
                         }
                     }
                 }
 
-                completeUserLogin({
-                    name: resolvedName,
-                    email: normEmail,
-                    role: authMode === 'signup' ? 'नव-पंजीकृत विकिपीडिया संपादक' : 'विकिपीडिया संपादक'
-                });
+                // यदि खाता पंजीकृत नहीं है या पासवर्ड प्रमाणित नहीं हुआ — तो कदापि लॉगिन न होने दें!
+                showAuthErrorAlert(`⚠️ यह खाता (${normEmail}) अभी इस पासवर्ड के साथ पंजीकृत नहीं है अथवा पासवर्ड गलत है! नया खाता बनाने व अपना पासवर्ड लॉक करने के लिए कृपया "साइन अप (Sign up)" टैब चुनें।`);
             });
         }
 
@@ -6325,6 +6575,7 @@
         const btnRefreshAdmin = $('btn-refresh-admin-panel');
         if (btnRefreshAdmin) {
             btnRefreshAdmin.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
                 refreshAdminAndApprovedBlacklist(true);
             });
         }
@@ -6332,6 +6583,7 @@
         const btnAdminTestWord = $('btn-admin-test-word');
         if (btnAdminTestWord) {
             btnAdminTestWord.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
                 const wordInput = $('admin-direct-word-input');
                 const langSel = $('admin-direct-lang-select');
                 const diagBox = $('admin-word-diagnostic-box');
@@ -6363,7 +6615,7 @@
         if (btnAdminDirectAdd) {
             btnAdminDirectAdd.addEventListener('click', async () => {
                 if (!isCurrentUserDesignatedAdmin()) {
-                    showToast('केवल एडमिन (विक्रम प्रताप) को यह अधिकार प्राप्त है।');
+                    showToast('केवल प्रमाणित एडमिन (विक्रम प्रताप) को यह अधिकार प्राप्त है।');
                     return;
                 }
                 const wordInput = $('admin-direct-word-input');
@@ -6386,20 +6638,21 @@
                         word: rawWord.toLowerCase(),
                         lang: langVal,
                         reason: policyReason,
-                        approvedBy: 'amankumar.wikimedian@gmail.com'
+                        approvedBy: DESIGNATED_ADMIN_EMAIL
                     });
+                    recordAdminAuditLog('सीधा शब्द बहिष्कार', `"${rawWord}" (${langVal}) — ${policyReason}`);
                     if (wordInput) wordInput.value = '';
                     if (diagBox) diagBox.style.display = 'none';
                     showToast(`'${rawWord}' (${policyReason}) को एडमिन द्वारा वैश्विक बहिष्कार सूची में जोड़ दिया गया!`);
                     await refreshAdminAndApprovedBlacklist();
                 } catch (err) {
-                    console.warn('Admin direct add error:', err);
                     addWordToLocalApprovedBlacklist({
                         word: rawWord.toLowerCase(),
                         lang: langVal,
                         reason: policyReason,
-                        approvedBy: 'amankumar.wikimedian@gmail.com'
+                        approvedBy: DESIGNATED_ADMIN_EMAIL
                     });
+                    recordAdminAuditLog('सीधा शब्द बहिष्कार', `"${rawWord}" (${langVal})`);
                     if (wordInput) wordInput.value = '';
                     if (diagBox) diagBox.style.display = 'none';
                     renderApprovedBlacklistStrip();
@@ -6450,9 +6703,10 @@
                         addWordToLocalApprovedBlacklist({
                             word: reqWord,
                             lang: req.lang || 'hi',
-                            approvedBy: 'amankumar.wikimedian@gmail.com'
+                            approvedBy: DESIGNATED_ADMIN_EMAIL
                         });
                     }
+                    recordAdminAuditLog('सामूहिक अनुरोध स्वीकृति', `${pendingList.length} लंबित शब्द स्वीकृत किए गए`);
                     renderApprovedBlacklistStrip();
                     renderAdminPanelUI();
                     showToast(`✓ सभी ${pendingList.length} लंबित अनुरोध स्वीकृत किए गए!`);
@@ -6480,6 +6734,7 @@
                         }
                         req.status = 'rejected';
                     }
+                    recordAdminAuditLog('सामूहिक अनुरोध अस्वीकृति', `${pendingList.length} लंबित शब्द अस्वीकृत किए गए`);
                     renderAdminPanelUI();
                     showToast(`सभी ${pendingList.length} लंबित अनुरोध अस्वीकृत किए गए`);
                 } finally {
@@ -6488,7 +6743,118 @@
             });
         }
 
-        // एडमिन स्वीकृत शब्द खोज, भाषा फ़िल्टर व JSON निर्यात
+        // ==================== एडमिन चरण 03: वैश्विक इंजन नीति एवं संपादकीय घोषणा नियंत्रक ====================
+        const btnSaveEnginePolicy = $('btn-admin-save-engine-policy');
+        if (btnSaveEnginePolicy) {
+            btnSaveEnginePolicy.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const maxDensity = parseInt($('admin-policy-max-density')?.value || '10', 10) || 0;
+                const minLen = parseInt($('admin-policy-min-len')?.value || '3', 10) || 3;
+                const defaultScope = $('admin-policy-default-scope')?.value || 'all';
+                const forceFirstOnly = Boolean($('admin-policy-force-first')?.checked);
+                const forceSkipDisambig = Boolean($('admin-policy-force-skip-disambig')?.checked);
+                const forceSkipDates = Boolean($('admin-policy-force-skip-dates')?.checked);
+                const forceBlueOnly = Boolean($('admin-policy-force-blue-only')?.checked);
+                const broadcastMsg = ($('admin-broadcast-msg-input')?.value || '').trim();
+
+                state.adminEnginePolicy = {
+                    maxDensityPercent: maxDensity,
+                    minWordLength: minLen,
+                    defaultScope,
+                    forceFirstOnly,
+                    forceSkipDisambig,
+                    forceSkipDates,
+                    forceBlueOnly,
+                    broadcastMessage: broadcastMsg,
+                    updatedAt: new Date().toISOString()
+                };
+                try {
+                    localStorage.setItem('wikilink_admin_engine_policy_v1', JSON.stringify(state.adminEnginePolicy));
+                } catch (e) {}
+                applyGlobalAdminEnginePolicyToWorkbench();
+                recordAdminAuditLog('वैश्विक इंजन नीति अपडेट', `अधिकतम घनत्व: ${maxDensity || 'असीमित'}%, न्यूनतम अक्षर: ${minLen}${broadcastMsg ? `, घोषणा: "${broadcastMsg}"` : ''}`);
+                showToast('✓ वैश्विक कड़ीकरण इंजन नीति एवं संपादकीय सूचना लागू हो गई!');
+            });
+        }
+
+        const btnClearBroadcast = $('btn-admin-clear-broadcast');
+        if (btnClearBroadcast) {
+            btnClearBroadcast.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const msgInput = $('admin-broadcast-msg-input');
+                if (msgInput) msgInput.value = '';
+                state.adminEnginePolicy.broadcastMessage = '';
+                try {
+                    localStorage.setItem('wikilink_admin_engine_policy_v1', JSON.stringify(state.adminEnginePolicy));
+                } catch (e) {}
+                applyGlobalAdminEnginePolicyToWorkbench();
+                recordAdminAuditLog('संपादकीय घोषणा पट्टी हटाई गई', 'मुख्य कार्यपटल की सूचना पट्टी साफ़ की गई');
+                showToast('संपादकीय सूचना पट्टी हटा दी गई');
+            });
+        }
+
+        // ==================== एडमिन चरण 04: सामूहिक बहिष्कार, सुरक्षित श्वेतसूची एवं शब्द निष्कासन ====================
+        const btnBulkBlacklistAdd = $('btn-admin-bulk-blacklist-add');
+        if (btnBulkBlacklistAdd) {
+            btnBulkBlacklistAdd.addEventListener('click', async () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const bulkInput = $('admin-bulk-blacklist-input');
+                const rawText = bulkInput ? bulkInput.value.trim() : '';
+                if (!rawText) {
+                    showToast('कृपया कौमा से अलग करके शब्द दर्ज करें');
+                    return;
+                }
+                const words = rawText.split(/[,،;\n\r]+/).map(w => w.trim()).filter(w => w.length >= 2);
+                if (words.length === 0) return;
+
+                btnBulkBlacklistAdd.disabled = true;
+                try {
+                    for (const w of words) {
+                        addWordToLocalApprovedBlacklist({
+                            word: w.toLowerCase(),
+                            lang: 'hi',
+                            reason: 'एडमिन सामूहिक बहिष्कार प्रविष्टि',
+                            approvedBy: DESIGNATED_ADMIN_EMAIL
+                        });
+                        if (window.WikiFirebase && window.WikiFirebase.addApprovedBlacklistWordByAdmin) {
+                            try { await window.WikiFirebase.addApprovedBlacklistWordByAdmin(w, 'hi'); } catch (e) {}
+                        }
+                    }
+                    if (bulkInput) bulkInput.value = '';
+                    recordAdminAuditLog('सामूहिक शब्द बहिष्कार', `${words.length} शब्द जोड़े गए (${words.slice(0, 5).join(', ')})`);
+                    renderAdminPanelUI();
+                    showToast(`✓ ${words.length} शब्द सामूहिक रूप से वैश्विक बहिष्कार सूची में जोड़े गए!`);
+                } finally {
+                    btnBulkBlacklistAdd.disabled = false;
+                }
+            });
+        }
+
+        const btnAddWhitelist = $('btn-admin-add-whitelist');
+        if (btnAddWhitelist) {
+            btnAddWhitelist.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const wlInput = $('admin-whitelist-word-input');
+                const rawWord = wlInput ? wlInput.value.trim() : '';
+                if (!rawWord) {
+                    showToast('कृपया श्वेतसूची के लिए शब्द दर्ज करें');
+                    return;
+                }
+                const lower = rawWord.toLowerCase();
+                state.adminWhitelist.add(lower);
+                if (!state.adminWhitelistList.includes(rawWord)) {
+                    state.adminWhitelistList.unshift(rawWord);
+                }
+                try {
+                    localStorage.setItem('wikilink_admin_whitelist_v1', JSON.stringify(state.adminWhitelistList));
+                } catch (e) {}
+                if (wlInput) wlInput.value = '';
+                recordAdminAuditLog('श्वेतसूची (Whitelist) में शब्द सुरक्षित', `"${rawWord}" को सदैव कड़ी योग्य बनाया गया`);
+                renderAdminPanelUI();
+                showToast(`🛡️ '${rawWord}' को एडमिन सुरक्षित श्वेतसूची में जोड़ दिया गया!`);
+            });
+        }
+
         const adminApprovedSearchInput = $('admin-approved-search-input');
         if (adminApprovedSearchInput) {
             adminApprovedSearchInput.addEventListener('input', (e) => {
@@ -6508,9 +6874,12 @@
         const btnAdminExportBl = $('btn-admin-export-blacklist');
         if (btnAdminExportBl) {
             btnAdminExportBl.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
                 const payload = {
                     exportedAt: new Date().toISOString(),
                     exportedBy: 'विक्रम प्रताप (amankumar.wikimedian@gmail.com)',
+                    enginePolicy: state.adminEnginePolicy,
+                    protectedWhitelist: state.adminWhitelistList || [],
                     totalApprovedCommunityWords: (state.approvedGlobalBlacklistList || []).length,
                     builtInPolicyWordsCount: (NEVER_LINK_WORDS.hi ? NEVER_LINK_WORDS.hi.size : 0) + (NEVER_LINK_WORDS.en ? NEVER_LINK_WORDS.en.size : 0),
                     words: state.approvedGlobalBlacklistList || []
@@ -6519,15 +6888,76 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `wikilink_approved_blacklist_${Date.now()}.json`;
+                a.download = `wikilink_admin_dictionary_${Date.now()}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                showToast('स्वीकृत वैश्विक बहिष्कार सूची JSON डाउनलोड हुई');
+                recordAdminAuditLog('एडमिन शब्दकोश JSON निर्यात', `${(state.approvedGlobalBlacklistList || []).length} बहिष्कृत व ${(state.adminWhitelistList || []).length} श्वेतसूची शब्द`);
+                showToast('संपूर्ण एडमिन शब्दकोश व नीति JSON डाउनलोड हुई');
             });
         }
 
+        // ==================== एडमिन चरण 05 एवं 06: सदस्य खोज, पासवर्ड परिवर्तन एवं ऑडिट लॉग ====================
+        const adminUserSearchInput = $('admin-user-search-input');
+        if (adminUserSearchInput) {
+            adminUserSearchInput.addEventListener('input', (e) => {
+                state.adminUserSearchQuery = (e.target.value || '').trim().toLowerCase();
+                renderAdminPanelUI();
+            });
+        }
+
+        const btnAdminUpdatePass = $('btn-admin-update-password');
+        if (btnAdminUpdatePass) {
+            btnAdminUpdatePass.addEventListener('click', async () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                const newPassEl = $('admin-new-password-input');
+                const confirmPassEl = $('admin-confirm-password-input');
+                const newPass = newPassEl ? newPassEl.value : '';
+                const confirmPass = confirmPassEl ? confirmPassEl.value : '';
+
+                if (!newPass || newPass.length < 6) {
+                    showToast('⚠️ नया एडमिन पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।');
+                    if (newPassEl) newPassEl.focus();
+                    return;
+                }
+                if (newPass !== confirmPass) {
+                    showToast('❌ दोनों पासवर्ड मेल नहीं खाते! कृपया पुनः जाँचें।');
+                    if (confirmPassEl) confirmPassEl.focus();
+                    return;
+                }
+
+                const newHash = await computeAccountPasswordHash(DESIGNATED_ADMIN_EMAIL, newPass);
+                recordLocalRegisteredEmail(
+                    DESIGNATED_ADMIN_EMAIL,
+                    DESIGNATED_ADMIN_NAME,
+                    currentUser.uid || 'admin_vikram',
+                    newHash,
+                    'मुख्य प्रशासक (Admin — विक्रम प्रताप)'
+                );
+                currentUser.passwordHashToken = newHash;
+                currentUser.vaultVerified = true;
+                localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+                if (newPassEl) newPassEl.value = '';
+                if (confirmPassEl) confirmPassEl.value = '';
+                recordAdminAuditLog('एडमिन पासवर्ड अपडेट', 'मुख्य प्रशासक खाते का SHA-256 पासवर्ड हैश बदला गया');
+                showToast('🔒 एडमिन पासवर्ड सफलतापूर्वक अपडेट और लॉक हो गया!');
+            });
+        }
+
+        const btnAdminClearAudit = $('btn-admin-clear-audit-log');
+        if (btnAdminClearAudit) {
+            btnAdminClearAudit.addEventListener('click', () => {
+                if (!isCurrentUserDesignatedAdmin()) return;
+                state.adminAuditLogs = [];
+                localStorage.removeItem('wikilink_admin_audit_logs_v1');
+                renderAdminAuditLogUI();
+                showToast('प्रशासकीय ऑडिट लॉग साफ़ किया गया');
+            });
+        }
+
+        loadAdminEnginePolicyAndWhitelistCache();
+        loadAdminAuditLogsFromStorage();
         loadLocalApprovedBlacklistCache();
         refreshAdminAndApprovedBlacklist();
 
@@ -6562,7 +6992,92 @@
         }
     }
 
-    // ================== एडमिन पैनल एवं स्वीकृत सामुदायिक बहिष्कार सूची प्रबंधन ==================
+    // ================== एडमिन इंजन नीति, श्वेतसूची एवं सामुदायिक बहिष्कार सूची प्रबंधन ==================
+    function loadAdminEnginePolicyAndWhitelistCache() {
+        try {
+            const rawPolicy = localStorage.getItem('wikilink_admin_engine_policy_v1');
+            if (rawPolicy) {
+                const parsedPolicy = JSON.parse(rawPolicy);
+                if (parsedPolicy && typeof parsedPolicy === 'object') {
+                    state.adminEnginePolicy = { ...state.adminEnginePolicy, ...parsedPolicy };
+                }
+            }
+        } catch (e) {}
+
+        try {
+            const rawWl = localStorage.getItem('wikilink_admin_whitelist_v1');
+            if (rawWl) {
+                const parsedWl = JSON.parse(rawWl);
+                if (Array.isArray(parsedWl)) {
+                    state.adminWhitelistList = parsedWl;
+                    state.adminWhitelist = new Set(parsedWl.map(w => String(w).trim().toLowerCase()).filter(Boolean));
+                }
+            }
+        } catch (e) {}
+
+        applyGlobalAdminEnginePolicyToWorkbench();
+    }
+
+    function applyGlobalAdminEnginePolicyToWorkbench() {
+        const policy = state.adminEnginePolicy || {};
+        if (DOM.optMinLength && policy.minWordLength) {
+            DOM.optMinLength.value = String(policy.minWordLength);
+        }
+        if (DOM.optLinkScope && policy.defaultScope) {
+            DOM.optLinkScope.value = String(policy.defaultScope);
+        }
+        if (DOM.optFirstOnly && typeof policy.forceFirstOnly === 'boolean') {
+            DOM.optFirstOnly.checked = policy.forceFirstOnly;
+        }
+        if (DOM.optSkipDisambig && typeof policy.forceSkipDisambig === 'boolean') {
+            DOM.optSkipDisambig.checked = policy.forceSkipDisambig;
+        }
+        if (DOM.optSkipDates && typeof policy.forceSkipDates === 'boolean') {
+            DOM.optSkipDates.checked = policy.forceSkipDates;
+        }
+        if (DOM.optBlueOnly && typeof policy.forceBlueOnly === 'boolean') {
+            DOM.optBlueOnly.checked = policy.forceBlueOnly;
+        }
+
+        const bannerEl = $('global-admin-broadcast-banner');
+        const bannerTextEl = $('global-admin-broadcast-text');
+        const policySummaryEl = $('global-admin-policy-summary-pill');
+        if (bannerEl && bannerTextEl) {
+            const msg = String(policy.broadcastMessage || '').trim();
+            if (msg) {
+                bannerTextEl.textContent = msg;
+                if (policySummaryEl) {
+                    policySummaryEl.textContent = policy.maxDensityPercent
+                        ? `अधिकतम कड़ी घनत्व सीमा: ${policy.maxDensityPercent}% • न्यूनतम अक्षर: ${policy.minWordLength || 3}`
+                        : `न्यूनतम अक्षर: ${policy.minWordLength || 3}`;
+                }
+                bannerEl.style.display = 'flex';
+            } else {
+                bannerEl.style.display = 'none';
+            }
+        }
+
+        // एडमिन पैनल के फॉर्म नियंत्रणों में वर्तमान मान भरें
+        const selDensity = $('admin-policy-max-density');
+        if (selDensity && policy.maxDensityPercent !== undefined) selDensity.value = String(policy.maxDensityPercent);
+        const selMinLen = $('admin-policy-min-len');
+        if (selMinLen && policy.minWordLength) selMinLen.value = String(policy.minWordLength);
+        const selScope = $('admin-policy-default-scope');
+        if (selScope && policy.defaultScope) selScope.value = String(policy.defaultScope);
+        const cbFirst = $('admin-policy-force-first');
+        if (cbFirst && typeof policy.forceFirstOnly === 'boolean') cbFirst.checked = policy.forceFirstOnly;
+        const cbDisambig = $('admin-policy-force-skip-disambig');
+        if (cbDisambig && typeof policy.forceSkipDisambig === 'boolean') cbDisambig.checked = policy.forceSkipDisambig;
+        const cbDates = $('admin-policy-force-skip-dates');
+        if (cbDates && typeof policy.forceSkipDates === 'boolean') cbDates.checked = policy.forceSkipDates;
+        const cbBlue = $('admin-policy-force-blue-only');
+        if (cbBlue && typeof policy.forceBlueOnly === 'boolean') cbBlue.checked = policy.forceBlueOnly;
+        const msgInput = $('admin-broadcast-msg-input');
+        if (msgInput && policy.broadcastMessage !== undefined && document.activeElement !== msgInput) {
+            msgInput.value = policy.broadcastMessage;
+        }
+    }
+
     function evaluateWordLogicalPolicyForAdmin(rawWord, lang = 'hi') {
         const w = String(rawWord || '').trim();
         const lower = w.toLowerCase();
@@ -6729,15 +7244,17 @@
         const approvedCountSpan = $('admin-approved-words-count');
         const approvedListEl = $('admin-approved-words-list');
 
+        // कठोर नियम: केवल पासवर्ड/Firebase से प्रमाणित एडमिन (विक्रम प्रताप | amankumar.wikimedian@gmail.com) को ही एडमिन पैनल दिखे
         const isAdmin = Boolean(
             currentUser &&
+            currentUser.vaultVerified === true &&
+            currentUser.isAdmin === true &&
             currentUser.email &&
             currentUser.email.trim().toLowerCase() === 'amankumar.wikimedian@gmail.com' &&
             currentUser.name &&
-            (currentUser.name.trim() === 'विक्रम प्रताप' || currentUser.name.trim().includes('विक्रम प्रताप'))
+            currentUser.name.trim() === 'विक्रम प्रताप'
         );
 
-        // कठोर नियम: केवल सदस्य नाम 'विक्रम प्रताप' एवं ईमेल 'amankumar.wikimedian@gmail.com' के लिए ही प्रोफ़ाइल के अंदर प्रदर्शित करें
         if (!isAdmin) {
             if (adminHeaderBtn) adminHeaderBtn.style.display = 'none';
             if (vnavAdminBtn) vnavAdminBtn.style.display = 'none';
@@ -6760,14 +7277,12 @@
         if (pendingBadge) pendingBadge.textContent = String(pendingReqs.length);
         if (pendingCountSpan) pendingCountSpan.textContent = String(pendingReqs.length);
 
-        // तार्किक सारांश KPI कार्ड अपडेट करें
         safeSetText('admin-stat-pending', String(pendingReqs.length));
         safeSetText('admin-stat-approved', String(approvedList.length || approvedReqs.length));
         safeSetText('admin-stat-rejected', String(rejectedReqs.length));
         const builtInCount = (NEVER_LINK_WORDS.hi ? NEVER_LINK_WORDS.hi.size : 7479) + approvedList.length;
         safeSetText('admin-stat-global-total', `${builtInCount.toLocaleString('hi-IN')}+`);
 
-        // सामूहिक एक्शन बटन केवल तभी सक्रिय हों जब लंबित अनुरोध हों
         const btnApproveAll = $('btn-admin-approve-all-pending');
         const btnRejectAll = $('btn-admin-reject-all-pending');
         if (btnApproveAll) btnApproveAll.disabled = (pendingReqs.length === 0);
@@ -6816,8 +7331,7 @@
 
                     return `
                         <tr>
-                            <td data-label="शब्द"><strong>${escapeHtml(wordDisplay)}</strong></td>
-                            <td data-label="भाषा"><span class="compact-lang-badge">${escapeHtml(reqLang)}</span></td>
+                            <td data-label="शब्द"><strong>${escapeHtml(wordDisplay)}</strong> <span class="compact-lang-badge">${escapeHtml(reqLang)}</span></td>
                             <td data-label="तार्किक नीति निदान">
                                 <span class="admin-policy-verdict-badge ${policyDiag.shouldBlacklist ? 'verdict-warn' : 'verdict-ok'}" title="${escapeHtml(policyDiag.summary)}">
                                     ${escapeHtml(policyDiag.shortBadge)}
@@ -6869,7 +7383,6 @@
                             renderAdminPanelUI();
                             showToast(`✓ '${reqWord}' को एडमिन की सहमति से बहिष्कार सूची में जोड़ दिया गया!`);
                         } catch (err) {
-                            console.warn('Approve error:', err);
                             showToast('स्वीकृत करने में त्रुटि हुई');
                             btn.disabled = false;
                             btn.textContent = '✓ सहमति दें';
@@ -6892,7 +7405,6 @@
                             renderAdminPanelUI();
                             showToast(`'${reqWord}' का अनुरोध अस्वीकार किया गया`);
                         } catch (err) {
-                            console.warn('Reject error:', err);
                             btn.disabled = false;
                         }
                     });
@@ -6905,13 +7417,222 @@
             approvedListEl.style.display = 'none';
             approvedListEl.innerHTML = '';
         }
+
+        // चरण 04: श्वेतसूची चिप्स एवं बहिष्कृत शब्द खोज परिणाम रेंडर करें
+        safeSetText('admin-whitelist-count', String((state.adminWhitelistList || []).length));
+        const wlChipsEl = $('admin-whitelist-chips');
+        if (wlChipsEl) {
+            if (!state.adminWhitelistList || state.adminWhitelistList.length === 0) {
+                wlChipsEl.innerHTML = `<small style="color: var(--text-muted);">कोई श्वेतसूची पद नहीं जोड़ा गया है।</small>`;
+            } else {
+                wlChipsEl.innerHTML = state.adminWhitelistList.map(w => `
+                    <span class="badge badge-blue" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;">
+                        🛡️ ${escapeHtml(w)}
+                        <button type="button" class="btn-remove-wl-word" data-wl-word="${escapeHtml(w)}" style="border: none; background: transparent; color: inherit; cursor: pointer; font-weight: 700;" title="श्वेतसूची से हटाएँ">✕</button>
+                    </span>
+                `).join('');
+                wlChipsEl.querySelectorAll('.btn-remove-wl-word').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetW = btn.dataset.wlWord || '';
+                        state.adminWhitelist.delete(targetW.toLowerCase());
+                        state.adminWhitelistList = state.adminWhitelistList.filter(item => item !== targetW);
+                        try {
+                            localStorage.setItem('wikilink_admin_whitelist_v1', JSON.stringify(state.adminWhitelistList));
+                        } catch (e) {}
+                        renderAdminPanelUI();
+                        showToast(`'${targetW}' श्वेतसूची से हटाया गया`);
+                    });
+                });
+            }
+        }
+
+        // केवल तब स्वीकृत बहिष्कार शब्द दिखाएँ जब एडमिन खोज बॉक्स में कुछ टाइप करे (ताकि पेज का आकार न बढ़े)
+        const searchResultsEl = $('admin-approved-search-results');
+        if (searchResultsEl) {
+            const q = (state.adminApprovedSearchQuery || '').trim().toLowerCase();
+            const langF = state.adminApprovedLangFilter || 'all';
+            if (!q) {
+                searchResultsEl.style.display = 'none';
+                searchResultsEl.innerHTML = '';
+            } else {
+                const matched = approvedList.filter(item => {
+                    const w = String(item.word || item.term || '').toLowerCase();
+                    if (langF !== 'all' && (item.lang || 'hi') !== langF) return false;
+                    return w.includes(q);
+                }).slice(0, 25);
+
+                searchResultsEl.style.display = 'flex';
+                if (matched.length === 0) {
+                    searchResultsEl.innerHTML = `<small style="color: var(--text-muted);">"${escapeHtml(q)}" से मेल खाता कोई सामुदायिक बहिष्कृत शब्द नहीं मिला।</small>`;
+                } else {
+                    searchResultsEl.innerHTML = matched.map(item => {
+                        const w = String(item.word || item.term || '');
+                        const wId = String(item.wordId || item.id || w);
+                        return `
+                            <span class="badge badge-disambig" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;">
+                                🚫 ${escapeHtml(w)} (${escapeHtml(item.lang || 'hi')})
+                                <button type="button" class="btn-delete-approved-word" data-word-id="${escapeHtml(wId)}" data-word-text="${escapeHtml(w)}" style="border: none; background: transparent; color: #b91c1c; cursor: pointer; font-weight: 800;" title="इस बहिष्कृत शब्द को हटाएँ">🗑️ हटाएँ</button>
+                            </span>
+                        `;
+                    }).join('');
+
+                    searchResultsEl.querySelectorAll('.btn-delete-approved-word').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const wId = btn.dataset.wordId || '';
+                            const wText = (btn.dataset.wordText || '').toLowerCase();
+                            state.approvedGlobalBlacklist.delete(wText);
+                            NEVER_LINK_WORDS.hi.delete(wText);
+                            state.approvedGlobalBlacklistList = state.approvedGlobalBlacklistList.filter(
+                                i => String(i.word || i.term || '').toLowerCase() !== wText
+                            );
+                            try {
+                                localStorage.setItem('wikilink_approved_global_blacklist_v1', JSON.stringify(state.approvedGlobalBlacklistList));
+                            } catch (e) {}
+                            if (window.WikiFirebase && window.WikiFirebase.removeApprovedBlacklistWordByAdmin) {
+                                try { await window.WikiFirebase.removeApprovedBlacklistWordByAdmin(wId); } catch (e) {}
+                            }
+                            renderAdminPanelUI();
+                            showToast(`✓ '${wText}' को वैश्विक बहिष्कार सूची से हटा दिया गया!`);
+                        });
+                    });
+                }
+            }
+        }
+
+        // चरण 05: पंजीकृत सदस्य तालिका रेंडर करें
+        const usersTbody = $('admin-users-tbody');
+        if (usersTbody) {
+            let vaultMap = {};
+            try {
+                vaultMap = JSON.parse(localStorage.getItem('wikilink_account_vault_v3') || '{}');
+            } catch (e) {}
+            const archiveMap = getUserProfilesArchiveMap();
+            const mergedUsersMap = new Map();
+
+            Object.values(vaultMap).forEach(u => {
+                if (u && u.email) {
+                    mergedUsersMap.set(u.email.toLowerCase(), {
+                        email: u.email.toLowerCase(),
+                        name: u.name || u.email.split('@')[0],
+                        role: u.role || (u.email.toLowerCase() === 'amankumar.wikimedian@gmail.com' ? 'मुख्य प्रशासक (Admin)' : 'विकिपीडिया संपादक'),
+                        blocked: Boolean(u.blocked),
+                        hasPasswordLock: Boolean(u.passwordHash)
+                    });
+                }
+            });
+
+            Object.values(archiveMap).forEach(u => {
+                if (u && u.email && !mergedUsersMap.has(u.email.toLowerCase())) {
+                    mergedUsersMap.set(u.email.toLowerCase(), {
+                        email: u.email.toLowerCase(),
+                        name: u.name || u.email.split('@')[0],
+                        role: u.role || 'विकिपीडिया संपादक',
+                        blocked: false,
+                        hasPasswordLock: false
+                    });
+                }
+            });
+
+            const allUsers = Array.from(mergedUsersMap.values());
+            safeSetText('admin-users-total-count', String(allUsers.length));
+
+            const uQuery = (state.adminUserSearchQuery || '').trim().toLowerCase();
+            const filteredUsers = allUsers.filter(u => {
+                if (!uQuery) return true;
+                return u.email.includes(uQuery) || u.name.toLowerCase().includes(uQuery) || u.role.toLowerCase().includes(uQuery);
+            });
+
+            if (filteredUsers.length === 0) {
+                usersTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 14px; color: var(--text-muted);">कोई पंजीकृत सदस्य नहीं मिला।</td></tr>`;
+            } else {
+                usersTbody.innerHTML = filteredUsers.map(u => {
+                    const isSelfAdmin = u.email === 'amankumar.wikimedian@gmail.com';
+                    const isReviewer = String(u.role || '').includes('वरिष्ठ परीक्षक');
+                    const statusBadge = u.blocked
+                        ? '<span class="status-pill status-pill-red">🚫 प्रतिबंधित (Blocked)</span>'
+                        : (u.hasPasswordLock
+                            ? '<span class="status-pill status-pill-blue">🔒 पासवर्ड लॉक सक्रिय</span>'
+                            : '<span class="status-pill status-pill-disambig">⏳ पासवर्ड अपंजीकृत</span>');
+
+                    return `
+                        <tr>
+                            <td data-label="सदस्य नाम"><strong>${escapeHtml(u.name)}</strong></td>
+                            <td data-label="ईमेल"><code>${escapeHtml(u.email)}</code></td>
+                            <td data-label="भूमिका"><span class="badge ${isSelfAdmin ? 'badge-success' : (isReviewer ? 'badge-blue' : 'badge-secondary')}">${escapeHtml(u.role)}</span></td>
+                            <td data-label="सुरक्षा स्थिति">${statusBadge}</td>
+                            <td class="td-actions-cell" data-label="प्रशासकीय अधिकार">
+                                ${isSelfAdmin ? `<span style="font-size: 0.78rem; color: var(--text-muted);">🛡️ मुख्य प्रशासक (संरक्षित)</span>` : `
+                                    <div class="review-action-btns">
+                                        <button type="button" class="btn btn-outline btn-sm admin-toggle-role-btn" data-user-email="${escapeHtml(u.email)}">
+                                            ${isReviewer ? 'संपादक बनाएँ' : '⭐ वरिष्ठ परीक्षक बनाएँ'}
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm ${u.blocked ? 'text-success' : 'text-danger'} admin-toggle-block-btn" data-user-email="${escapeHtml(u.email)}">
+                                            ${u.blocked ? '✓ बहाल करें' : '🚫 ब्लॉक करें'}
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm admin-reset-user-lock-btn" data-user-email="${escapeHtml(u.email)}" title="पासवर्ड लॉक रीसेट करें">
+                                            🔑 लॉक रीसेट
+                                        </button>
+                                    </div>
+                                `}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                usersTbody.querySelectorAll('.admin-toggle-role-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetEmail = (btn.dataset.userEmail || '').toLowerCase();
+                        if (!targetEmail || targetEmail === 'amankumar.wikimedian@gmail.com') return;
+                        try {
+                            const map = JSON.parse(localStorage.getItem('wikilink_account_vault_v3') || '{}');
+                            const cur = map[targetEmail] || { email: targetEmail, name: targetEmail.split('@')[0] };
+                            const isRev = String(cur.role || '').includes('वरिष्ठ परीक्षक');
+                            cur.role = isRev ? 'विकिपीडिया संपादक' : 'वरिष्ठ परीक्षक (Senior Reviewer)';
+                            map[targetEmail] = cur;
+                            localStorage.setItem('wikilink_account_vault_v3', JSON.stringify(map));
+                            renderAdminPanelUI();
+                            showToast(`✓ ${targetEmail} की भूमिका बदलकर "${cur.role}" की गई`);
+                        } catch (e) {}
+                    });
+                });
+
+                usersTbody.querySelectorAll('.admin-toggle-block-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetEmail = (btn.dataset.userEmail || '').toLowerCase();
+                        if (!targetEmail || targetEmail === 'amankumar.wikimedian@gmail.com') return;
+                        try {
+                            const map = JSON.parse(localStorage.getItem('wikilink_account_vault_v3') || '{}');
+                            const cur = map[targetEmail] || { email: targetEmail, name: targetEmail.split('@')[0] };
+                            cur.blocked = !cur.blocked;
+                            map[targetEmail] = cur;
+                            localStorage.setItem('wikilink_account_vault_v3', JSON.stringify(map));
+                            renderAdminPanelUI();
+                            showToast(cur.blocked ? `🚫 खाता ${targetEmail} प्रतिबंधित किया गया` : `✓ खाता ${targetEmail} बहाल किया गया`);
+                        } catch (e) {}
+                    });
+                });
+
+                usersTbody.querySelectorAll('.admin-reset-user-lock-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetEmail = (btn.dataset.userEmail || '').toLowerCase();
+                        if (!targetEmail || targetEmail === 'amankumar.wikimedian@gmail.com') return;
+                        try {
+                            const map = JSON.parse(localStorage.getItem('wikilink_account_vault_v3') || '{}');
+                            delete map[targetEmail];
+                            localStorage.setItem('wikilink_account_vault_v3', JSON.stringify(map));
+                            renderAdminPanelUI();
+                            showToast(`🔑 ${targetEmail} का पासवर्ड लॉक रीसेट किया गया (सदस्य नया पासवर्ड सेट कर सकता है)`);
+                        } catch (e) {}
+                    });
+                });
+            }
+        }
     }
 
     function checkPendingRestoredArticle() {
         try {
             const raw = localStorage.getItem('wikilink_restore_article');
             if (!raw) return;
-            // केवल तभी लोड करें जब हम कार्यपटल (index.html) पर हों
             if (!DOM.rawWikitextInput && !$('raw-wikitext-input')) return;
             localStorage.removeItem('wikilink_restore_article');
             const item = JSON.parse(raw);
@@ -6934,33 +7655,47 @@
 
     function loadUserAndLogsFromStorage() {
         try {
-            let savedUser = localStorage.getItem('wikilink_current_user');
-            if (!savedUser) {
-                const googleSaved = localStorage.getItem('wikilink_google_account');
-                if (googleSaved) {
-                    savedUser = googleSaved;
-                }
-            }
+            const savedUser = localStorage.getItem('wikilink_current_user');
             if (savedUser) {
                 const parsed = JSON.parse(savedUser);
-                if (parsed && String(parsed.role || '').includes('Demo')) {
+                let vaultMap = {};
+                try {
+                    vaultMap = JSON.parse(localStorage.getItem('wikilink_account_vault_v3') || '{}');
+                } catch (e) {}
+
+                const normEmail = String(parsed?.email || '').trim().toLowerCase();
+                const vaultEntry = normEmail ? vaultMap[normEmail] : null;
+
+                // कठोर सुरक्षा नियम: यदि सत्र बिना SHA-256 पासवर्ड हैश सत्यापन (vaultVerified) के है, तो उसे तुरंत निरस्त करें!
+                const hasValidVaultMatch = Boolean(
+                    parsed &&
+                    parsed.vaultVerified === true &&
+                    normEmail &&
+                    (parsed.firebaseAuthVerified === true || (vaultEntry && vaultEntry.passwordHash && vaultEntry.passwordHash === parsed.passwordHashToken)) &&
+                    !(vaultEntry && vaultEntry.blocked && normEmail !== 'amankumar.wikimedian@gmail.com')
+                );
+
+                if (!hasValidVaultMatch) {
                     localStorage.removeItem('wikilink_current_user');
                     currentUser = null;
-                } else if (parsed && (parsed.name || parsed.email)) {
-                    const normEmail = String(parsed.email || '').trim().toLowerCase();
+                } else {
                     const emailKey = getEmailArchiveKey(normEmail);
                     const archivedProfile = getUserProfilesArchiveMap()[emailKey] || null;
-                    const normName = String((archivedProfile && archivedProfile.name) || parsed.name || '').trim() || normEmail.split('@')[0];
+                    const normName = normEmail === 'amankumar.wikimedian@gmail.com'
+                        ? 'विक्रम प्रताप'
+                        : (String((vaultEntry && vaultEntry.name) || (archivedProfile && archivedProfile.name) || parsed.name || '').trim() || normEmail.split('@')[0]);
                     parsed.name = normName;
                     parsed.email = normEmail;
-                    parsed.uid = parsed.uid || (archivedProfile && archivedProfile.uid) || '';
+                    parsed.uid = parsed.uid || (vaultEntry && vaultEntry.uid) || (archivedProfile && archivedProfile.uid) || '';
                     parsed.avatarIcon = parsed.avatarIcon || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
-                    parsed.isAdmin = (
+                    parsed.isAdmin = Boolean(
                         normEmail === 'amankumar.wikimedian@gmail.com' &&
-                        (normName === 'विक्रम प्रताप' || normName.includes('विक्रम प्रताप'))
+                        normName === 'विक्रम प्रताप'
                     );
                     currentUser = parsed;
                 }
+            } else {
+                currentUser = null;
             }
         } catch (e) {
             currentUser = null;
@@ -6968,10 +7703,8 @@
 
         try {
             if (currentUser && currentUser.email) {
-                // जब यूज़र लॉगिन हो, तो सख्ती से केवल उसी यूज़र के ईमेल/UID के लॉग लोड करें — किसी अन्य यूज़र या साझा लॉग को कदापि न दिखाएँ!
                 userActivityLogs = getSavedUserLogsByEmail(currentUser.email, currentUser.uid);
             } else {
-                // अतिथि (Guest) सत्र के लिए केवल अतिथि लॉग लोड करें
                 const guestLogsRaw = localStorage.getItem('wikilink_guest_activity_logs');
                 const guestLogs = guestLogsRaw ? JSON.parse(guestLogsRaw) : [];
                 userActivityLogs = Array.isArray(guestLogs) ? filterLogsStrictlyForUser(guestLogs, null) : [];

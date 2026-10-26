@@ -363,27 +363,25 @@ function openUniversalGoogleHandlerPopup(config) {
                     resolve(null);
                     return;
                 }
-                let savedGoogleProfile = null;
-                try {
-                    savedGoogleProfile = JSON.parse(localStorage.getItem('wikilink_google_account') || 'null');
-                } catch (e) {}
-                const emailInputEl = document.getElementById('auth-email-input');
-                const nameInputEl = document.getElementById('auth-name-input');
-                const typedEmail = emailInputEl && emailInputEl.value ? emailInputEl.value.trim() : '';
-                const typedName = nameInputEl && nameInputEl.value ? nameInputEl.value.trim() : '';
+                if (auth && auth.currentUser && auth.currentUser.email) {
+                    const realUser = auth.currentUser;
+                    const realEmail = realUser.email.trim().toLowerCase();
+                    const realName = isDesignatedAdminUser(realUser)
+                        ? ADMIN_MEMBER_NAME
+                        : (realUser.displayName || realEmail.split('@')[0]);
+                    resolve({
+                        uid: realUser.uid,
+                        displayName: realName,
+                        email: realEmail,
+                        isAdmin: isDesignatedAdminUser(realUser),
+                        firebaseAuthVerified: true,
+                        role: isDesignatedAdminUser(realUser) ? 'मुख्य प्रशासक (Admin)' : 'Google सत्यापित संपादक'
+                    });
+                    return;
+                }
 
-                const resolvedEmail = typedEmail || (savedGoogleProfile && savedGoogleProfile.email) || 'google.editor@gmail.com';
-                const resolvedName = isDesignatedAdminUser(resolvedEmail, typedName)
-                    ? ADMIN_MEMBER_NAME
-                    : (typedName || (savedGoogleProfile && savedGoogleProfile.name) || resolvedEmail.split('@')[0]);
-
-                resolve({
-                    uid: `google_${Date.now()}`,
-                    displayName: resolvedName,
-                    email: resolvedEmail,
-                    isAdmin: isDesignatedAdminUser(resolvedEmail, resolvedName),
-                    role: isDesignatedAdminUser(resolvedEmail, resolvedName) ? 'मुख्य प्रशासक (Admin)' : 'Google सत्यापित संपादक'
-                });
+                // यदि पॉपअप बिना वास्तविक Firebase Auth सत्र के बंद हुआ है, तो कभी भी एडमिन या किसी अन्य ईमेल की नकल (spoofing) न होने दें
+                resolve(null);
             }
         }, 450);
     });
@@ -533,8 +531,14 @@ export async function registerWithEmailAccount(arg1, arg2, arg3) {
         throw err;
     }
 
+    if (!password || String(password).length < 6) {
+        const err = new Error('पासवर्ड कम से कम 6 अक्षरों का होना अनिवार्य है।');
+        err.code = 'auth/weak-password';
+        throw err;
+    }
+
     // यदि कोई अन्य व्यक्ति एडमिन ईमेल से गलत नाम से खाता बनाने का प्रयास करे
-    if (cleanEmail === ADMIN_EMAIL.toLowerCase() && cleanName !== ADMIN_MEMBER_NAME && !cleanName.toLowerCase().includes('vikram')) {
+    if (cleanEmail === ADMIN_EMAIL.toLowerCase() && cleanName !== ADMIN_MEMBER_NAME && cleanName.toLowerCase() !== 'vikram pratap') {
         const err = new Error('यह एडमिन ईमेल पता आरक्षित है।');
         err.code = 'auth/email-already-in-use';
         throw err;
@@ -550,7 +554,7 @@ export async function registerWithEmailAccount(arg1, arg2, arg3) {
         throw dupErr;
     }
 
-    const secretPass = password && String(password).length >= 6 ? String(password) : 'WikiLink@2026';
+    const secretPass = String(password);
     const cred = await createUserWithEmailAndPassword(auth, cleanEmail, secretPass);
     if (cred && cred.user) {
         const finalName = isDesignatedAdminUser(cleanEmail, cleanName) ? ADMIN_MEMBER_NAME : cleanName;
@@ -574,7 +578,12 @@ export async function registerWithEmailAccount(arg1, arg2, arg3) {
 export async function signInWithEmailAccount(email, password, fallbackName = '') {
     if (!auth) await initFirebaseService();
     const cleanEmail = String(email || '').trim().toLowerCase();
-    const secretPass = password && String(password).length >= 6 ? String(password) : 'WikiLink@2026';
+    if (!password || String(password).length < 6) {
+        const err = new Error('पासवर्ड कम से कम 6 अक्षरों का होना अनिवार्य है।');
+        err.code = 'auth/wrong-password';
+        throw err;
+    }
+    const secretPass = String(password);
 
     try {
         const cred = await signInWithEmailAndPassword(auth, cleanEmail, secretPass);

@@ -129,6 +129,15 @@
     <main class="main-content container">
         <div id="main-workbench-page-view">
 
+        <!-- एडमिन वैश्विक संपादकीय घोषणा पट्टी (केवल तब दिखती है जब एडमिन द्वारा कोई सूचना सक्रिय की गई हो) -->
+        <div id="global-admin-broadcast-banner" class="workbench-card" style="display: none; margin-bottom: 12px; padding: 10px 16px; background: var(--primary-light); border-left: 4px solid var(--primary-color); align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-primary);">
+                <span class="badge badge-blue">📢 प्रशासकीय निर्देश</span>
+                <span id="global-admin-broadcast-text" style="font-weight: 600;"></span>
+            </div>
+            <small id="global-admin-policy-summary-pill" style="font-size: 0.76rem; color: var(--text-secondary); font-weight: 600;"></small>
+        </div>
+
         <!-- कॉम्पैक्ट सारांश पट्टी (विश्लेषण के बाद प्रदर्शित होती है जब इनपुट फॉर्म छुप जाता है) -->
         <div id="compact-active-article-bar" class="compact-article-bar" style="display: none;">
             <div class="compact-info">
@@ -960,7 +969,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
-    <script type="module" src="firebase-client.js?v=15"></script>
-    <script src="app.js?v=15" defer></script>
+    <script type="module" src="firebase-client.js?v=16"></script>
+    <script src="app.js?v=16" defer></script>
 </body>
 </html>

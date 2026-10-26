@@ -620,9 +620,189 @@
                                 </div>
                             </div>
 
-                            <!-- तार्किक चरण 3: स्वीकृत वैश्विक बहिष्कार शब्दकोश प्रबंधन (आकार बचाने हेतु अदृश्य) -->
-                            <div class="admin-logical-step-box" style="margin-top: 16px; display: none;">
-                                <div id="admin-approved-words-list" class="approved-blacklist-chips" style="display: none;"></div>
+                            <!-- तार्किक चरण 3: वैश्विक कड़ीकरण इंजन नीति एवं संपादकीय घोषणा नियंत्रक (Global Engine Policy & Broadcast) -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">03</span>
+                                    <div style="flex: 1;">
+                                        <h3 class="admin-sub-heading" style="margin-bottom: 2px;">⚙️ वैश्विक कड़ीकरण इंजन नीति एवं संपादकीय घोषणा नियंत्रक (Global Engine Policy & Broadcast)</h3>
+                                        <p class="theme-studio-desc">संपूर्ण उपकरण के लिए डिफ़ॉल्ट कड़ी घनत्व सीमा, अनिवार्य विकिपीडिया नीति लॉक और मुख्य कार्यपटल की संपादकीय घोषणा पट्टी नियंत्रित करें:</p>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 10px;">
+                                    <div>
+                                        <label for="admin-policy-max-density" class="form-hint" style="display: block; font-weight: 600; margin-bottom: 4px;">अधिकतम कड़ी घनत्व सीमा (Max Link Density Cap)</label>
+                                        <select id="admin-policy-max-density" class="form-control form-control-sm">
+                                            <option value="0">कोई सीमा नहीं (डिफ़ॉल्ट)</option>
+                                            <option value="6">6% (सख्त WP:OVERLINK सीमा)</option>
+                                            <option value="8">8% (संतुलित विश्वकोशीय मानक)</option>
+                                            <option value="10" selected>10% (अनुशंसित अधिकतम सीमा)</option>
+                                            <option value="12">12% (विस्तृत लेख सीमा)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="admin-policy-min-len" class="form-hint" style="display: block; font-weight: 600; margin-bottom: 4px;">न्यूनतम शब्द लंबाई मानक (Min Word Length)</label>
+                                        <select id="admin-policy-min-len" class="form-control form-control-sm">
+                                            <option value="2">2 अक्षर</option>
+                                            <option value="3" selected>3 अक्षर (मानक)</option>
+                                            <option value="4">4 अक्षर (सख्त)</option>
+                                            <option value="5">5 अक्षर</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="admin-policy-default-scope" class="form-hint" style="display: block; font-weight: 600; margin-bottom: 4px;">डिफ़ॉल्ट कड़ीकरण दायरा (Default Link Scope)</label>
+                                        <select id="admin-policy-default-scope" class="form-control form-control-sm">
+                                            <option value="all" selected>संपूर्ण लेख (Full Article)</option>
+                                            <option value="lead">केवल प्रारंभिक अनुच्छेद (Lead Only)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; padding: 10px 12px; background: var(--bg-alt); border-radius: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-first" checked>
+                                        <span>केवल प्रथम उपस्थिति अनिवार्य करें (WP:LINKONCE)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-skip-disambig" checked>
+                                        <span>बहुविकल्पी पृष्ठ स्वतः अचयनित रखें (WP:INTDAB)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-skip-dates" checked>
+                                        <span>सामान्य वर्ष व तिथियाँ वर्जित रखें (WP:DATELINK)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-blue-only">
+                                        <span>केवल नीली (अस्तित्वमान) कड़ियाँ अनिवार्य करें</span>
+                                    </label>
+                                </div>
+
+                                <div class="admin-direct-add-bar" style="margin-top: 12px;">
+                                    <input type="text" id="admin-broadcast-msg-input" class="form-control form-control-sm" placeholder="मुख्य कार्यपटल हेतु संपादकीय सूचना लिखें (उदा: कृपया सामान्य वर्षों एवं देशों की पुनरावृत्ति कड़ियाँ न जोड़ें)..." style="flex: 2 1 280px;">
+                                    <button type="button" id="btn-admin-save-engine-policy" class="btn btn-primary btn-sm">
+                                        💾 वैश्विक नीति व सूचना लागू करें
+                                    </button>
+                                    <button type="button" id="btn-admin-clear-broadcast" class="btn btn-outline btn-sm">
+                                        🗑️ सूचना पट्टी हटाएँ
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 4: सामूहिक शब्दकोश प्रबंधन, सुरक्षित श्वेतसूची (Whitelist) एवं शब्द निष्कासन -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">04</span>
+                                    <div style="flex: 1;">
+                                        <div class="admin-step-title-flex">
+                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">📚 सामूहिक बहिष्कार प्रविष्टि, सुरक्षित श्वेतसूची (Whitelist) एवं शब्द निष्कासन</h3>
+                                            <div class="admin-bulk-actions">
+                                                <button type="button" id="btn-admin-export-blacklist" class="btn btn-secondary btn-sm">
+                                                    📥 संपूर्ण एडमिन शब्दकोश JSON निर्यात
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="theme-studio-desc">एक साथ अनेक शब्द बहिष्कृत करें, विश्वकोशीय शब्दों को श्वेतसूची (Always Linkable Whitelist) में सुरक्षित करें, या किसी स्वीकृत बहिष्कृत शब्द को खोजकर हटाएँ:</p>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 10px;">
+                                    <!-- सामूहिक बहिष्कार (Bulk Blacklist Add) -->
+                                    <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-alt);">
+                                        <strong style="font-size: 0.86rem; display: block; margin-bottom: 6px;">🚫 सामूहिक बहिष्कार शब्द जोड़ें (कौमा या नई पंक्ति से अलग करें)</strong>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                            <input type="text" id="admin-bulk-blacklist-input" class="form-control form-control-sm" placeholder="उदा: समिति, आयोग, विभाग, कार्यालय..." style="flex: 1 1 180px;">
+                                            <button type="button" id="btn-admin-bulk-blacklist-add" class="btn btn-primary btn-sm">+ सामूहिक जोड़ें</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- एडमिन सुरक्षित श्वेतसूची (Protected Whitelist) -->
+                                    <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-alt);">
+                                        <strong style="font-size: 0.86rem; display: block; margin-bottom: 6px;">🛡️ एडमिन सुरक्षित श्वेतसूची (Whitelist — सदैव कड़ी योग्य पद: <span id="admin-whitelist-count">0</span>)</strong>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                            <input type="text" id="admin-whitelist-word-input" class="form-control form-control-sm" placeholder="विशेष विश्वकोशीय पद (जो कभी ब्लॉक न हो)..." style="flex: 1 1 180px;">
+                                            <button type="button" id="btn-admin-add-whitelist" class="btn btn-success btn-sm">+ श्वेतसूची में रखें</button>
+                                        </div>
+                                        <div id="admin-whitelist-chips" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- स्वीकृत बहिष्कार शब्द खोजकर हटाने का कॉम्पैक्ट उपकरण -->
+                                <div style="margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                                        <strong style="font-size: 0.84rem;">🔍 स्वीकृत सामुदायिक बहिष्कार शब्दों (<span id="admin-approved-words-count">0</span>) में खोजें व हटाएँ:</strong>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap; flex: 1; max-width: 420px;">
+                                            <input type="text" id="admin-approved-search-input" class="form-control form-control-sm" placeholder="हटाने या जाँचने के लिए बहिष्कृत शब्द खोजें..." style="flex: 1;">
+                                            <select id="admin-approved-lang-filter" class="form-control form-control-sm" style="max-width: 110px;">
+                                                <option value="all">सभी भाषाएँ</option>
+                                                <option value="hi">हिन्दी (hi)</option>
+                                                <option value="en">English (en)</option>
+                                                <option value="sa">संस्कृतम् (sa)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="admin-approved-search-results" style="display: none; gap: 6px; flex-wrap: wrap; margin-top: 10px;"></div>
+                                    <div id="admin-approved-words-list" class="approved-blacklist-chips" style="display: none;"></div>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 5: पंजीकृत सदस्य, भूमिका (Role) एवं खाता नियंत्रण कक्ष -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">05</span>
+                                    <div style="flex: 1;">
+                                        <div class="admin-step-title-flex">
+                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">👥 पंजीकृत सदस्य, भूमिका आवंटन एवं खाता नियंत्रण (<span id="admin-users-total-count">0</span> सदस्य)</h3>
+                                            <input type="text" id="admin-user-search-input" class="form-control form-control-sm" placeholder="सदस्य नाम या ईमेल खोजें..." style="max-width: 240px;">
+                                        </div>
+                                        <p class="theme-studio-desc">पंजीकृत खातों की समीक्षा करें, सदस्यों को 'वरिष्ठ परीक्षक' (Reviewer) पदोन्नत करें, अवांछित खातों को प्रतिबंधित (Block) करें या भूले हुए पासवर्ड का लॉक रीसेट करें:</p>
+                                    </div>
+                                </div>
+
+                                <div class="suggestions-table-container" style="max-height: 320px; margin-top: 8px;">
+                                    <table class="table suggestions-table">
+                                        <thead>
+                                            <tr>
+                                                <th>सदस्य नाम (Member)</th>
+                                                <th>पंजीकृत ईमेल पता (Email)</th>
+                                                <th>भूमिका (Role)</th>
+                                                <th>सुरक्षा स्थिति (Status)</th>
+                                                <th width="260">प्रशासकीय अधिकार (Admin Actions)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-users-tbody">
+                                            <tr>
+                                                <td colspan="5" style="text-align: center; padding: 16px; color: var(--text-muted);">सदस्य सूची लोड हो रही है...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 6: एडमिन सुरक्षा वॉल्ट, पासवर्ड परिवर्तन एवं प्रशासकीय ऑडिट लॉग -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">06</span>
+                                    <div style="flex: 1;">
+                                        <h3 class="admin-sub-heading" style="margin-bottom: 2px;">🔐 एडमिन पासवर्ड सुरक्षा वॉल्ट एवं प्रशासकीय ऑडिट लॉग (Security Vault & Audit Trail)</h3>
+                                        <p class="theme-studio-desc">मुख्य प्रशासक खाते का SHA-256 पासवर्ड बदलें तथा एडमिन पैनल में किए गए सभी निर्णयों का कालानुक्रमिक ऑडिट रिकॉर्ड देखें:</p>
+                                    </div>
+                                </div>
+
+                                <div class="admin-direct-add-bar" style="margin-top: 10px;">
+                                    <input type="password" id="admin-new-password-input" class="form-control form-control-sm" placeholder="नया एडमिन पासवर्ड (न्यूनतम 6 अक्षर)..." minlength="6">
+                                    <input type="password" id="admin-confirm-password-input" class="form-control form-control-sm" placeholder="नए पासवर्ड की पुष्टि करें..." minlength="6">
+                                    <button type="button" id="btn-admin-update-password" class="btn btn-primary btn-sm">
+                                        🔒 एडमिन पासवर्ड अपडेट व लॉक करें
+                                    </button>
+                                    <button type="button" id="btn-admin-clear-audit-log" class="btn btn-outline text-danger btn-sm">
+                                        🗑️ ऑडिट लॉग साफ़ करें
+                                    </button>
+                                </div>
+
+                                <div id="admin-audit-log-container" style="margin-top: 10px; max-height: 180px; overflow-y: auto; padding: 8px 12px; background: var(--bg-alt); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem;">
+                                    <div style="color: var(--text-muted);">कोई प्रशासकीय ऑडिट प्रविष्टि नहीं है।</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -677,7 +857,7 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js?v=15"></script>
-    <script src="app.js?v=15" defer></script>
+    <script type="module" src="firebase-client.js?v=16"></script>
+    <script src="app.js?v=16" defer></script>
 </body>
 </html>
