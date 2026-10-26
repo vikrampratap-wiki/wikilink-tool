@@ -1,6 +1,12 @@
 /**
  * विकीलिंक सहायक (WikiLink Assistant) — Firebase (Firestore + Google Auth) Client Integration
  * Supports both AI Studio Cloud Run (/) and GitHub Pages (/wikilink-tool/) deployments.
+ *
+ * Key architecture:
+ * - firebase-app.js & firebase-auth.js are imported statically so `auth` is ready synchronously
+ *   and `signInWithPopup(auth, provider)` executes in the exact user click gesture (never popup-blocked).
+ * - firebase-firestore.js (~300 KB) is loaded on-demand when a user is authenticated or reading/writing logs,
+ *   keeping initial Mobile PageSpeed Insights fast.
  */
 
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
@@ -8,29 +14,15 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signInWithCredential,
   signOut,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  collection,
-  query,
-  where,
-  onSnapshot,
-  writeBatch,
-  serverTimestamp,
-  getDocFromServer
-} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 
 export const TOOL_DISPLAY_NAME = 'विकीलिंक सहायक (WikiLink Assistant)';
 
-// Built-in configuration so subpath deployments (e.g. https://vikrampratap-wiki.github.io/wikilink-tool/)
-// initialize immediately without failing on root-relative fetch('/firebase-applet-config.json').
 const DEFAULT_FIREBASE_CONFIG = {
   appName: TOOL_DISPLAY_NAME,
   projectId: 'gen-lang-client-0674523264',
@@ -63,9 +55,14 @@ const ALLOWED_SKINS = [
   'anime-royal'
 ];
 
-let app = null;
+// Initialize Firebase App & Auth synchronously so signInWithPopup never loses user gesture activation
+const app = getApps().length > 0 ? getApp() : initializeApp(DEFAULT_FIREBASE_CONFIG);
+const auth = getAuth(app);
+auth.languageCode = 'hi';
+
 let db = null;
-let auth = null;
+let fbFirestoreMod = null;
+let firestoreLoadPromise = null;
 let unsubscribeLogsSnapshot = null;
 let authListenerBound = false;
 const profileEnsurePromises = new Map();
@@ -105,38 +102,38 @@ export function handleFirestoreError(error, operationType, path) {
   throw new Error(JSON.stringify(errInfo));
 }
 
-function initFirebaseInstances(config = DEFAULT_FIREBASE_CONFIG) {
-  if (!app) {
-    app = getApps().length > 0 ? getApp() : initializeApp(config);
+async function ensureFirestoreLoaded() {
+  if (db && fbFirestoreMod) {
+    return { db, fbFirestoreMod };
   }
-  if (!db) {
-    db = getFirestore(app, config.firestoreDatabaseId || DEFAULT_FIREBASE_CONFIG.firestoreDatabaseId);
+  if (!firestoreLoadPromise) {
+    firestoreLoadPromise = import('https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js')
+      .then((mod) => {
+        fbFirestoreMod = mod;
+        if (!db) {
+          db = mod.getFirestore(app, DEFAULT_FIREBASE_CONFIG.firestoreDatabaseId);
+        }
+        return { db, fbFirestoreMod };
+      })
+      .catch((err) => {
+        firestoreLoadPromise = null;
+        throw err;
+      });
   }
-  if (!auth) {
-    auth = getAuth(app);
-    auth.languageCode = 'hi';
-  }
-  return { app, db, auth };
-}
-
-async function testConnection() {
-  if (!db || !navigator.onLine) return;
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
-    }
-  }
+  return firestoreLoadPromise;
 }
 
 async function ensureUserProfileInFirestore(user) {
-  if (!db || !user || !user.uid) return null;
+  if (!user || !user.uid) return null;
+  await ensureFirestoreLoaded();
+  if (!db || !fbFirestoreMod) return null;
   const uid = sanitizeId(user.uid);
 
   if (profileEnsurePromises.has(uid)) {
     return profileEnsurePromises.get(uid);
   }
+
+  const { doc, getDoc, writeBatch, serverTimestamp } = fbFirestoreMod;
 
   const ensurePromise = (async () => {
     const userPath = `users/${uid}`;
@@ -204,13 +201,16 @@ async function ensureUserProfileInFirestore(user) {
   }
 }
 
-function subscribeToUserActivityLogs(uid, onLogsUpdated) {
+async function subscribeToUserActivityLogs(uid, onLogsUpdated) {
   if (unsubscribeLogsSnapshot) {
     unsubscribeLogsSnapshot();
     unsubscribeLogsSnapshot = null;
   }
-  if (!db || !uid) return;
+  if (!uid) return;
+  await ensureFirestoreLoaded();
+  if (!db || !fbFirestoreMod) return;
 
+  const { collection, query, where, onSnapshot } = fbFirestoreMod;
   const cleanUid = sanitizeId(uid);
   const logsPath = `users/${cleanUid}/activityLogs`;
   const logsQuery = query(
@@ -253,15 +253,18 @@ function subscribeToUserActivityLogs(uid, onLogsUpdated) {
 }
 
 async function saveActivityLogToFirestore(entry) {
-  if (!db || !auth || !auth.currentUser) return false;
+  if (!auth || !auth.currentUser) return false;
   const user = auth.currentUser;
   if (!user.emailVerified) return false;
 
+  await ensureFirestoreLoaded();
+  if (!db || !fbFirestoreMod) return false;
+
+  const { doc, setDoc, serverTimestamp } = fbFirestoreMod;
   const uid = sanitizeId(user.uid);
   const logId = sanitizeId(entry.logId || entry.id || `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`);
   const docPath = `users/${uid}/activityLogs/${logId}`;
 
-  // Ensure the parent /users/{uid} document exists before creating subcollection documents
   await ensureUserProfileInFirestore(user);
 
   const payload = {
@@ -288,10 +291,14 @@ async function saveActivityLogToFirestore(entry) {
 }
 
 async function deleteSingleActivityLogInFirestore(rawId) {
-  if (!db || !auth || !auth.currentUser || !rawId) return false;
+  if (!auth || !auth.currentUser || !rawId) return false;
   const user = auth.currentUser;
   if (!user.emailVerified) return false;
 
+  await ensureFirestoreLoaded();
+  if (!db || !fbFirestoreMod) return false;
+
+  const { doc, deleteDoc } = fbFirestoreMod;
   const uid = sanitizeId(user.uid);
   const logId = sanitizeId(rawId);
   const docPath = `users/${uid}/activityLogs/${logId}`;
@@ -306,10 +313,14 @@ async function deleteSingleActivityLogInFirestore(rawId) {
 }
 
 async function clearUserActivityLogsInFirestore(logIds = []) {
-  if (!db || !auth || !auth.currentUser) return false;
+  if (!auth || !auth.currentUser) return false;
   const user = auth.currentUser;
   if (!user.emailVerified) return false;
 
+  await ensureFirestoreLoaded();
+  if (!db || !fbFirestoreMod) return false;
+
+  const { doc, deleteDoc } = fbFirestoreMod;
   const uid = sanitizeId(user.uid);
   await ensureUserProfileInFirestore(user);
   for (const rawId of logIds) {
@@ -325,11 +336,15 @@ async function clearUserActivityLogsInFirestore(logIds = []) {
 }
 
 async function updatePreferredSkinInFirestore(skinId) {
-  if (!db || !auth || !auth.currentUser) return false;
+  if (!auth || !auth.currentUser) return false;
   const user = auth.currentUser;
   if (!user.emailVerified) return false;
   if (!ALLOWED_SKINS.includes(skinId)) return false;
 
+  await ensureFirestoreLoaded();
+  if (!db || !fbFirestoreMod) return false;
+
+  const { doc, updateDoc, serverTimestamp } = fbFirestoreMod;
   const uid = sanitizeId(user.uid);
   const userPath = `users/${uid}`;
   await ensureUserProfileInFirestore(user);
@@ -352,19 +367,90 @@ async function updatePreferredSkinInFirestore(skinId) {
   return false;
 }
 
+/**
+ * Fallback using official Google Identity Services (accounts.google.com popup) + signInWithCredential
+ * if Firebase's `/__/auth/handler` rejects a custom domain before it is added in Firebase Console.
+ */
+function signInViaGoogleIdentityServicesPopup() {
+  return new Promise((resolve, reject) => {
+    function launchGsiTokenPopup() {
+      if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+        reject(new Error('Google Identity Services unavailable'));
+        return;
+      }
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: DEFAULT_FIREBASE_CONFIG.oAuthClientId,
+        scope: 'openid email profile',
+        prompt: 'select_account',
+        callback: async (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            try {
+              const cred = GoogleAuthProvider.credential(null, tokenResponse.access_token);
+              const result = await signInWithCredential(auth, cred);
+              if (result.user && result.user.emailVerified) {
+                await ensureUserProfileInFirestore(result.user).catch(() => {});
+              }
+              resolve(result.user);
+            } catch (credErr) {
+              reject(credErr);
+            }
+          } else {
+            reject(new Error(tokenResponse?.error || 'Google Sign-In cancelled'));
+          }
+        }
+      });
+      tokenClient.requestAccessToken({ prompt: 'select_account' });
+    }
+
+    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+      launchGsiTokenPopup();
+      return;
+    }
+
+    const existingScript = document.getElementById('google-gsi-client-script');
+    if (existingScript) {
+      existingScript.addEventListener('load', launchGsiTokenPopup, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'google-gsi-client-script';
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = launchGsiTokenPopup;
+    script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+    document.head.appendChild(script);
+  });
+}
+
 async function signInWithGooglePopup() {
-  initFirebaseInstances(DEFAULT_FIREBASE_CONFIG);
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  const result = await signInWithPopup(auth, provider);
-  if (result.user && result.user.emailVerified) {
-    try {
-      await ensureUserProfileInFirestore(result.user);
-    } catch (err) {
-      console.warn('Profile initialization on sign-in:', err);
+
+  try {
+    // Synchronous call on user click so browser never blocks the Google Account Chooser popup
+    const result = await signInWithPopup(auth, provider);
+    if (result.user && result.user.emailVerified) {
+      try {
+        await ensureUserProfileInFirestore(result.user);
+      } catch (err) {
+        console.warn('Profile initialization on sign-in:', err);
+      }
     }
+    return result.user;
+  } catch (err) {
+    const code = err && err.code ? String(err.code) : '';
+    // If mobile browser blocks popups, redirect directly to official Google Account Chooser
+    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
+    // If domain is not yet in Firebase's authorizedDomains, open official Google Account Chooser via GSI + signInWithCredential
+    if (code === 'auth/unauthorized-domain') {
+      return await signInViaGoogleIdentityServicesPopup();
+    }
+    throw err;
   }
-  return result.user;
 }
 
 async function signOutFirebaseUser() {
@@ -378,9 +464,69 @@ async function signOutFirebaseUser() {
   }
 }
 
-// Immediately initialize Firebase & expose window.WikiFirebase synchronously so the Google Sign-In
-// button never gets stuck on "Firebase Auth लोड हो रहा है..."
-initFirebaseInstances(DEFAULT_FIREBASE_CONFIG);
+function bindFirebaseAuthListener() {
+  if (authListenerBound) return;
+  authListenerBound = true;
+
+  // Handle redirect sign-in completion if signInWithRedirect was used on mobile
+  getRedirectResult(auth)
+    .then(async (result) => {
+      if (result && result.user && result.user.emailVerified) {
+        await ensureUserProfileInFirestore(result.user).catch(() => {});
+      }
+    })
+    .catch(() => {});
+
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      let profile = null;
+      if (firebaseUser.emailVerified) {
+        try {
+          profile = await ensureUserProfileInFirestore(firebaseUser);
+        } catch (err) {
+          console.warn('Profile sync warning:', err);
+        }
+        subscribeToUserActivityLogs(firebaseUser.uid);
+      }
+
+      const userDetail = {
+        uid: firebaseUser.uid,
+        name:
+          profile?.displayName ||
+          firebaseUser.displayName ||
+          (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'विकिपीडिया संपादक'),
+        email: firebaseUser.email || 'editor@wikipedia.org',
+        emailVerified: firebaseUser.emailVerified,
+        role: `${TOOL_DISPLAY_NAME} • क्लाउड संपादक`,
+        preferredSkin: profile?.preferredSkin || null,
+        isFirebaseUser: true
+      };
+
+      window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: userDetail } }));
+    } else {
+      if (unsubscribeLogsSnapshot) {
+        unsubscribeLogsSnapshot();
+        unsubscribeLogsSnapshot = null;
+      }
+      window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: null } }));
+    }
+  });
+}
+
+// Preload GSI script on login.html so even if auth/unauthorized-domain occurs, Google's Account Chooser opens seamlessly
+if (typeof window !== 'undefined' && window.location.pathname.includes('login')) {
+  window.addEventListener('load', () => {
+    if (!document.getElementById('google-gsi-client-script')) {
+      const s = document.createElement('script');
+      s.id = 'google-gsi-client-script';
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      document.head.appendChild(s);
+    }
+  }, { once: true });
+}
+
+bindFirebaseAuthListener();
 
 window.WikiFirebase = {
   isReady: true,
@@ -396,64 +542,4 @@ window.WikiFirebase = {
   OperationType
 };
 
-async function bootFirebaseIntegration() {
-  try {
-    // Also check relative './firebase-applet-config.json' (works on both '/' and '/wikilink-tool/')
-    try {
-      const res = await fetch('./firebase-applet-config.json');
-      if (res.ok) {
-        const fetchedConfig = await res.json();
-        initFirebaseInstances({ ...DEFAULT_FIREBASE_CONFIG, ...fetchedConfig });
-      }
-    } catch (fetchErr) {
-      // Fallback config is already active
-    }
-
-    if (!authListenerBound && auth) {
-      authListenerBound = true;
-      onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          let profile = null;
-          if (firebaseUser.emailVerified) {
-            try {
-              profile = await ensureUserProfileInFirestore(firebaseUser);
-            } catch (err) {
-              console.warn('Profile sync warning:', err);
-            }
-            subscribeToUserActivityLogs(firebaseUser.uid);
-          }
-
-          const userDetail = {
-            uid: firebaseUser.uid,
-            name:
-              profile?.displayName ||
-              firebaseUser.displayName ||
-              (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'विकिपीडिया संपादक'),
-            email: firebaseUser.email || 'editor@wikipedia.org',
-            emailVerified: firebaseUser.emailVerified,
-            role: `${TOOL_DISPLAY_NAME} • क्लाउड संपादक`,
-            preferredSkin: profile?.preferredSkin || null,
-            isFirebaseUser: true
-          };
-
-          window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: userDetail } }));
-        } else {
-          if (unsubscribeLogsSnapshot) {
-            unsubscribeLogsSnapshot();
-            unsubscribeLogsSnapshot = null;
-          }
-          window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', { detail: { user: null } }));
-        }
-      });
-    }
-
-    window.dispatchEvent(new CustomEvent('wikilink:firebase-ready'));
-
-    // Validate Firestore connection non-blockingly in the background
-    testConnection();
-  } catch (err) {
-    console.error('Firebase initialization error:', err);
-  }
-}
-
-bootFirebaseIntegration();
+window.dispatchEvent(new CustomEvent('wikilink:firebase-ready'));

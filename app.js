@@ -256,9 +256,29 @@
 
     // विलंबित लोडिंग (Lazy initialization) द्वारा 7,479+ शब्दों की बहिष्कार सूची लोड करें ताकि मोबाइल PageSpeed LCP/TBT बाधित न हो
     let extendedBlacklistLoaded = false;
+    let blacklistScriptPromise = null;
+
+    function ingestExtendedBlacklistArray(extList) {
+        if (!Array.isArray(extList) || extendedBlacklistLoaded) return;
+        extendedBlacklistLoaded = true;
+        for (let i = 0; i < extList.length; i++) {
+            const w = extList[i];
+            if (w && typeof w === 'string') {
+                const clean = w.trim().toLowerCase();
+                const code = clean.charCodeAt(0);
+                if (code >= 0x0900 && code <= 0x097F) {
+                    NEVER_LINK_WORDS.hi.add(clean);
+                } else if (code >= 97 && code <= 122) {
+                    NEVER_LINK_WORDS.en.add(clean);
+                } else {
+                    NEVER_LINK_WORDS.hi.add(clean);
+                }
+            }
+        }
+    }
+
     function ensureExtendedBlacklistLoaded() {
         if (extendedBlacklistLoaded) return;
-        extendedBlacklistLoaded = true;
         try {
             let extList = null;
             if (typeof COMMON_5000_WORDS !== 'undefined' && Array.isArray(COMMON_5000_WORDS)) {
@@ -272,34 +292,45 @@
                     extList = require('./words_blacklist.js');
                 } catch (e) { }
             }
-
             if (Array.isArray(extList)) {
-                for (let i = 0; i < extList.length; i++) {
-                    const w = extList[i];
-                    if (w && typeof w === 'string') {
-                        const clean = w.trim().toLowerCase();
-                        const code = clean.charCodeAt(0);
-                        if (code >= 0x0900 && code <= 0x097F) {
-                            NEVER_LINK_WORDS.hi.add(clean);
-                        } else if (code >= 97 && code <= 122) {
-                            NEVER_LINK_WORDS.en.add(clean);
-                        } else {
-                            NEVER_LINK_WORDS.hi.add(clean);
-                        }
-                    }
-                }
+                ingestExtendedBlacklistArray(extList);
             }
         } catch (e) {
             console.warn('विस्तारित बहिष्कार सूची लोड करने में त्रुटि:', e);
         }
     }
 
-    if (typeof window !== 'undefined') {
-        if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(() => ensureExtendedBlacklistLoaded(), { timeout: 2500 });
-        } else {
-            setTimeout(ensureExtendedBlacklistLoaded, 1200);
+    function fetchExtendedBlacklistScriptIfNeeded() {
+        if (extendedBlacklistLoaded) return Promise.resolve();
+        ensureExtendedBlacklistLoaded();
+        if (extendedBlacklistLoaded) return Promise.resolve();
+        if (typeof document === 'undefined') return Promise.resolve();
+        if (!blacklistScriptPromise) {
+            blacklistScriptPromise = new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = './words_blacklist.js';
+                script.async = true;
+                script.onload = () => {
+                    ensureExtendedBlacklistLoaded();
+                    resolve();
+                };
+                script.onerror = () => resolve();
+                document.head.appendChild(script);
+            });
         }
+        return blacklistScriptPromise;
+    }
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if ('requestIdleCallback' in window) {
+                    window.requestIdleCallback(() => fetchExtendedBlacklistScriptIfNeeded(), { timeout: 6000 });
+                } else {
+                    fetchExtendedBlacklistScriptIfNeeded();
+                }
+            }, 4000);
+        }, { once: true });
     } else {
         ensureExtendedBlacklistLoaded();
     }
@@ -409,7 +440,6 @@
         DOM.analyzeStatusBanner = $('analyze-status-banner');
         DOM.analyzeStatusText = $('analyze-status-text');
         DOM.themeToggleBtn = $('theme-toggle-btn');
-        DOM.shortcutsBtn = $('shortcuts-btn');
 
         // सेटिंग्स
         DOM.toggleSettingsBtn = $('toggle-settings-btn');
@@ -434,7 +464,6 @@
         DOM.btnDownloadStandaloneHtml = $('btn-download-standalone-html');
         DOM.btnToggleAuxGuide = $('btn-toggle-aux-guide');
         DOM.auxGuideDetails = $('aux-guide-details');
-        DOM.btnShowAllShortcuts = $('btn-show-all-shortcuts');
 
         // प्रगति
         DOM.progressCard = $('progress-card');
@@ -510,8 +539,6 @@
         DOM.policyChipsContainer = $('policy-chips-container');
         DOM.policyWordsCount = $('policy-words-count');
 
-        DOM.shortcutsModal = $('shortcuts-modal');
-
         // फ्लोटिंग सारांश
         DOM.wikiSummaryCard = $('wiki-summary-card');
         DOM.summaryCardClose = $('summary-card-close');
@@ -542,9 +569,7 @@
         }
     }
 
-    // ================== सर्विस वर्कर, ऑफ़लाइन कार्यपटल एवं PWA इंस्टॉल ==================
-    let deferredPwaPrompt = null;
-
+    // ================== सर्विस वर्कर एवं ऑफ़लाइन कार्यपटल ==================
     const OFFLINE_PRESET_ARTICLES = {
         'भारत': `'''भारत''' (आधिकारिक नाम: '''भारत गणराज्य''') दक्षिण एशिया में स्थित एक विशाल देश है। इसकी राजधानी [[नई दिल्ली]] है। भारत के उत्तर में हिमालय पर्वत श्रृंखला और दक्षिण में हिन्द महासागर स्थित है। भारत की प्रमुख नदियों में गंगा, यमुना, ब्रह्मपुत्र, नर्मदा और गोदावरी शामिल हैं। भारतीय संविधान विश्व का सबसे बड़ा लिखित संविधान है। भारत में अनेक भाषाएँ बोली जाती हैं जिनमें हिन्दी और संस्कृत प्रमुख हैं।`,
         'महात्मा गांधी': `'''मोहनदास करमचन्द गांधी''' (२ अक्टूबर १८६९ - ३० जनवरी १९४८) भारत के स्वतंत्रता संग्राम के प्रमुख राजनीतिक एवं आध्यात्मिक नेता थे। उन्हें '''महात्मा गांधी''' और राष्ट्रपिता के नाम से जाना जाता है। उन्होंने सत्य और अहिंसा के मार्ग पर चलकर भारतीय राष्ट्रीय कांग्रेस के नेतृत्व में दांडी मार्च, असहयोग आंदोलन और भारत छोड़ो आंदोलन चलाया। उनका जन्म गुजरात के पोरबंदर में हुआ था।`,
@@ -555,7 +580,6 @@
 
     function initServiceWorkerAndOfflineMode() {
         const offlineBanner = $('offline-connectivity-banner');
-        const installBtn = $('pwa-install-btn');
 
         function updateOnlineStatusUI() {
             const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
@@ -574,40 +598,15 @@
             showToast('ऑफ़लाइन मोड सक्रिय: मुख्य कार्यपटल बिना इंटरनेट के कार्यशील है');
         });
 
-        // PWA इन-ऐप इंस्टॉल प्रॉम्प्ट
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPwaPrompt = e;
-            if (installBtn) {
-                installBtn.style.display = 'inline-flex';
-            }
-        });
-
-        if (installBtn) {
-            installBtn.addEventListener('click', async () => {
-                if (!deferredPwaPrompt) return;
-                deferredPwaPrompt.prompt();
-                try {
-                    await deferredPwaPrompt.userChoice;
-                } catch (err) {}
-                deferredPwaPrompt = null;
-                installBtn.style.display = 'none';
-            });
-        }
-
-        window.addEventListener('appinstalled', () => {
-            deferredPwaPrompt = null;
-            if (installBtn) installBtn.style.display = 'none';
-            showToast('विकीलिंक सहायक ऑफ़लाइन ऐप सफलतापूर्वक इंस्टॉल हो गया!');
-        });
-
-        // Service Worker पंजीकरण (./sw.js सापेक्ष पथ ताकि GitHub Pages subpath व मूल डोमेन दोनों पर चले)
+        // Service Worker पंजीकरण (./sw.js को लोड के बाद शांत समय में पंजीकृत करें ताकि मोबाइल PageSpeed LCP/TBT बाधित न हो)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
-                    console.warn('Service Worker registration warning:', err);
-                });
-            });
+                setTimeout(() => {
+                    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
+                        console.warn('Service Worker registration warning:', err);
+                    });
+                }, 3500);
+            }, { once: true });
         }
     }
 
@@ -639,6 +638,11 @@
 
     // ================== घटना श्रोता (Event Listeners) ==================
     function bindEvents() {
+        function updateLanguageHeaderIndicator() {
+            const langCode = getSelectedLanguage();
+            safeSetText('workbench-active-lang-indicator', `${langCode}.wikipedia.org`);
+        }
+
         // भाषा चयन
         safeAddListener(DOM.langSelect, 'change', () => {
             if (DOM.langSelect && DOM.langSelect.value === 'custom') {
@@ -648,20 +652,24 @@
                 safeSetDisplay(DOM.customLangWrap, 'none');
             }
             state.lang = getSelectedLanguage();
+            updateLanguageHeaderIndicator();
         });
 
         safeAddListener(DOM.customLangInput, 'input', () => {
             state.lang = getSelectedLanguage();
+            updateLanguageHeaderIndicator();
         });
 
         // त्वरित उदाहरण
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const lang = e.target.dataset.lang;
-                const title = e.target.dataset.title;
+                const target = e.currentTarget || e.target;
+                const lang = target.dataset.lang || 'hi';
+                const title = target.dataset.title || '';
                 if (DOM.langSelect) DOM.langSelect.value = lang;
                 safeSetDisplay(DOM.customLangWrap, 'none');
                 state.lang = lang;
+                updateLanguageHeaderIndicator();
                 safeSetValue(DOM.pageInput, title);
                 switchTab('tab-input-wiki');
                 if (DOM.loadPageBtn) DOM.loadPageBtn.click();
@@ -687,6 +695,18 @@
         // श्रेणी लोडर
         safeAddListener(DOM.loadCategoryBtn, 'click', handleSearchCategory);
         safeAddListener(DOM.loadSelectedCatPageBtn, 'click', handleLoadSelectedCatPage);
+        safeAddListener(DOM.categoryInput, 'keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearchCategory();
+            }
+        });
+        safeAddListener(DOM.pageInput, 'keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleLoadArticle();
+            }
+        });
 
         // फ़ाइल अपलोड
         safeAddListener(DOM.fileUploadInput, 'change', handleFileUpload);
@@ -702,21 +722,6 @@
             }
         });
 
-        // बॉक्स 1: सक्रिय तार्किक छन्नी चिप्स
-        document.querySelectorAll('.filter-chip-toggle').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const targetId = chip.dataset.target;
-                const checkbox = $(targetId);
-                if (checkbox) {
-                    checkbox.checked = !checkbox.checked;
-                    chip.classList.toggle('active', checkbox.checked);
-                    const name = chip.textContent.replace('✓', '').trim();
-                    showToast(`${name}: ${checkbox.checked ? 'सक्रिय' : 'निष्क्रिय'}`);
-                }
-            });
-        });
-
-        // सेटिंग्स चेकबॉक्स से चिप्स को सिंक करना
         const filterSyncIds = [
             'opt-first-only',
             'opt-filter-common-words',
@@ -727,15 +732,56 @@
             'opt-clean-pipes',
             'opt-blue-only'
         ];
+
+        function updateActiveFilterCountBadge() {
+            let activeCount = 0;
+            filterSyncIds.forEach(id => {
+                const cb = $(id);
+                if (cb && cb.checked) activeCount++;
+            });
+            safeSetText('active-filter-count-badge', `${activeCount}/${filterSyncIds.length} मुख्य नियम सक्रिय`);
+        }
+
+        // बॉक्स 1: सक्रिय तार्किक छन्नी चिप्स
+        document.querySelectorAll('.filter-chip-toggle').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const targetId = chip.dataset.target;
+                const checkbox = $(targetId);
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    chip.classList.toggle('active', checkbox.checked);
+                    updateActiveFilterCountBadge();
+                    const name = chip.textContent.replace('✓', '').trim();
+                    showToast(`${name}: ${checkbox.checked ? 'सक्रिय' : 'निष्क्रिय'}`);
+                }
+            });
+        });
+
+        // सेटिंग्स चेकबॉक्स से चिप्स को सिंक करना
         filterSyncIds.forEach(id => {
             const cb = $(id);
             if (cb) {
                 cb.addEventListener('change', () => {
                     const chip = document.querySelector(`.filter-chip-toggle[data-target="${id}"]`);
                     if (chip) chip.classList.toggle('active', cb.checked);
+                    updateActiveFilterCountBadge();
                 });
             }
         });
+
+        // सभी मुख्य नियम एक-क्लिक में सक्रिय करें
+        safeAddListener('btn-enable-all-filters', 'click', () => {
+            [...filterSyncIds, 'opt-resolve-redirects', 'opt-protect-structures', 'opt-filter-stopwords'].forEach(id => {
+                const cb = $(id);
+                if (cb) cb.checked = true;
+            });
+            document.querySelectorAll('.filter-chip-toggle').forEach(chip => chip.classList.add('active'));
+            updateActiveFilterCountBadge();
+            showToast('सभी तार्किक छन्नी नियम सक्रिय किए गए');
+        });
+
+        updateLanguageHeaderIndicator();
+        updateActiveFilterCountBadge();
 
         // बॉक्स 2: उप-टैब्स स्विचिंग
         document.querySelectorAll('.box2-tab-btn').forEach(btn => {
@@ -1393,6 +1439,7 @@
 
     // ================== मुख्य विश्लेषण एल्गोरिदम ==================
     async function handleAnalyze() {
+        await fetchExtendedBlacklistScriptIfNeeded();
         ensureExtendedBlacklistLoaded();
         const typedTitle = cleanWikiTitleFromInput(safeGetValue(DOM.pageInput));
         let wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
@@ -4092,79 +4139,11 @@
 
         const googleFirebaseBtn = $('auth-google-firebase-btn');
         const googleBtnText = $('auth-google-btn-text');
-        const googleModalEmail = $('google-modal-email');
-        const googleModalName = $('google-modal-name');
-        const googleModalConfirmBtn = $('google-modal-confirm-btn');
-
-        function openSeamlessGoogleAccountPicker() {
-            // यदि उपयोगकर्ता ने पहले से मुख्य फॉर्म में ईमेल लिखा है तो सीधे Google साइन-इन पूरा करें
-            const typedEmail = emailInput ? emailInput.value.trim() : '';
-            const typedName = nameInput ? nameInput.value.trim() : '';
-            if (typedEmail) {
-                const resolvedEmail = typedEmail.includes('@') ? typedEmail : `${typedEmail}@gmail.com`;
-                const resolvedName = typedName || typedEmail.split('@')[0];
-                localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: resolvedEmail }));
-                completeUserLogin({
-                    name: resolvedName,
-                    email: resolvedEmail,
-                    role: 'विकीलिंक सहायक • Google खाता'
-                });
-                return;
-            }
-
-            // पूर्व में सहेजा गया Google खाता भरें (यदि उपलब्ध हो)
-            try {
-                const savedGoogle = JSON.parse(localStorage.getItem('wikilink_google_account') || 'null');
-                if (savedGoogle && savedGoogle.email) {
-                    if (googleModalEmail && !googleModalEmail.value) googleModalEmail.value = savedGoogle.email;
-                    if (googleModalName && !googleModalName.value) googleModalName.value = savedGoogle.name || '';
-                } else if (currentUser && currentUser.email) {
-                    if (googleModalEmail && !googleModalEmail.value) googleModalEmail.value = currentUser.email;
-                    if (googleModalName && !googleModalName.value) googleModalName.value = currentUser.name || '';
-                }
-            } catch (e) {}
-
-            openModal('google-account-picker-modal');
-            if (googleModalEmail) googleModalEmail.focus();
-        }
-
-        function handleConfirmGoogleModalSignIn() {
-            const rawEmail = googleModalEmail ? googleModalEmail.value.trim() : '';
-            const rawName = googleModalName ? googleModalName.value.trim() : '';
-            if (!rawEmail) {
-                showToast('कृपया अपना Google ईमेल दर्ज करें');
-                if (googleModalEmail) googleModalEmail.focus();
-                return;
-            }
-            const finalEmail = rawEmail.includes('@') ? rawEmail : `${rawEmail}@gmail.com`;
-            const finalName = rawName || finalEmail.split('@')[0];
-            localStorage.setItem('wikilink_google_account', JSON.stringify({ name: finalName, email: finalEmail }));
-            closeModal('google-account-picker-modal');
-            completeUserLogin({
-                name: finalName,
-                email: finalEmail,
-                role: 'विकीलिंक सहायक • Google खाता'
-            });
-        }
-
-        if (googleModalConfirmBtn) {
-            googleModalConfirmBtn.addEventListener('click', handleConfirmGoogleModalSignIn);
-        }
-        [googleModalEmail, googleModalName].forEach(inp => {
-            if (inp) {
-                inp.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleConfirmGoogleModalSignIn();
-                    }
-                });
-            }
-        });
 
         if (googleFirebaseBtn) {
             googleFirebaseBtn.addEventListener('click', async () => {
                 if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
-                    if (googleBtnText) googleBtnText.textContent = 'विकीलिंक सहायक क्लाउड जुड़ रहा है...';
+                    if (googleBtnText) googleBtnText.textContent = 'Google खाता विंडो खुल रही है...';
                     try {
                         await import('./firebase-client.js');
                     } catch (e) {
@@ -4174,7 +4153,7 @@
                 }
 
                 if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
-                    openSeamlessGoogleAccountPicker();
+                    showToast('Google साइन-इन मॉड्यूल लोड नहीं हो सका। कृपया पृष्ठ रीफ़्रेश करें।');
                     return;
                 }
 
@@ -4192,15 +4171,8 @@
                     }
                 } catch (err) {
                     const code = err && err.code ? String(err.code) : '';
-                    if (
-                        code === 'auth/unauthorized-domain' ||
-                        code === 'auth/operation-not-supported-in-this-environment' ||
-                        code === 'auth/popup-blocked'
-                    ) {
-                        // GitHub Pages (vikrampratap-wiki.github.io) या पॉपअप अवरोध पर बिना किसी त्रुटि संदेश के इनलाइन Google साइन-इन खोलें
-                        openSeamlessGoogleAccountPicker();
-                    } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-                        openSeamlessGoogleAccountPicker();
+                    if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+                        showToast('Google खाता साइन-इन रद्द या बाधित हुआ। कृपया पुनः प्रयास करें।');
                     }
                 }
             });

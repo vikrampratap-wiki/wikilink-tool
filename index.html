@@ -15,6 +15,14 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <style id="critical-above-fold-css">
+        :root{--primary-color:#2a4b8d;--primary-light:#eaf3ff;--bg-main:#f8f9fa;--bg-card:#ffffff;--bg-alt:#f1f3f5;--border-color:#c8ccd1;--text-primary:#202122;--text-secondary:#475569;--font-sans:'Mukta','Noto Sans Devanagari',system-ui,-apple-system,sans-serif}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:var(--font-sans);background:var(--bg-main);color:var(--text-primary);line-height:1.55;min-height:100vh;display:flex;flex-direction:column}
+        .container{width:100%;max-width:1240px;margin:0 auto;padding:0 16px}
+        .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
+        .workbench-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px}
+    </style>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,13 +106,9 @@
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
-                <button type="button" id="pwa-install-btn" class="btn btn-outline btn-sm pwa-install-btn" style="display: none;" title="ऑफ़लाइन कार्यपटल ऐप इंस्टॉल करें">
-                    📲 ऐप इंस्टॉल करें
-                </button>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से तुरंत लॉगआउट करें">
                     लॉगआउट ⏻
                 </button>
-                <button type="button" id="shortcuts-btn" class="btn btn-outline btn-sm" title="कीबोर्ड शॉर्टकट्स">⌨️ शॉर्टकट्स</button>
             </nav>
         </div>
     </header>
@@ -154,251 +158,312 @@
         <!-- मुख्य कार्यपटल (Unified Workbench Layout) -->
         <div class="dual-workbench-container single-workbench-layout" id="dual-workbench-container">
             <!-- 1. मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी (Input Article & Filters Box) -->
-            <section id="input-control-card" class="workbench-card">
+            <section id="input-control-card" class="workbench-card workbench-logical-card">
                 <div class="workbench-card-header">
-                    <div>
+                    <div class="workbench-header-main">
                         <h2 class="workbench-card-title">मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</h2>
-                        <small class="form-hint">यहाँ विकिपीडिया लेख लोड करें एवं कड़ियों की तार्किक छन्नी निर्धारित करें</small>
+                        <small class="form-hint">चरणबद्ध कार्यप्रवाह: 01. मूल विकिपीडिया लेख चुनें · 02. नीतिगत तार्किक छन्नी निर्धारित करें · 03. स्वचालित विश्लेषण चलाएँ</small>
                     </div>
-                    <span class="workbench-badge badge-source">स्रोत व छन्नी</span>
+                    <div class="workbench-header-meta">
+                        <span id="workbench-active-lang-indicator" class="workbench-meta-text">hi.wikipedia.org</span>
+                        <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                        <span id="active-filter-count-badge" class="workbench-meta-text workbench-meta-highlight">8/8 मुख्य नियम सक्रिय</span>
+                    </div>
                 </div>
 
-                <!-- 1.1 भाषा चयन एवं त्वरित उदाहरण -->
-                <div class="form-row workbench-lang-row">
-                    <div class="form-group flex-2">
-                        <label for="lang-select" class="form-label">
-                            विकिपीडिया भाषा चुनें (Language):
-                        </label>
-                        <div class="lang-selector-group">
-                            <select id="lang-select" class="form-control">
-                                <optgroup label="प्रमुख भारतीय भाषाएँ">
-                                    <option value="hi" selected>हिन्दी (hi.wikipedia.org)</option>
-                                    <option value="sa">संस्कृतम् (sa.wikipedia.org)</option>
-                                    <option value="bho">भोजपुरी (bho.wikipedia.org)</option>
-                                    <option value="mai">मैथिली (mai.wikipedia.org)</option>
-                                    <option value="mr">मराठी (mr.wikipedia.org)</option>
-                                    <option value="bn">বাংলা (bn.wikipedia.org)</option>
-                                    <option value="gu">ગુજરાતી (gu.wikipedia.org)</option>
-                                    <option value="pa">ਪੰਜਾਬੀ (pa.wikipedia.org)</option>
-                                    <option value="ta">தமிழ் (ta.wikipedia.org)</option>
-                                    <option value="te">తెలుగు (te.wikipedia.org)</option>
-                                    <option value="ur">اردو (ur.wikipedia.org)</option>
-                                    <option value="ne">नेपाली (ne.wikipedia.org)</option>
-                                    <option value="or">ଓଡ଼ିଆ (or.wikipedia.org)</option>
-                                    <option value="kn">ಕನ್ನಡ (kn.wikipedia.org)</option>
-                                    <option value="ml">മലയാളം (ml.wikipedia.org)</option>
-                                </optgroup>
-                                <optgroup label="अन्य प्रमुख भाषाएँ">
-                                    <option value="en">English (en.wikipedia.org)</option>
-                                    <option value="fr">Français (fr.wikipedia.org)</option>
-                                    <option value="de">Deutsch (de.wikipedia.org)</option>
-                                    <option value="es">Español (es.wikipedia.org)</option>
-                                    <option value="ru">Русский (ru.wikipedia.org)</option>
-                                    <option value="custom">अन्य भाषा कोड दर्ज करें...</option>
-                                </optgroup>
-                            </select>
-                            <div id="custom-lang-wrap" class="custom-lang-input" style="display: none;">
-                                <input type="text" id="custom-lang-input" class="form-control" placeholder="उदा: bho, as, new" maxlength="10">
+                <!-- तार्किक कार्यपटल द्वि-स्तरीय संरचना (Step 01: Source Article + Step 02: Logical Filters) -->
+                <div class="workbench-logical-sections">
+
+                    <!-- खण्ड 01: मूल लेख स्रोत एवं चयन (Source Article Selection) -->
+                    <div class="workbench-logical-block block-source-article">
+                        <div class="logical-block-header">
+                            <div class="logical-block-title-wrap">
+                                <span class="logical-step-index">01</span>
+                                <div>
+                                    <h3 class="logical-block-title">मूल लेख चयन एवं स्रोत (Source Article)</h3>
+                                    <p class="logical-block-subtitle">विकिपीडिया भाषा चुनें और शीर्षक, यादृच्छिक लेख, श्रेणी या फ़ाइल से लेख लोड करें</p>
+                                </div>
+                            </div>
+
+                            <!-- भाषा चयनकर्ता (Compact inline with header) -->
+                            <div class="logical-lang-control">
+                                <label for="lang-select" class="logical-inline-label">विकिपीडिया भाषा:</label>
+                                <div class="lang-selector-group">
+                                    <select id="lang-select" class="form-control form-control-sm">
+                                        <optgroup label="प्रमुख भारतीय भाषाएँ">
+                                            <option value="hi" selected>हिन्दी (hi.wikipedia.org)</option>
+                                            <option value="sa">संस्कृतम् (sa.wikipedia.org)</option>
+                                            <option value="bho">भोजपुरी (bho.wikipedia.org)</option>
+                                            <option value="mai">मैथिली (mai.wikipedia.org)</option>
+                                            <option value="mr">मराठी (mr.wikipedia.org)</option>
+                                            <option value="bn">বাংলা (bn.wikipedia.org)</option>
+                                            <option value="gu">ગુજરાતી (gu.wikipedia.org)</option>
+                                            <option value="pa">ਪੰਜਾਬੀ (pa.wikipedia.org)</option>
+                                            <option value="ta">தமிழ் (ta.wikipedia.org)</option>
+                                            <option value="te">తెలుగు (te.wikipedia.org)</option>
+                                            <option value="ur">اردو (ur.wikipedia.org)</option>
+                                            <option value="ne">नेपाली (ne.wikipedia.org)</option>
+                                            <option value="or">ଓଡ଼ିଆ (or.wikipedia.org)</option>
+                                            <option value="kn">ಕನ್ನಡ (kn.wikipedia.org)</option>
+                                            <option value="ml">മലയാളം (ml.wikipedia.org)</option>
+                                        </optgroup>
+                                        <optgroup label="अन्य प्रमुख भाषाएँ">
+                                            <option value="en">English (en.wikipedia.org)</option>
+                                            <option value="fr">Français (fr.wikipedia.org)</option>
+                                            <option value="de">Deutsch (de.wikipedia.org)</option>
+                                            <option value="es">Español (es.wikipedia.org)</option>
+                                            <option value="ru">Русский (ru.wikipedia.org)</option>
+                                            <option value="custom">अन्य भाषा कोड दर्ज करें...</option>
+                                        </optgroup>
+                                    </select>
+                                    <div id="custom-lang-wrap" class="custom-lang-input" style="display: none;">
+                                        <input type="text" id="custom-lang-input" class="form-control form-control-sm" placeholder="उदा: bho, as" maxlength="10">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- स्रोत माध्यम टैब्स (Source Input Mode Tabs) -->
+                        <div class="logical-source-bar">
+                            <div class="tabs-nav input-tabs logical-segmented-tabs" role="tablist">
+                                <button type="button" class="tab-btn active" data-tab="tab-input-wiki">शीर्षक / URL</button>
+                                <button type="button" class="tab-btn" data-tab="tab-input-random">यादृच्छिक लेख</button>
+                                <button type="button" class="tab-btn" data-tab="tab-input-category">श्रेणी से</button>
+                                <button type="button" class="tab-btn" data-tab="tab-input-file">फ़ाइल अपलोड</button>
+                            </div>
+
+                            <div class="preset-buttons logical-presets-inline">
+                                <span class="preset-label-text">त्वरित उदाहरण:</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="तुलसीदास">तुलसीदास</button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="प्रेमचंद">प्रेमचंद</button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="भारत">भारत</button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="हिमालय">हिमालय</button>
+                            </div>
+                        </div>
+
+                        <!-- इनपुट टैब सामग्री -->
+                        <div class="logical-tab-panels">
+                            <div id="tab-input-wiki" class="tab-content active">
+                                <div class="input-with-button">
+                                    <input type="text" id="page-input" class="form-control" placeholder="विकिपीडिया लेख का शीर्षक अथवा पूरा URL दर्ज करें (उदा: तुलसीदास, भारत)...">
+                                    <button type="button" id="load-page-btn" class="btn btn-secondary">लेख लोड करें</button>
+                                </div>
+                            </div>
+
+                            <div id="tab-input-random" class="tab-content">
+                                <div class="input-with-button">
+                                    <button type="button" id="load-random-btn" class="btn btn-secondary">यादृच्छिक लेख प्राप्त करें</button>
+                                    <span id="random-loading-status" class="status-inline-text"></span>
+                                </div>
+                            </div>
+
+                            <div id="tab-input-category" class="tab-content">
+                                <div class="input-with-button">
+                                    <input type="text" id="category-input" class="form-control" placeholder="उदा: श्रेणी:हिन्दी साहित्य" value="श्रेणी:हिन्दी साहित्य">
+                                    <button type="button" id="load-category-btn" class="btn btn-secondary">श्रेणी खोजें</button>
+                                </div>
+                                <div id="category-pages-wrap" style="display: none; margin-top: 8px;">
+                                    <div class="input-with-button">
+                                        <select id="category-pages-select" class="form-control"></select>
+                                        <button type="button" id="load-selected-cat-page-btn" class="btn btn-primary">यह लेख लोड करें</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="tab-input-file" class="tab-content">
+                                <div class="file-upload-row">
+                                    <input type="file" id="file-upload-input" class="form-control" accept=".txt,.wiki,.text">
+                                    <small class="form-hint">स्थानीय कंप्यूटर से <code>.wiki</code> या <code>.txt</code> फ़ाइल सीधे लोड करें</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- आंतरिक लेख बफ़र एवं सक्रिय लोड स्थिति पट्टी -->
+                        <textarea id="raw-wikitext-input" style="display: none;" aria-hidden="true"></textarea>
+                        <div id="loaded-article-status-bar" class="loaded-article-status-bar" style="display: none;">
+                            <div class="loaded-status-left">
+                                <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
+                            </div>
+                            <div class="loaded-status-actions">
+                                <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">लेख साफ़ करें</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- खण्ड 02: तार्किक छन्नी नियंत्रण पटल (Logical Filter & Policy Engine) -->
+                    <div class="workbench-logical-block block-logical-filters">
+                        <div class="logical-block-header">
+                            <div class="logical-block-title-wrap">
+                                <span class="logical-step-index">02</span>
+                                <div>
+                                    <h3 class="logical-block-title">तार्किक छन्नी एवं विकिपीडिया नीति नियम (Logical Filters)</h3>
+                                    <p class="logical-block-subtitle">अनावश्यक, चक्रीय व बहुविकल्पी कड़ियों को रोकने के लिए सक्रिय विकिपीडिया शैली-निर्देश (MOS) नियम</p>
+                                </div>
+                            </div>
+                            <div class="filter-toolbar-actions">
+                                <button type="button" id="btn-enable-all-filters" class="btn btn-text btn-sm" title="सभी मुख्य तार्किक नियमों को पुनः सक्रिय करें">
+                                    सभी नियम सक्रिय करें
+                                </button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" id="toggle-settings-btn" class="btn btn-text btn-sm btn-settings-toggle">
+                                    विस्तृत नियम व विवरण <span class="accordion-arrow">▼</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- वर्गीकृत तार्किक नियम चिप्स (Categorized Policy Toggles) -->
+                        <div class="active-filters-toolbar">
+                            <div class="logical-filter-groups">
+                                <!-- समूह क: शब्द पात्रता एवं आवृत्ति नियम -->
+                                <div class="logical-filter-group">
+                                    <span class="filter-group-label">क. शब्द पात्रता व आवृत्ति (Word &amp; Scope):</span>
+                                    <div class="filter-chips-grid">
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-first-only" title="एक लेख में एक ही संकल्पना की बार-बार कड़ी न बनाएं (WP:OVERLINKING)">✓ प्रथम उल्लेख (WP:OVERLINK)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-filter-common-words" title="7,479 सामान्य दैनिक शब्दों की नई कड़ी न बनाएं (WP:NOTLINKED)">✓ सामान्य शब्द छोड़ें (WP:NOTLINKED)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-prevent-self-link" title="वर्तमान लेख शीर्षक की चक्रीय कड़ी रोकें (WP:CIRCULAR)">✓ स्व-कड़ीकरण रोकें (WP:CIRCULAR)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-dates" title="अकेले वर्ष या सामान्य तिथियों को लिंक न करें (WP:DATELINK)">✓ वर्ष व दिनांक छन्नी (WP:DATELINK)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-units" title="किमी, किग्रा, मीटर, सेकंड आदि मात्रक छोड़ें (WP:UNITS)">✓ मात्रक व इकाइयाँ छन्नी</button>
+                                    </div>
+                                </div>
+
+                                <!-- समूह ख: लक्ष्य सत्यापन एवं सिंटेक्स शुद्धता -->
+                                <div class="logical-filter-group">
+                                    <span class="filter-group-label">ख. लक्ष्य सत्यापन व सिंटेक्स (Target &amp; Syntax):</span>
+                                    <div class="filter-chips-grid">
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-blue-only" title="केवल विकिपीडिया पर मौजूद सत्यापित नीले पृष्ठों की कड़ियाँ जोड़ें">✓ केवल पुष्ट नीली कड़ियाँ</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-disambig" title="बहुविकल्पी पृष्ठों की सीधी कड़ी न जोड़ें (WP:DISAMBIG)">✓ बहुविकल्पी निवारण (WP:DISAMBIG)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-clean-pipes" title="[[भारत|भारत]] के स्थान पर स्वच्छ [[भारत]] सिंटेक्स रखें">✓ स्वच्छ पाइप [[X]]</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- प्रत्यक्ष मापदंड पट्टी (Always-Visible Scope, Min-Length & Structural Parameters) -->
+                            <div class="logical-params-strip">
+                                <div class="logical-param-item">
+                                    <label for="opt-link-scope" class="logical-param-label">कड़ीकरण दायरा (Scope):</label>
+                                    <select id="opt-link-scope" class="form-control form-control-sm logical-param-select">
+                                        <option value="article" selected>संपूर्ण लेख में एक बार</option>
+                                        <option value="section">प्रति अनुभाग एक बार</option>
+                                        <option value="lead">केवल मुख्य भूमिका (Lead)</option>
+                                    </select>
+                                </div>
+
+                                <div class="logical-param-item">
+                                    <label for="opt-min-length" class="logical-param-label">न्यूनतम शब्द लंबाई:</label>
+                                    <div class="logical-minlen-wrap">
+                                        <input type="number" id="opt-min-length" class="form-control form-control-sm logical-param-number" value="3" min="2" max="10">
+                                        <span class="logical-unit-text">अक्षर</span>
+                                    </div>
+                                </div>
+
+                                <div class="logical-param-item logical-param-checks">
+                                    <label class="logical-inline-check" title="पुनर्निर्देशन (Redirect) को मूल प्रमाणित लक्ष्य लेख से जोड़ें">
+                                        <input type="checkbox" id="opt-resolve-redirects" checked>
+                                        <span>पुनर्निर्देशन स्वतः ठीक करें</span>
+                                    </label>
+                                    <label class="logical-inline-check" title="शीर्षक, संदर्भ, साँचे (Templates), श्रेणियाँ व चित्र सुरक्षित रखें">
+                                        <input type="checkbox" id="opt-protect-structures" checked>
+                                        <span>विकि-संरचनाएँ सुरक्षित रखें</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- विस्तारणीय विस्तृत नियम व्याख्या (Collapsible Detailed Policy Reference) -->
+                        <div class="settings-accordion">
+                            <div class="settings-body" id="settings-body" style="display: none;">
+                                <div class="settings-grid">
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-first-only" checked>
+                                        <div class="setting-desc">
+                                            <strong>1. प्रथम उल्लेख नियम (WP:OVERLINKING)</strong>
+                                            <p>एक लेख में एक ही संकल्पना की बार-बार कड़ियाँ नहीं दोहराई जाएँगी।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-blue-only" checked>
+                                        <div class="setting-desc">
+                                            <strong>2. केवल सत्यापित पृष्ठ (नीली कड़ियाँ)</strong>
+                                            <p>केवल वही कड़ियाँ जोड़ें जो विकिपीडिया पर वास्तव में मौजूद हैं (लाल कड़ियाँ नहीं)।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-skip-disambig" checked>
+                                        <div class="setting-desc">
+                                            <strong>3. बहुविकल्पी पृष्ठ छोड़ें (WP:DISAMBIG)</strong>
+                                            <p>बहुविकल्पी पृष्ठों की सीधी कड़ी न जोड़ें; ऐसे पदों पर चेतावनी चिह्न दर्शाएं।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-skip-dates" checked>
+                                        <div class="setting-desc">
+                                            <strong>4. सामान्य तिथियाँ व वर्ष छोड़ें (WP:DATELINK)</strong>
+                                            <p>अकेले वर्ष (उदा: 1947, 2024) या साधारण तिथियों को लिंक न करें।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-skip-units" checked>
+                                        <div class="setting-desc">
+                                            <strong>5. माप व इकाइयाँ छोड़ें (WP:UNITS)</strong>
+                                            <p>किमी, किग्रा, मीटर, लीटर, सेकंड, मिनट आदि मात्रकों को लिंक न करें।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-clean-pipes" checked>
+                                        <div class="setting-desc">
+                                            <strong>6. व्यर्थ पाइप सिंटेक्स हटाएं (WP:PIPELINK)</strong>
+                                            <p><code>[[भारत|भारत]]</code> के स्थान पर स्वच्छ <code>[[भारत]]</code> सिंटेक्स उपयोग करें।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-filter-stopwords" checked>
+                                        <div class="setting-desc">
+                                            <strong>7. सामान्य व्याकरणिक पद छोड़ें</strong>
+                                            <p>आम सर्वनाम, सहायक क्रियाएँ (है, था, और, का, के, में आदि) बाहर रहेंगे।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-filter-common-words" checked>
+                                        <div class="setting-desc">
+                                            <strong>8. सामान्य दैनिक शब्द छोड़ें (WP:NOTLINKED)</strong>
+                                            <p>7,479 आम दैनिक शब्दों (पानी, दिन, घर, लोग आदि) की नई कड़ियाँ न बनाएं।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-prevent-self-link" checked>
+                                        <div class="setting-desc">
+                                            <strong>9. स्व-कड़ीकरण रोकें (WP:CIRCULAR)</strong>
+                                            <p>वर्तमान लेख के स्वयं के शीर्षक की चक्रीय आंतरिक कड़ी न बनाएं।</p>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 1.2 लेख लोड करने के विकल्प (Tabs) -->
-                <div class="tabs-nav input-tabs">
-                    <button type="button" class="tab-btn active" data-tab="tab-input-wiki">शीर्षक / URL</button>
-                    <button type="button" class="tab-btn" data-tab="tab-input-random">यादृच्छिक</button>
-                    <button type="button" class="tab-btn" data-tab="tab-input-category">श्रेणी से</button>
-                    <button type="button" class="tab-btn" data-tab="tab-input-file">फ़ाइल</button>
-                </div>
-
-                <!-- इनपुट टैब सामग्री -->
-                <div id="tab-input-wiki" class="tab-content active">
-                    <div class="form-group" style="margin-bottom: 6px;">
-                        <div class="input-with-button">
-                            <input type="text" id="page-input" class="form-control" placeholder="विकिपीडिया लेख का शीर्षक अथवा पूरा URL दर्ज करें...">
-                            <button type="button" id="load-page-btn" class="btn btn-secondary">लेख लोड करें</button>
+                <!-- खण्ड 03: मुख्य विश्लेषण निष्पादन पटल (Execution Bar) -->
+                <div class="action-footer logical-execution-footer">
+                    <div class="execution-footer-row">
+                        <div class="execution-step-hint">
+                            <span class="logical-step-index">03</span>
+                            <span><strong>तार्किक विश्लेषण निष्पादन:</strong> चयनित लेख एवं सक्रिय नीतियों के आधार पर आंतरिक कड़ियाँ खोजें</span>
                         </div>
-                    </div>
-                </div>
-
-                <div id="tab-input-random" class="tab-content">
-                    <div class="form-group" style="margin-bottom: 6px;">
-                        <div class="input-with-button">
-                            <button type="button" id="load-random-btn" class="btn btn-secondary">यादृच्छिक लेख प्राप्त करें</button>
-                            <span id="random-loading-status" class="status-inline-text"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tab-input-category" class="tab-content">
-                    <div class="form-group" style="margin-bottom: 6px;">
-                        <div class="input-with-button">
-                            <input type="text" id="category-input" class="form-control" placeholder="उदा: श्रेणी:हिन्दी साहित्य" value="श्रेणी:हिन्दी साहित्य">
-                            <button type="button" id="load-category-btn" class="btn btn-secondary">श्रेणी खोजें</button>
-                        </div>
-                        <div id="category-pages-wrap" style="display: none; margin-top: 8px;">
-                            <div class="input-with-button">
-                                <select id="category-pages-select" class="form-control"></select>
-                                <button type="button" id="load-selected-cat-page-btn" class="btn btn-primary">यह लेख लोड करें</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tab-input-file" class="tab-content">
-                    <div class="form-group" style="margin-bottom: 6px;">
-                        <input type="file" id="file-upload-input" class="form-control" accept=".txt,.wiki,.text">
-                    </div>
-                </div>
-
-                <!-- आंतरिक लेख बफ़र एवं संक्षिप्त स्थिति पट्टी -->
-                <textarea id="raw-wikitext-input" style="display: none;" aria-hidden="true"></textarea>
-                <div id="loaded-article-status-bar" style="display: none; margin-bottom: 8px; padding: 6px 12px; border-radius: 6px; background: var(--bg-subtle); border: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-secondary); align-items: center; justify-content: space-between; gap: 8px;">
-                    <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
-                    <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">साफ़ करें</button>
-                </div>
-
-                <!-- 1.4 तार्किक छन्नी नियंत्रण पटल (Logical Filter Toolbar inside Box 1) -->
-                <div class="active-filters-toolbar">
-                    <div class="filter-toolbar-header">
-                        <span class="filter-toolbar-title">तार्किक छन्नी (Active Logical Filters):</span>
-                        <button type="button" id="toggle-settings-btn" class="btn btn-text btn-sm btn-settings-toggle">
-                            विस्तृत 11 नियम व सेटिंग्स <span class="accordion-arrow">▼</span>
+                        <button type="button" id="analyze-btn" class="btn btn-primary btn-lg logical-analyze-cta">
+                            तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें
                         </button>
                     </div>
-                    <div class="filter-chips-grid">
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-first-only" title="WP:OVERLINKING नियम">✓ प्रथम उल्लेख (WP:OVERLINK)</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-filter-common-words" title="7,479 सामान्य शब्दों की नई कड़ी न बनाएं (पूर्व-मौजूद कड़ियाँ यथावत सुरक्षित रहेंगी)">✓ सामान्य शब्द छोड़ें (WP:NOTLINKED)</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-prevent-self-link" title="वर्तमान लेख शीर्षक की चक्रीय कड़ी रोकें (WP:CIRCULAR)">✓ स्व-कड़ीकरण रोकें</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-disambig" title="WP:DISAMBIG नियम">✓ बहुविकल्पी निवारण</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-dates" title="WP:DATELINK नियम">✓ वर्ष व दिनांक छन्नी</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-units" title="मात्रक व इकाइयाँ छोड़ें">✓ मात्रक व इकाइयाँ छन्नी</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-clean-pipes" title="व्यर्थ पाइप हटाएं">✓ स्वच्छ पाइप [[X]]</button>
-                        <button type="button" class="filter-chip-toggle active" data-target="opt-blue-only" title="केवल नीली कड़ियाँ">✓ केवल पुष्ट कड़ियाँ</button>
-                    </div>
-                </div>
-
-                <!-- विस्तारणीय सेटिंग्स (Collapsible Detailed Settings) -->
-                <div class="settings-accordion">
-                    <div class="settings-body" id="settings-body" style="display: none;">
-                        <div class="settings-grid">
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-first-only" checked>
-                                <div class="setting-desc">
-                                    <strong>प्रथम उल्लेख नियम (WP:OVERLINKING)</strong>
-                                    <p>एक लेख में एक ही संकल्पना की बार-बार कड़ियाँ नहीं दोहराई जाएँगी।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-blue-only" checked>
-                                <div class="setting-desc">
-                                    <strong>केवल सत्यापित पृष्ठ (नीली कड़ियाँ)</strong>
-                                    <p>केवल वही कड़ियाँ जोड़ें जो विकिपीडिया पर वास्तव में मौजूद हैं।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-skip-disambig" checked>
-                                <div class="setting-desc">
-                                    <strong>बहुविकल्पी पृष्ठ छोड़ें (WP:DISAMBIG)</strong>
-                                    <p>बहुविकल्पी पृष्ठों की सीधी कड़ी न जोड़ें; ऐसे पदों पर चेतावनी चिह्न दर्शाएं।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-skip-dates" checked>
-                                <div class="setting-desc">
-                                    <strong>सामान्य तिथियाँ व वर्ष छोड़ें (WP:DATELINK)</strong>
-                                    <p>अकेले वर्ष (उदा: 1947, 2024) या साधारण तिथियों को लिंक न करें।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-skip-units" checked>
-                                <div class="setting-desc">
-                                    <strong>माप व इकाइयाँ छोड़ें</strong>
-                                    <p>किमी, किग्रा, मीटर, लीटर, सेकंड, मिनट आदि मात्रकों को लिंक न करें।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-resolve-redirects" checked>
-                                <div class="setting-desc">
-                                    <strong>पुनर्निर्देशन स्वतः ठीक करें</strong>
-                                    <p>पुनर्निर्देशन को मूल प्रमाणित लक्ष्य लेख से जोड़ें।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-clean-pipes" checked>
-                                <div class="setting-desc">
-                                    <strong>व्यर्थ पाइप सिंटेक्स हटाएं</strong>
-                                    <p><code>[[भारत|भारत]]</code> के स्थान पर स्वच्छ <code>[[भारत]]</code> सिंटेक्स उपयोग करें।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-protect-structures" checked>
-                                <div class="setting-desc">
-                                    <strong>संरचनाएँ सुरक्षित रखें</strong>
-                                    <p>शीर्षक, संदर्भ, टेम्पलेट, श्रेणियाँ व चित्र सुरक्षित रहें।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-filter-stopwords" checked>
-                                <div class="setting-desc">
-                                    <strong>सामान्य शब्द व व्याकरणिक पद छोड़ें</strong>
-                                    <p>आम सर्वनाम, सहायक क्रियाएँ (है, था, और, का, के, में आदि) बाहर रहेंगे।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-filter-common-words" checked>
-                                <div class="setting-desc">
-                                    <strong>सामान्य दैनिक शब्द छोड़ें (WP:NOTLINKED / WP:COMMONWORDS)</strong>
-                                    <p>7,479 आम दैनिक शब्दों (उदा: पानी, दिन, घर, लोग, बड़ा, काम) की नई कड़ियाँ न बनाएं (लेख में पहले से मौजूद कड़ियाँ यथावत सुरक्षित रहेंगी)।</p>
-                                </div>
-                            </label>
-
-                            <label class="setting-item">
-                                <input type="checkbox" id="opt-prevent-self-link" checked>
-                                <div class="setting-desc">
-                                    <strong>स्व-कड़ीकरण रोकें (WP:CIRCULAR / WP:SELFREF)</strong>
-                                    <p>वर्तमान लेख के स्वयं के शीर्षक अथवा उसके समानार्थी रूपों की चक्रीय आंतरिक कड़ी न बनाएं।</p>
-                                </div>
-                            </label>
-
-                            <div class="setting-item setting-item-input">
-                                <div class="setting-desc">
-                                    <strong>कड़ीकरण आवृत्ति (Linking Scope):</strong>
-                                    <p>कड़ियों का दायरा चुनें।</p>
-                                </div>
-                                <select id="opt-link-scope" class="form-control form-control-sm" style="width: 170px;">
-                                    <option value="article" selected>संपूर्ण लेख में एक बार</option>
-                                    <option value="section">प्रति अनुभाग एक बार</option>
-                                    <option value="lead">केवल मुख्य भूमिका (Lead)</option>
-                                </select>
-                            </div>
-
-                            <div class="setting-item setting-item-input">
-                                <div class="setting-desc">
-                                    <strong>न्यूनतम शब्द लंबाई (Min Length)</strong>
-                                    <p>न्यूनतम अक्षर सीमा।</p>
-                                </div>
-                                <input type="number" id="opt-min-length" class="form-control form-control-sm" value="3" min="2" max="10">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 1.5 मुख्य विश्लेषण बटन एवं सक्रिय परीक्षण स्थिति -->
-                <div class="action-footer" style="margin-top: 10px;">
-                    <button type="button" id="analyze-btn" class="btn btn-primary btn-lg" style="width: 100%;">
-                        तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें (Analyze & Suggest Links)
-                    </button>
                     <div id="analyze-status-banner" class="analyze-status-banner" style="display: none;">
                         <span class="analyze-spinner"></span>
                         <span id="analyze-status-text">परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की वैधता जाँची जा रही है...</span>
@@ -790,7 +855,7 @@
         </div>
         <div class="summary-card-body">
             <div class="summary-image-wrap" id="summary-img-wrap" style="display: none;">
-                <img id="summary-img" src="" alt="Thumbnail">
+                <img id="summary-img" src="" alt="Thumbnail" width="120" height="90" loading="lazy">
             </div>
             <h4 id="summary-title">-</h4>
             <p id="summary-extract" class="summary-extract">विवरण लोड हो रहा है...</p>
@@ -847,7 +912,6 @@
         </div>
     </footer>
 
-    <script src="words_blacklist.js" defer></script>
     <script type="module" src="firebase-client.js"></script>
     <script src="app.js" defer></script>
 </body>

@@ -30,17 +30,19 @@ const RELATIVE_WORKBENCH_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE_NAME).then(async (cache) => {
-      for (const relPath of RELATIVE_WORKBENCH_ASSETS) {
-        try {
-          const fullUrl = new URL(relPath, self.registration.scope).href;
-          const response = await fetch(fullUrl, { cache: 'reload' });
-          if (response && response.ok) {
-            await cache.put(fullUrl, response.clone());
+      await Promise.allSettled(
+        RELATIVE_WORKBENCH_ASSETS.map(async (relPath) => {
+          try {
+            const fullUrl = new URL(relPath, self.registration.scope).href;
+            const response = await fetch(fullUrl, { cache: 'default' });
+            if (response && response.ok) {
+              await cache.put(fullUrl, response.clone());
+            }
+          } catch (err) {
+            // Ignore individual asset failure during install so SW still activates
           }
-        } catch (err) {
-          // Ignore individual asset failure during install so SW still activates
-        }
-      }
+        })
+      );
     }).then(() => self.skipWaiting())
   );
 });
