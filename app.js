@@ -4143,37 +4143,41 @@
         if (googleFirebaseBtn) {
             googleFirebaseBtn.addEventListener('click', async () => {
                 if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
-                    if (googleBtnText) googleBtnText.textContent = 'Google खाता विंडो खुल रही है...';
+                    showToast('Google साइन-इन मॉड्यूल तैयार हो रहा है, कृपया पुनः क्लिक करें।');
                     try {
                         await import('./firebase-client.js');
                     } catch (e) {
                         console.warn('Dynamic import firebase-client failed:', e);
                     }
-                    if (googleBtnText) googleBtnText.textContent = 'Google से साइन इन करें — विकीलिंक सहायक';
-                }
-
-                if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
-                    showToast('Google साइन-इन मॉड्यूल लोड नहीं हो सका। कृपया पृष्ठ रीफ़्रेश करें।');
                     return;
                 }
+
+                const defaultLabel = 'Google से साइन इन करें — विकीलिंक सहायक';
+                if (googleBtnText) googleBtnText.textContent = 'Google खाता चयन विंडो खुली है...';
+                googleFirebaseBtn.disabled = true;
 
                 try {
                     const fbUser = await window.WikiFirebase.signInWithGooglePopup();
                     if (fbUser) {
-                        const resolvedName = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Google संपादक');
+                        const resolvedName = fbUser.displayName || fbUser.name || (fbUser.email ? fbUser.email.split('@')[0] : 'Google संपादक');
                         const resolvedEmail = fbUser.email || 'editor@wikipedia.org';
                         localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: resolvedEmail }));
                         completeUserLogin({
                             name: resolvedName,
                             email: resolvedEmail,
-                            role: 'विकीलिंक सहायक क्लाउड संपादक'
+                            role: fbUser.role || 'विकीलिंक सहायक क्लाउड संपादक'
                         });
                     }
                 } catch (err) {
                     const code = err && err.code ? String(err.code) : '';
-                    if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+                    if (code === 'auth/popup-blocked') {
+                        showToast('ब्राउज़र ने पॉपअप रोक दिया है। कृपया पॉपअप की अनुमति दें और पुनः प्रयास करें।');
+                    } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
                         showToast('Google खाता साइन-इन रद्द या बाधित हुआ। कृपया पुनः प्रयास करें।');
                     }
+                } finally {
+                    googleFirebaseBtn.disabled = false;
+                    if (googleBtnText) googleBtnText.textContent = defaultLabel;
                 }
             });
         }
@@ -4189,6 +4193,7 @@
                     loginTime: new Date().toISOString()
                 };
                 localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+                localStorage.setItem('wikilink_google_account', JSON.stringify({ name: fbUser.name, email: fbUser.email }));
                 if (fbUser.preferredSkin) {
                     applySkinPreset(fbUser.preferredSkin, false);
                 }
