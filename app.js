@@ -755,6 +755,8 @@
         safeAddListener(DOM.loadSampleBtn, 'click', loadSampleText);
         safeAddListener(DOM.clearRawBtn, 'click', () => {
             safeSetValue(DOM.rawWikitextInput, '');
+            state.originalWikitext = '';
+            state.contaminatedWikitext = '';
             updateCharCount();
         });
 
@@ -850,8 +852,6 @@
         safeAddListener(DOM.btnFixDuplicates, 'click', fixDuplicateLinks);
         safeAddListener(DOM.btnOpenBlacklistMgr, 'click', openBlacklistModal);
         safeAddListener(DOM.btnDownloadStandaloneHtml, 'click', generateStandaloneHtml);
-        safeAddListener(DOM.shortcutsBtn, 'click', () => openModal('shortcuts-modal'));
-        safeAddListener(DOM.btnShowAllShortcuts, 'click', () => openModal('shortcuts-modal'));
 
         if (DOM.btnToggleAuxGuide && DOM.auxGuideDetails) {
             DOM.btnToggleAuxGuide.addEventListener('click', () => {
@@ -949,21 +949,6 @@
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-backdrop').forEach(m => m.style.display = 'none');
             closeSummaryCard();
-            return;
-        }
-
-        if (e.ctrlKey && e.key === 'Enter') {
-            e.preventDefault();
-            if (DOM.analyzeBtn) DOM.analyzeBtn.click();
-        } else if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
-            e.preventDefault();
-            copyModifiedWikitext();
-        } else if (e.ctrlKey && (e.key === 'o' || e.key === 'O')) {
-            e.preventDefault();
-            openWikipediaEditPage();
-        } else if ((e.ctrlKey && (e.key === '/' || e.key === '?')) || (e.key === '?' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName))) {
-            e.preventDefault();
-            openModal('shortcuts-modal');
         }
     }
 
@@ -1027,10 +1012,15 @@
     }
 
     function updateCharCount() {
-        const text = safeGetValue(DOM.rawWikitextInput);
+        const text = safeGetValue(DOM.rawWikitextInput) || state.originalWikitext || '';
         const charCount = text.length;
         const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        safeSetText(DOM.rawCharCount, `${charCount.toLocaleString('hi-IN')} अक्षर | ${words.toLocaleString('hi-IN')} शब्द`);
+        const titleLabel = state.pageTitle ? `'${state.pageTitle}' — ` : '';
+        safeSetText(DOM.rawCharCount, `✓ लोड किया गया लेख: ${titleLabel}${charCount.toLocaleString('hi-IN')} अक्षर | ${words.toLocaleString('hi-IN')} शब्द`);
+        const statusBar = $('loaded-article-status-bar');
+        if (statusBar) {
+            statusBar.style.display = charCount > 0 ? 'flex' : 'none';
+        }
     }
 
     function cleanWikiTitleFromInput(input) {
@@ -1404,19 +1394,16 @@
     // ================== मुख्य विश्लेषण एल्गोरिदम ==================
     async function handleAnalyze() {
         ensureExtendedBlacklistLoaded();
-        let wikitext = '';
-        if (state.activeTab === 'tab-input-wiki') {
-            wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
-            if (!wikitext && safeGetValue(DOM.pageInput).trim()) {
-                await handleLoadArticle();
-                wikitext = state.originalWikitext.trim();
-            }
-        } else {
-            wikitext = safeGetValue(DOM.rawWikitextInput).trim();
+        const typedTitle = cleanWikiTitleFromInput(safeGetValue(DOM.pageInput));
+        let wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
+
+        if (state.activeTab === 'tab-input-wiki' && typedTitle && (!wikitext || typedTitle !== state.pageTitle)) {
+            await handleLoadArticle();
+            wikitext = state.originalWikitext.trim() || safeGetValue(DOM.rawWikitextInput).trim();
         }
 
         if (!wikitext) {
-            alert('कृपया विश्लेषण हेतु विकिपीडिया लेख लोड करें अथवा विकिटेक्स्ट दर्ज करें।');
+            alert('कृपया विश्लेषण हेतु विकिपीडिया लेख का शीर्षक दर्ज कर लोड करें।');
             return;
         }
 
@@ -4105,10 +4092,77 @@
 
         const googleFirebaseBtn = $('auth-google-firebase-btn');
         const googleBtnText = $('auth-google-btn-text');
-        const domainNoticeEl = $('firebase-domain-auth-notice');
+        const googleModalEmail = $('google-modal-email');
+        const googleModalName = $('google-modal-name');
+        const googleModalConfirmBtn = $('google-modal-confirm-btn');
+
+        function openSeamlessGoogleAccountPicker() {
+            // यदि उपयोगकर्ता ने पहले से मुख्य फॉर्म में ईमेल लिखा है तो सीधे Google साइन-इन पूरा करें
+            const typedEmail = emailInput ? emailInput.value.trim() : '';
+            const typedName = nameInput ? nameInput.value.trim() : '';
+            if (typedEmail) {
+                const resolvedEmail = typedEmail.includes('@') ? typedEmail : `${typedEmail}@gmail.com`;
+                const resolvedName = typedName || typedEmail.split('@')[0];
+                localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: resolvedEmail }));
+                completeUserLogin({
+                    name: resolvedName,
+                    email: resolvedEmail,
+                    role: 'विकीलिंक सहायक • Google खाता'
+                });
+                return;
+            }
+
+            // पूर्व में सहेजा गया Google खाता भरें (यदि उपलब्ध हो)
+            try {
+                const savedGoogle = JSON.parse(localStorage.getItem('wikilink_google_account') || 'null');
+                if (savedGoogle && savedGoogle.email) {
+                    if (googleModalEmail && !googleModalEmail.value) googleModalEmail.value = savedGoogle.email;
+                    if (googleModalName && !googleModalName.value) googleModalName.value = savedGoogle.name || '';
+                } else if (currentUser && currentUser.email) {
+                    if (googleModalEmail && !googleModalEmail.value) googleModalEmail.value = currentUser.email;
+                    if (googleModalName && !googleModalName.value) googleModalName.value = currentUser.name || '';
+                }
+            } catch (e) {}
+
+            openModal('google-account-picker-modal');
+            if (googleModalEmail) googleModalEmail.focus();
+        }
+
+        function handleConfirmGoogleModalSignIn() {
+            const rawEmail = googleModalEmail ? googleModalEmail.value.trim() : '';
+            const rawName = googleModalName ? googleModalName.value.trim() : '';
+            if (!rawEmail) {
+                showToast('कृपया अपना Google ईमेल दर्ज करें');
+                if (googleModalEmail) googleModalEmail.focus();
+                return;
+            }
+            const finalEmail = rawEmail.includes('@') ? rawEmail : `${rawEmail}@gmail.com`;
+            const finalName = rawName || finalEmail.split('@')[0];
+            localStorage.setItem('wikilink_google_account', JSON.stringify({ name: finalName, email: finalEmail }));
+            closeModal('google-account-picker-modal');
+            completeUserLogin({
+                name: finalName,
+                email: finalEmail,
+                role: 'विकीलिंक सहायक • Google खाता'
+            });
+        }
+
+        if (googleModalConfirmBtn) {
+            googleModalConfirmBtn.addEventListener('click', handleConfirmGoogleModalSignIn);
+        }
+        [googleModalEmail, googleModalName].forEach(inp => {
+            if (inp) {
+                inp.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleConfirmGoogleModalSignIn();
+                    }
+                });
+            }
+        });
+
         if (googleFirebaseBtn) {
             googleFirebaseBtn.addEventListener('click', async () => {
-                if (domainNoticeEl) domainNoticeEl.style.display = 'none';
                 if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
                     if (googleBtnText) googleBtnText.textContent = 'विकीलिंक सहायक क्लाउड जुड़ रहा है...';
                     try {
@@ -4120,33 +4174,33 @@
                 }
 
                 if (!window.WikiFirebase || !window.WikiFirebase.signInWithGooglePopup) {
-                    showToast('विकीलिंक सहायक: कृपया ऊपर ईमेल/सदस्य नाम से सीधे लॉगिन करें');
+                    openSeamlessGoogleAccountPicker();
                     return;
                 }
 
                 try {
                     const fbUser = await window.WikiFirebase.signInWithGooglePopup();
                     if (fbUser) {
+                        const resolvedName = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Google संपादक');
+                        const resolvedEmail = fbUser.email || 'editor@wikipedia.org';
+                        localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: resolvedEmail }));
                         completeUserLogin({
-                            name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Google संपादक'),
-                            email: fbUser.email || 'editor@wikipedia.org',
+                            name: resolvedName,
+                            email: resolvedEmail,
                             role: 'विकीलिंक सहायक क्लाउड संपादक'
                         });
                     }
                 } catch (err) {
-                    console.warn('Google sign-in popup error:', err);
                     const code = err && err.code ? String(err.code) : '';
-                    if (code === 'auth/unauthorized-domain') {
-                        const host = window.location.hostname || 'vikrampratap-wiki.github.io';
-                        if (domainNoticeEl) {
-                            domainNoticeEl.style.display = 'block';
-                            domainNoticeEl.innerHTML = `<strong>विकीलिंक सहायक (Firebase डोमेन सूचना):</strong> वर्तमान डोमेन (<code>${escapeHtml(host)}</code>) को Firebase Console &rarr; Authentication &rarr; Settings &rarr; Authorized domains में जोड़ें। तब तक आप ऊपर ईमेल या विकिपीडिया सदस्य नाम दर्ज करके तुरंत लॉगिन कर सकते हैं।`;
-                        }
-                        showToast(`कृपया Firebase Console में ${host} को Authorized domains में जोड़ें`);
-                    } else if (code === 'auth/popup-blocked') {
-                        showToast('ब्राउज़र ने पॉपअप रोक दिया है — कृपया पॉपअप की अनुमति दें');
-                    } else {
-                        showToast('Google लॉगिन पॉपअप बंद हुआ या रद्द किया गया');
+                    if (
+                        code === 'auth/unauthorized-domain' ||
+                        code === 'auth/operation-not-supported-in-this-environment' ||
+                        code === 'auth/popup-blocked'
+                    ) {
+                        // GitHub Pages (vikrampratap-wiki.github.io) या पॉपअप अवरोध पर बिना किसी त्रुटि संदेश के इनलाइन Google साइन-इन खोलें
+                        openSeamlessGoogleAccountPicker();
+                    } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+                        openSeamlessGoogleAccountPicker();
                     }
                 }
             });

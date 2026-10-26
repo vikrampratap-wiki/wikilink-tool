@@ -210,7 +210,6 @@
                     <button type="button" class="tab-btn" data-tab="tab-input-random">यादृच्छिक</button>
                     <button type="button" class="tab-btn" data-tab="tab-input-category">श्रेणी से</button>
                     <button type="button" class="tab-btn" data-tab="tab-input-file">फ़ाइल</button>
-                    <button type="button" class="tab-btn" data-tab="tab-input-raw">पेस्ट करें</button>
                 </div>
 
                 <!-- इनपुट टैब सामग्री -->
@@ -253,21 +252,11 @@
                     </div>
                 </div>
 
-                <div id="tab-input-raw" class="tab-content">
-                    <small class="form-hint" style="margin-bottom: 6px; display: block;">नीचे दिए गए टेक्स्ट बॉक्स में सीधे विकिटेक्स्ट या सादा पाठ लिखें अथवा संपादित करें।</small>
-                </div>
-
-                <!-- 1.3 मूल विकिटेक्स्ट इनपुट क्षेत्र -->
-                <div class="form-group" style="margin-bottom: 6px;">
-                    <label for="raw-wikitext-input" class="form-label">मूल विकिटेक्स्ट / लेख पाठ:</label>
-                    <textarea id="raw-wikitext-input" class="form-control monospace-input workbench-textarea" placeholder="यहाँ अपना विकिपीडिया लेख का विकिटेक्स्ट दर्ज करें अथवा विकिपीडिया से लोड करें..."></textarea>
-                    <div class="raw-tools">
-                        <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
-                        <div>
-                            <button type="button" id="load-sample-btn" class="btn btn-text btn-sm">नमूना पाठ भरें</button>
-                            <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">साफ़ करें</button>
-                        </div>
-                    </div>
+                <!-- आंतरिक लेख बफ़र एवं संक्षिप्त स्थिति पट्टी -->
+                <textarea id="raw-wikitext-input" style="display: none;" aria-hidden="true"></textarea>
+                <div id="loaded-article-status-bar" style="display: none; margin-bottom: 8px; padding: 6px 12px; border-radius: 6px; background: var(--bg-subtle); border: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-secondary); align-items: center; justify-content: space-between; gap: 8px;">
+                    <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
+                    <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">साफ़ करें</button>
                 </div>
 
                 <!-- 1.4 तार्किक छन्नी नियंत्रण पटल (Logical Filter Toolbar inside Box 1) -->
@@ -479,15 +468,6 @@
             </div>
         </div>
 
-        <!-- कीबोर्ड शॉर्टकट्स त्वरित पट्टी -->
-        <div class="shortcuts-quick-strip">
-            <span class="shortcuts-title">कीबोर्ड शॉर्टकट्स:</span>
-            <span class="shortcut-pill"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> विश्लेषण</span>
-            <span class="shortcut-pill"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> विकिटेक्स्ट कॉपी</span>
-            <span class="shortcut-pill"><kbd>Ctrl</kbd> + <kbd>O</kbd> विकिपीडिया संपादन</span>
-            <span class="shortcut-pill"><kbd>Esc</kbd> मोडल बंद</span>
-            <button type="button" id="btn-show-all-shortcuts" class="btn btn-text btn-sm" style="margin-left: auto;">सभी शॉर्टकट्स देखें</button>
-        </div>
 
         <!-- 2. प्रगति एवं स्थिति पटल (Progress & Status Section) -->
         <section id="progress-card" class="card progress-card" style="display: none;">
@@ -801,26 +781,6 @@
         </div>
     </div>
 
-    <!-- 4. कीबोर्ड शॉर्टकट्स मोडल (Shortcuts Modal) -->
-    <div id="shortcuts-modal" class="modal-backdrop" style="display: none;">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>कीबोर्ड शॉर्टकट्स (Keyboard Shortcuts)</h3>
-                <button type="button" class="modal-close-btn" data-modal="shortcuts-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <table class="table shortcuts-table">
-                    <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>तार्किक कड़ियाँ विश्लेषण आरंभ करें</td></tr>
-                    <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td><td>संशोधित विकिटेक्स्ट कॉपी करें</td></tr>
-                    <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>विकिपीडिया पर संपादन पृष्ठ खोलें</td></tr>
-                    <tr><td><kbd>Esc</kbd></td><td>कोई भी खुला मोडल अथवा पॉपअप बंद करें</td></tr>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary modal-close-btn" data-modal="shortcuts-modal">समझ गया</button>
-            </div>
-        </div>
-    </div>
 
     <!-- 5. विकिपीडिया फ्लोटिंग सारांश पूर्वावलोकन कार्ड -->
     <div id="wiki-summary-card" class="wiki-summary-card" style="display: none;">

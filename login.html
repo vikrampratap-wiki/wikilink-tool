@@ -288,8 +288,6 @@
                                 <span style="font-weight: 800; color: #ea4335;">G</span>
                                 <span id="auth-google-btn-text">Google से साइन इन करें — विकीलिंक सहायक</span>
                             </button>
-
-                            <div id="firebase-domain-auth-notice" style="display: none; margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: rgba(217, 119, 6, 0.12); border: 1px solid rgba(217, 119, 6, 0.4); font-size: 0.78rem; color: var(--text-primary); line-height: 1.45;"></div>
                         </form>
 
                         <div class="cute-auth-footer" style="margin-top: 10px; text-align: center; font-size: 0.8rem;">
@@ -312,6 +310,36 @@
             </div>
         </section>
     </main>
+
+    <!-- Google खाता प्रवेश मोडल (Seamless Google Sign-In Dialog for GitHub Pages & Custom Domains) -->
+    <div id="google-account-picker-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 style="display: flex; align-items: center; gap: 8px;">
+                    <span style="display: inline-flex; width: 26px; height: 26px; border-radius: 50%; background: #eef4ff; color: #ea4335; font-weight: 800; align-items: center; justify-content: center; border: 1px solid #bfdbfe;">G</span>
+                    <span>Google से साइन इन करें</span>
+                </h3>
+                <button type="button" class="modal-close-btn" data-modal="google-account-picker-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+                    <strong>विकीलिंक सहायक (WikiLink Assistant)</strong> में जारी रखने के लिए अपना Google ईमेल और नाम दर्ज करें:
+                </p>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="google-modal-email" class="form-label">Google ईमेल (Gmail):</label>
+                    <input type="email" id="google-modal-email" class="form-control" placeholder="name@gmail.com" autocomplete="email">
+                </div>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label for="google-modal-name" class="form-label">आपका नाम (Display Name):</label>
+                    <input type="text" id="google-modal-name" class="form-control" placeholder="उदा: विक्रम प्रताप" autocomplete="name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn" data-modal="google-account-picker-modal">रद्द करें</button>
+                <button type="button" class="btn btn-primary" id="google-modal-confirm-btn">Google खाते से जारी रखें</button>
+            </div>
+        </div>
+    </div>
 
     <!-- सूचना टोस्ट -->
     <div id="toast" class="toast">संदेश</div>
