@@ -3,9 +3,9 @@
  * Supports both root (/) and GitHub Pages subpath (/wikilink-tool/) deployments.
  */
 
-const SHELL_CACHE_NAME = 'wikilink-shell-v6';
-const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v6';
-const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v6';
+const SHELL_CACHE_NAME = 'wikilink-shell-v11';
+const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v11';
+const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v11';
 
 const RELATIVE_WORKBENCH_ASSETS = [
   './',
@@ -34,7 +34,7 @@ self.addEventListener('install', (event) => {
         RELATIVE_WORKBENCH_ASSETS.map(async (relPath) => {
           try {
             const fullUrl = new URL(relPath, self.registration.scope).href;
-            const response = await fetch(fullUrl, { cache: 'default' });
+            const response = await fetch(fullUrl, { cache: 'no-cache' });
             if (response && response.ok) {
               await cache.put(fullUrl, response.clone());
             }
@@ -229,7 +229,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(SHELL_CACHE_NAME).then(async (cache) => {
         try {
-          const networkResponse = await fetch(request);
+          const networkResponse = await fetch(request, { cache: 'no-cache' });
           if (networkResponse && networkResponse.ok) {
             cache.put(request, networkResponse.clone());
           }

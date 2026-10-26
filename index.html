@@ -25,7 +25,7 @@
         .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
         .workbench-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px}
     </style>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=11">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -104,13 +104,16 @@
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
                     <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
-                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन करें अथवा अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें">
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन करें अथवा अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें" onclick="if(localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account')||(this.textContent&&!this.textContent.includes('लॉगिन'))){event.preventDefault();window.location.href='logs.html';return false;}">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से तुरंत लॉगआउट करें">
                     लॉगआउट ⏻
                 </button>
+                <script>
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account');if(raw){var u=JSON.parse(raw);if(u&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                </script>
             </nav>
         </div>
     </header>
@@ -918,8 +921,8 @@
                     <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
                 <a href="logs.html" class="footer-page-card" data-auth-only="true" style="display: none;">
-                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Anime Profile & Logs)</strong>
-                    <span>ऊर्ध्वाधर विकल्प, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Profile & Logs)</strong>
+                    <span>यूज़रनेम व आइकन चयन, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
                 </a>
                 <a href="about.html" class="footer-page-card">
                     <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
@@ -945,7 +948,7 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js"></script>
-    <script src="app.js" defer></script>
+    <script type="module" src="firebase-client.js?v=11"></script>
+    <script src="app.js?v=11" defer></script>
 </body>
 </html>

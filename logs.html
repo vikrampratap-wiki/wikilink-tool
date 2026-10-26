@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>विशेष एनीमे प्रोफ़ाइल पोर्टल (Anime Profile & Logs) - विकीलिंक सहायक</title>
-    <meta name="description" content="विकीलिंक सहायक में उपयोगकर्ता का विशेष एनीमे-स्टाइल प्रोफ़ाइल पेज, ऊर्ध्वाधर विकल्प पट्टी, रंग व थीम स्टूडियो, गतिविधि लॉग एवं एडमिन नियंत्रण पैनल">
-    <meta property="og:title" content="विशेष एनीमे प्रोफ़ाइल पोर्टल - विकीलिंक सहायक">
-    <meta property="og:description" content="विकीलिंक सहायक में उपयोगकर्ता का विशेष एनीमे-स्टाइल प्रोफ़ाइल पेज एवं क्लाउड गतिविधि लॉग">
+    <title>विशेष सदस्य प्रोफ़ाइल एवं गतिविधि पोर्टल (Member Profile & Logs) - विकीलिंक सहायक</title>
+    <meta name="description" content="विकीलिंक सहायक में उपयोगकर्ता का विशेष सदस्य प्रोफ़ाइल पेज, आइकन व यूज़रनेम सेटिंग, रंग व थीम स्टूडियो, गतिविधि लॉग एवं एडमिन नियंत्रण पैनल">
+    <meta property="og:title" content="विशेष सदस्य प्रोफ़ाइल पोर्टल - विकीलिंक सहायक">
+    <meta property="og:description" content="विकीलिंक सहायक में उपयोगकर्ता का विशेष प्रोफ़ाइल पेज एवं क्लाउड गतिविधि लॉग">
     <meta property="og:url" content="https://vikrampratap-wiki.github.io/wikilink-tool/logs.html">
     <link rel="canonical" href="https://vikrampratap-wiki.github.io/wikilink-tool/logs.html">
     <meta name="theme-color" content="#0969da">
@@ -17,7 +17,7 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="icon" type="image/svg+xml" href="./icon.svg">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=11">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -75,9 +75,9 @@
                     <div class="logo-text-block">
                         <div class="logo-title-wrap">
                             <h1 class="app-title">विकीलिंक सहायक</h1>
-                            <span class="badge badge-tool">✦ ANIME SENPAI PROFILE ✦</span>
+                            <span class="badge badge-tool">सदस्य प्रोफ़ाइल पोर्टल</span>
                         </div>
-                        <p class="app-subtitle">विशेष एनीमे प्रोफ़ाइल पोर्टल, रंग/थीम स्टूडियो, क्लाउड गतिविधि लॉग एवं एडमिन नियंत्रण</p>
+                        <p class="app-subtitle">विशेष सदस्य प्रोफ़ाइल, आइकन व यूज़रनेम सेटिंग, रंग/थीम स्टूडियो, गतिविधि लॉग एवं एडमिन नियंत्रण</p>
                     </div>
                 </a>
                 <!-- केवल मोबाइल के लिए हैमबर्गर टॉगल मेन्यू बटन -->
@@ -96,13 +96,16 @@
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
                     <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
-                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn active" title="अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें">
+                <a href="logs.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn active" title="अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें" onclick="if(localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account')||(this.textContent&&!this.textContent.includes('लॉगिन'))){event.preventDefault();window.location.href='logs.html';return false;}">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
                     लॉगआउट ⏻
                 </button>
+                <script>
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account');var ic=localStorage.getItem('wikilink_profile_icon')||'📚';if(raw){var u=JSON.parse(raw);if(u&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];var uic=u.avatarIcon||ic;if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — विशेष प्रोफ़ाइल पेज';}if(lbl)lbl.textContent=uic+' '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                </script>
             </nav>
         </div>
     </header>
@@ -118,33 +121,16 @@
         <section id="anime-guest-lock-screen" class="anime-guest-lock-card" style="display: none;">
             <div class="anime-guest-lock-aura" aria-hidden="true"></div>
             <div class="anime-guest-lock-inner">
-                <div class="anime-chibi-guardian" aria-hidden="true">
-                    <svg viewBox="0 0 120 120" width="96" height="96">
-                        <defs>
-                            <linearGradient id="guardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#6366f1"/>
-                                <stop offset="100%" stop-color="#ec4899"/>
-                            </linearGradient>
-                        </defs>
-                        <circle cx="60" cy="60" r="54" fill="url(#guardGrad)" opacity="0.16"/>
-                        <circle cx="60" cy="64" r="36" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="3.5"/>
-                        <path d="M22 58 C22 24, 98 24, 98 58 C90 42, 76 36, 60 38 C44 36, 30 42, 22 58 Z" fill="url(#guardGrad)" stroke="#1e1b4b" stroke-width="3.5"/>
-                        <ellipse cx="46" cy="66" rx="6" ry="7.5" fill="#1e1b4b"/>
-                        <circle cx="44" cy="63.5" r="2.3" fill="#ffffff"/>
-                        <ellipse cx="74" cy="66" rx="6" ry="7.5" fill="#1e1b4b"/>
-                        <circle cx="72" cy="63.5" r="2.3" fill="#ffffff"/>
-                        <ellipse cx="36" cy="74" rx="5" ry="2.2" fill="#fb7185" opacity="0.7"/>
-                        <ellipse cx="84" cy="74" rx="5" ry="2.2" fill="#fb7185" opacity="0.7"/>
-                        <path d="M52 79 Q60 85 68 79" fill="none" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round"/>
-                    </svg>
+                <div class="profile-animated-lock-emblem" aria-hidden="true">
+                    <span>🔒</span>
                 </div>
-                <span class="anime-hud-tag">✦ RESTRICTED PORTAL // केवल लॉग-इन सदस्यों हेतु ✦</span>
-                <h2 class="anime-guest-lock-title">विशेष एनीमे प्रोफ़ाइल एवं लॉग पोर्टल लॉक है 🔒</h2>
+                <span class="anime-hud-tag">केवल लॉग-इन सदस्यों हेतु आरक्षित</span>
+                <h2 class="anime-guest-lock-title">सदस्य प्रोफ़ाइल एवं लॉग पोर्टल लॉक है</h2>
                 <p class="anime-guest-lock-desc">
-                    यह विशेष प्रोफ़ाइल पेज, व्यक्तिगत गतिविधि लॉग और थीम स्टूडियो केवल <strong>लॉग-इन सदस्यों</strong> के लिए आरक्षित है। खाते में लॉगिन करते ही आपको सीधे आपके विशेष एनीमे प्रोफ़ाइल पेज पर ले जाया जाएगा!
+                    यह प्रोफ़ाइल पेज, व्यक्तिगत गतिविधि लॉग और थीम स्टूडियो केवल <strong>लॉग-इन सदस्यों</strong> के लिए उपलब्ध है। खाते में लॉगिन करते ही आपको सीधे आपके प्रोफ़ाइल पेज पर ले जाया जाएगा!
                 </p>
                 <div class="anime-guest-lock-actions">
-                    <a href="login.html" class="btn btn-anime-auth btn-lg">
+                    <a href="login.html" class="btn btn-primary btn-lg">
                         🔑 अभी लॉगिन / साइन अप करें
                     </a>
                     <a href="index.html" class="btn btn-outline btn-lg">
@@ -154,42 +140,24 @@
             </div>
         </section>
 
-        <!-- 2. लॉग-इन उपयोगकर्ता का विशेष एनीमे-स्टाइल प्रोफ़ाइल पोर्टल (Left Vertical Sidebar + Right Stage) -->
+        <!-- 2. लॉग-इन उपयोगकर्ता का आधुनिक एनिमेटेड प्रोफ़ाइल पोर्टल (Left Vertical Sidebar + Right Stage) -->
         <div id="anime-profile-authenticated-shell" class="anime-profile-shell">
-            <!-- बायाँ स्तंभ: ऊर्ध्वाधर विकल्प पट्टी (Vertical Sidebar Navigation in Anime Style) -->
+            <!-- बायाँ स्तंभ: ऊर्ध्वाधर विकल्प पट्टी (Vertical Sidebar Navigation) -->
             <aside class="anime-profile-sidebar" aria-label="प्रोफ़ाइल ऊर्ध्वाधर नेविगेशन विकल्प">
-                <!-- एनीमे कैरेक्टर अवतार एवं सदस्य पहचान कार्ड -->
+                <!-- एनिमेटेड सदस्य अवतार एवं पहचान कार्ड (बिना किसी लेवल बैज के) -->
                 <div class="anime-sidebar-hero-card">
-                    <div class="anime-sidebar-sparkles" aria-hidden="true">
-                        <span>✦</span><span>★</span><span>✧</span>
-                    </div>
+                    <div class="profile-hero-ambient-glow" aria-hidden="true"></div>
                     <div class="anime-avatar-halo-wrap">
-                        <div class="anime-avatar-ring">
-                            <svg class="anime-chibi-portrait" viewBox="0 0 96 96" width="64" height="64" aria-hidden="true">
-                                <defs>
-                                    <linearGradient id="senpaiHair" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="var(--primary-color)"/>
-                                        <stop offset="100%" stop-color="#ec4899"/>
-                                    </linearGradient>
-                                </defs>
-                                <circle cx="48" cy="52" r="30" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="3"/>
-                                <path d="M16 48 C16 20, 80 20, 80 48 C74 34, 62 28, 48 30 C34 28, 22 34, 16 48 Z" fill="url(#senpaiHair)" stroke="#1e1b4b" stroke-width="3"/>
-                                <path d="M20 38 L10 20 L30 28 Z" fill="#f59e0b" stroke="#1e1b4b" stroke-width="2.5"/>
-                                <path d="M76 38 L86 20 L66 28 Z" fill="#f59e0b" stroke="#1e1b4b" stroke-width="2.5"/>
-                                <ellipse cx="36" cy="54" rx="5.2" ry="6.4" fill="#1e1b4b"/>
-                                <circle cx="34.5" cy="51.8" r="2" fill="#ffffff"/>
-                                <ellipse cx="60" cy="54" rx="5.2" ry="6.4" fill="#1e1b4b"/>
-                                <circle cx="58.5" cy="51.8" r="2" fill="#ffffff"/>
-                                <ellipse cx="28" cy="61" rx="4" ry="1.8" fill="#fb7185" opacity="0.7"/>
-                                <ellipse cx="68" cy="61" rx="4" ry="1.8" fill="#fb7185" opacity="0.7"/>
-                                <path d="M42 64 Q48 70 54 64" fill="none" stroke="#1e1b4b" stroke-width="2.8" stroke-linecap="round"/>
-                            </svg>
-                            <span class="anime-avatar-initial-badge" id="user-dash-avatar">वि</span>
+                        <div class="anime-avatar-ring" id="profile-avatar-ring">
+                            <span class="profile-main-avatar-icon" id="profile-main-avatar-icon" aria-hidden="true">📚</span>
+                            <span class="anime-avatar-initial-badge" id="user-dash-avatar" title="सदस्य आद्याक्षर">वि</span>
                         </div>
-                        <span class="anime-rank-pill" id="anime-sidebar-rank-pill">LV.99 SENPAI</span>
                     </div>
 
-                    <h2 class="anime-sidebar-username" id="user-dash-name">विकिपीडिया संपादक</h2>
+                    <div class="sidebar-username-row">
+                        <h2 class="anime-sidebar-username" id="user-dash-name">विकिपीडिया संपादक</h2>
+                        <button type="button" id="btn-focus-username-edit" class="sidebar-edit-name-btn" title="अपना यूज़रनेम बदलें">✏️</button>
+                    </div>
                     <p class="anime-sidebar-email" id="user-dash-email">सदस्य खाता सक्रिय</p>
                     <div class="anime-sidebar-status-wrap">
                         <span class="badge badge-success" id="user-dash-status-badge">✓ लॉगिन सक्रिय</span>
@@ -197,13 +165,13 @@
                 </div>
 
                 <!-- ऊर्ध्वाधर नेविगेशन विकल्प सूची (Vertical Options Menu on One Side) -->
-                <div class="anime-vnav-section-label">✦ प्रोफ़ाइल विकल्प (VERTICAL MENU) ✦</div>
+                <div class="anime-vnav-section-label">प्रोफ़ाइल विकल्प (मेन्यू)</div>
                 <nav class="anime-vertical-nav" id="anime-vertical-nav" role="tablist" aria-orientation="vertical">
                     <button type="button" class="anime-vnav-btn active" data-profile-section="sec-profile-overview" role="tab" aria-selected="true">
                         <span class="vnav-icon">👤</span>
                         <span class="vnav-text">
-                            <strong>प्रोफ़ाइल व खाता सारांश</strong>
-                            <small>सदस्य विवरण एवं संपादन आँकड़े</small>
+                            <strong>प्रोफ़ाइल व खाता सेटिंग</strong>
+                            <small>यूज़रनेम एवं 5 प्रोफ़ाइल आइकन</small>
                         </span>
                         <span class="vnav-arrow">▸</span>
                     </button>
@@ -251,49 +219,82 @@
                 </div>
             </aside>
 
-            <!-- दायाँ मुख्य मंच (Anime Profile Stage — Dynamic Sections) -->
+            <!-- दायाँ मुख्य मंच (Profile Stage — Dynamic Animated Sections) -->
             <div class="anime-profile-stage">
-                <!-- ==================== अनुभाग 1: प्रोफ़ाइल एवं खाता सारांश (Overview) ==================== -->
+                <!-- ==================== अनुभाग 1: प्रोफ़ाइल, यूज़रनेम एवं आइकन सेटिंग (Overview) ==================== -->
                 <section id="sec-profile-overview" class="anime-profile-pane active" role="tabpanel">
                     <div class="anime-stage-banner">
                         <div class="anime-stage-banner-text">
-                            <span class="anime-hud-tag">✦ SPECIAL USER DOSSIER // विशेष प्रोफ़ाइल ✦</span>
-                            <h2 class="anime-stage-title">स्वागत है, <span id="anime-banner-user-name">सदस्य</span>! ✨</h2>
+                            <span class="anime-hud-tag">सदस्य प्रोफ़ाइल डैशबोर्ड</span>
+                            <h2 class="anime-stage-title">नमस्ते, <span id="anime-banner-user-name">सदस्य</span>!</h2>
                             <p class="anime-stage-subtitle">
-                                बाईं ओर दी गई <strong>ऊर्ध्वाधर विकल्प पट्टी</strong> से आप अपने खाते के आँकड़े, रंग व थीम स्टूडियो, गतिविधि लॉग तथा (अधिकृत होने पर) एडमिन नियंत्रण पैनल संचालित कर सकते हैं।
+                                यहाँ से आप अपना <strong>यूज़रनेम (सदस्य नाम)</strong> बदल सकते हैं, अपना पसंदीदा <strong>प्रोफ़ाइल आइकन</strong> चुन सकते हैं, और बाईं ओर के ऊर्ध्वाधर विकल्पों से थीम, गतिविधि लॉग व एडमिन पैनल संचालित कर सकते हैं।
                             </p>
                         </div>
                         <div class="anime-stage-banner-emblem" aria-hidden="true">
-                            <div class="anime-stat-crest">⚡ WIKILINK</div>
+                            <div class="anime-stat-crest" id="banner-selected-icon-crest">📚 WIKILINK</div>
                         </div>
                     </div>
 
-                    <!-- 4 एनीमे-स्टाइल तार्किक आँकड़े कार्ड्स -->
-                    <div class="user-stats-grid anime-stats-grid">
-                        <div class="user-stat-box anime-cel-box">
-                            <span class="ust-label">📄 विश्लेषित लेख (Analyzed)</span>
-                            <strong class="ust-val" id="ust-articles-count">0</strong>
+                    <!-- प्रोफ़ाइल वैयक्तिकीकरण कार्ड: यूज़रनेम बदलें + 5 आइकन विकल्प चुनें -->
+                    <div class="card workbench-card profile-customizer-card anime-cel-card">
+                        <div class="workbench-card-header">
+                            <div>
+                                <h3 class="workbench-card-title">✨ प्रोफ़ाइल वैयक्तिकीकरण: यूज़रनेम एवं आइकन चयन</h3>
+                                <small class="form-hint">अपना प्रदर्शित सदस्य नाम अपडेट करें और नीचे दिए गए 5 विकल्पों में से अपना पसंदीदा प्रोफ़ाइल आइकन चुनें</small>
+                            </div>
                         </div>
-                        <div class="user-stat-box anime-cel-box">
-                            <span class="ust-label">🔗 जोड़ी गई कड़ियाँ (Links Added)</span>
-                            <strong class="ust-val text-success" id="ust-links-added">0</strong>
-                        </div>
-                        <div class="user-stat-box anime-cel-box">
-                            <span class="ust-label">🧹 शुद्ध किए गए दोष (Fixed)</span>
-                            <strong class="ust-val text-warning" id="ust-contaminations-fixed">0</strong>
-                        </div>
-                        <div class="user-stat-box anime-cel-box">
-                            <span class="ust-label">📜 कुल लॉग प्रविष्टियाँ (Total Logs)</span>
-                            <strong class="ust-val" id="ust-total-logs">0</strong>
+                        <div class="workbench-card-body profile-customizer-body">
+                            <!-- 1. यूज़रनेम बदलने का बॉक्स -->
+                            <div class="profile-username-edit-box">
+                                <label for="profile-username-input" class="form-label"><strong>👤 आपका यूज़रनेम / सदस्य नाम बदलें:</strong></label>
+                                <div class="profile-username-input-row">
+                                    <input type="text" id="profile-username-input" class="form-control" maxlength="60" placeholder="अपना नया यूज़रनेम दर्ज करें...">
+                                    <button type="button" id="btn-save-profile-username" class="btn btn-primary">
+                                        ✓ यूज़रनेम सुरक्षित करें
+                                    </button>
+                                </div>
+                                <small class="form-hint">यह नाम शीर्ष पट्टी, आपके गतिविधि लॉग और बहिष्कार अनुरोधों में प्रदर्शित होगा।</small>
+                            </div>
+
+                            <!-- 2. प्रोफ़ाइल आइकन चुनने के 5 विकल्प -->
+                            <div class="profile-icon-picker-box">
+                                <div class="profile-icon-picker-header">
+                                    <label class="form-label" style="margin-bottom: 0;"><strong>🎭 अपना प्रोफ़ाइल आइकन चुनें (5 विकल्प):</strong></label>
+                                    <span class="badge badge-tool" id="selected-icon-label-badge">चयनित: ज्ञानकोश विद्वान</span>
+                                </div>
+                                <div class="profile-icon-options-grid" id="profile-icon-options-grid" role="radiogroup" aria-label="प्रोफ़ाइल आइकन चुनें">
+                                    <button type="button" class="profile-icon-option-btn active" data-profile-icon="📚" data-icon-title="ज्ञानकोश विद्वान">
+                                        <span class="pio-emoji">📚</span>
+                                        <span class="pio-name">ज्ञानकोश विद्वान</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🪶" data-icon-title="संपादक कलम">
+                                        <span class="pio-emoji">🪶</span>
+                                        <span class="pio-name">संपादक कलम</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🌐" data-icon-title="विकि ग्लोब">
+                                        <span class="pio-emoji">🌐</span>
+                                        <span class="pio-name">विकि ग्लोब</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🏛️" data-icon-title="साहित्य स्तंभ">
+                                        <span class="pio-emoji">🏛️</span>
+                                        <span class="pio-name">साहित्य स्तंभ</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🚀" data-icon-title="नवप्रवर्तक">
+                                        <span class="pio-emoji">🚀</span>
+                                        <span class="pio-name">नवप्रवर्तक</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- एडमिन त्वरित प्रवेश कार्ड (केवल विक्रम प्रताप / amankumar.wikimedian@gmail.com के लिए ही प्रदर्शित) -->
                     <div id="overview-admin-quick-card" class="anime-admin-spotlight-card" style="display: none;">
                         <div class="anime-admin-spotlight-info">
-                            <span class="anime-hud-tag">🛡️ ADMIN AUTHORITY ACTIVE // मुख्य प्रशासक</span>
+                            <span class="anime-hud-tag">🛡️ मुख्य प्रशासक अधिकार सक्रिय</span>
                             <h3>एडमिन नियंत्रण पैनल आपके प्रोफ़ाइल में सक्रिय है (विक्रम प्रताप)</h3>
-                            <p>आप अधिकृत मुख्य प्रशासक (<code>amankumar.wikimedian@gmail.com</code>) हैं। सदस्यों द्वारा भेजे गए 'बहिष्कार सूची में जोड़ें' अनुरोधों की समीक्षा व स्वीकृति करें।</p>
+                            <p>आप अधिकृत मुख्य प्रशासक (<code>amankumar.wikimedian@gmail.com</code>) हैं। सदस्यों द्वारा भेजे गए बहिष्कार अनुरोधों की समीक्षा व स्वीकृति करें।</p>
                         </div>
                         <button type="button" class="btn btn-warning btn-sm" data-jump-profile-section="sec-profile-admin">
                             🛡️ एडमिन पैनल खोलें →
@@ -306,7 +307,7 @@
                             <div class="anime-tile-icon">🎨</div>
                             <div class="anime-tile-body">
                                 <h3>रंग एवं थीम स्टूडियो</h3>
-                                <p>1-टच में विकिमीडिया क्लासिक, साकुरा लाइट, एनीमे डार्क या नियो-टोक्यो थीम और 8 एक्सेंट रंग पैलेट बदलें।</p>
+                                <p>1-टच में विकिमीडिया क्लासिक, साकुरा पेस्टल, इंडिगो डार्क या मिडनाइट थीम और 8 एक्सेंट रंग पैलेट बदलें।</p>
                                 <button type="button" class="btn btn-outline btn-sm" data-jump-profile-section="sec-profile-theme">
                                     🎨 थीम स्टूडियो खोलें →
                                 </button>
@@ -317,7 +318,7 @@
                             <div class="anime-tile-icon">📜</div>
                             <div class="anime-tile-body">
                                 <h3>मेरा गतिविधि लॉग व इतिहास</h3>
-                                <p>आपके द्वारा विश्लेषित सभी विकिपीडिया लेखों का समयबद्ध रिकॉर्ड देखें और 1-क्लिक में उन्हें पुनः कार्यपटल में लोड करें।</p>
+                                <p>आपके पुराने एवं नए सभी विश्लेषित विकिपीडिया लेखों का रिकॉर्ड सुरक्षित रहता है — लॉगआउट के बाद दोबारा लॉगिन करने पर भी सभी पुराने लॉग उपलब्ध रहते हैं।</p>
                                 <button type="button" class="btn btn-outline btn-sm" data-jump-profile-section="sec-profile-logs">
                                     📜 गतिविधि लॉग देखें →
                                 </button>
@@ -326,16 +327,21 @@
                     </div>
                 </section>
 
-                <!-- ==================== अनुभाग 2: रंग एवं थीम स्टूडियो (Theme & Color Studio) ==================== -->
+                <!-- ==================== अनुभाग 2: रंग एवं थीम स्टूडियो (Optimized Theme & Color Studio) ==================== -->
                 <section id="sec-profile-theme" class="anime-profile-pane" role="tabpanel" style="display: none;">
                     <div id="profile-theme-studio" class="card workbench-card profile-theme-studio-card anime-cel-card">
                         <div class="workbench-card-header profile-theme-studio-header">
                             <div>
-                                <span class="anime-hud-tag">✦ ANIME THEME & COLOR STUDIO ✦</span>
-                                <h2 class="workbench-card-title">🎨 प्रोफ़ाइल रंग एवं थीम स्टूडियो (Logical Theme & Color Studio)</h2>
-                                <small class="form-hint">यहाँ से चुनी गई थीम, एक्सेंट रंग और कार्ड शैली आपके पूरे उपकरण पर स्वतः लागू व सुरक्षित रहती है</small>
+                                <span class="anime-hud-tag">🎨 वैयक्तिकृत रंग एवं थीम नियंत्रण</span>
+                                <h2 class="workbench-card-title">प्रोफ़ाइल रंग एवं थीम स्टूडियो (Theme & Color Studio)</h2>
+                                <small class="form-hint">यहाँ से चुनी गई थीम, एक्सेंट रंग और कार्ड शैली आपके पूरे उपकरण पर तुरंत लागू होती है और लॉगआउट के बाद भी सुरक्षित रहती है</small>
                             </div>
-                            <span class="badge badge-tool">Auto-Saved in Profile</span>
+                            <div class="theme-studio-header-actions">
+                                <span class="badge badge-success" id="active-skin-badge">विकिमीडिया क्लासिक</span>
+                                <button type="button" id="btn-reset-color-palette" class="btn btn-outline btn-sm" title="डिफ़ॉल्ट रंग व थीम पर वापस जाएँ">
+                                    ↺ डिफ़ॉल्ट रीसेट करें
+                                </button>
+                            </div>
                         </div>
 
                         <div class="workbench-card-body">
@@ -345,8 +351,8 @@
                                     <div class="theme-block-title-row">
                                         <span class="theme-step-badge">01</span>
                                         <div>
-                                            <h3 class="theme-studio-subtitle">मुख्य थीम प्रीसेट (Theme Skin Presets)</h3>
-                                            <p class="theme-studio-desc">शीर्ष पट्टी के डार्क/लाइट बटन के अतिरिक्त यहाँ से विशिष्ट विज़ुअल स्किन चुनें:</p>
+                                            <h3 class="theme-studio-subtitle">मुख्य थीम प्रीसेट चुनें (Theme Presets — Light & Dark)</h3>
+                                            <p class="theme-studio-desc">दिन या रात्रि संपादन के अनुसार अपनी पसंदीदा पृष्ठभूमि व कंट्रास्ट थीम चुनें:</p>
                                         </div>
                                     </div>
                                     <div class="skin-preset-grid">
@@ -360,21 +366,21 @@
                                         <button type="button" class="skin-preset-card" data-skin-preset="sakura-day">
                                             <span class="skin-swatch swatch-sakura"></span>
                                             <span class="skin-meta">
-                                                <strong>साकुरा एनीमे लाइट (Sakura)</strong>
+                                                <strong>साकुरा पेस्टल (Soft Light)</strong>
                                                 <small>कोमल गुलाबी-बैंगनी पेस्टल थीम</small>
                                             </span>
                                         </button>
                                         <button type="button" class="skin-preset-card" data-skin-preset="anime-spirit">
                                             <span class="skin-swatch swatch-anime"></span>
                                             <span class="skin-meta">
-                                                <strong>एनीमे स्पिरिट (Dark)</strong>
+                                                <strong>इंडिगो नाइट (Indigo Dark)</strong>
                                                 <small>गहरा इंडिगो एवं निऑन सियान</small>
                                             </span>
                                         </button>
                                         <button type="button" class="skin-preset-card" data-skin-preset="cyber-shonen">
                                             <span class="skin-swatch swatch-cyber"></span>
                                             <span class="skin-meta">
-                                                <strong>नियो-टोक्यो (Midnight)</strong>
+                                                <strong>मिडनाइट डार्क (Midnight)</strong>
                                                 <small>रात्रि संपादन हेतु उच्च कंट्रास्ट</small>
                                             </span>
                                         </button>
@@ -385,12 +391,12 @@
                                 <div class="theme-studio-block">
                                     <div class="theme-block-title-row">
                                         <span class="theme-step-badge">02</span>
-                                        <div style="flex: 1;">
-                                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                                                <h3 class="theme-studio-subtitle">1-टच रंग पैलेट (Accent Color Palette)</h3>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div class="theme-block-title-flex">
+                                                <h3 class="theme-studio-subtitle">1-टच एक्सेंट रंग पैलेट (Accent Color Palette)</h3>
                                                 <span class="palette-active-badge" id="active-palette-name-badge">डिफ़ॉल्ट थीम रंग</span>
                                             </div>
-                                            <p class="theme-studio-desc">बटन, हाइलाइट और बैज के लिए अपना पसंदीदा प्राथमिक रंग चुनें:</p>
+                                            <p class="theme-studio-desc">बटन, हाइलाइट और बैज के लिए अपना पसंदीदा प्राथमिक रंग चुनें (1-क्लिक में लागू):</p>
                                         </div>
                                     </div>
 
@@ -429,18 +435,17 @@
                                         </button>
                                     </div>
 
-                                    <!-- कार्ड बॉर्डर शैली एवं रीसेट नियंत्रण -->
+                                    <!-- भाग C: कार्ड बॉर्डर शैली नियंत्रण -->
                                     <div class="profile-card-style-bar">
                                         <div class="card-style-selector">
-                                            <span class="card-style-label">कार्ड बॉर्डर शैली:</span>
-                                            <button type="button" class="card-style-chip active" data-card-style-opt="flat">समतल (Flat)</button>
-                                            <button type="button" class="card-style-chip" data-card-style-opt="glass">ग्लास (Glass)</button>
-                                            <button type="button" class="card-style-chip" data-card-style-opt="manga">मंगा (Manga)</button>
-                                            <button type="button" class="card-style-chip" data-card-style-opt="minimal">सूक्ष्म (Minimal)</button>
+                                            <span class="card-style-label"><strong>03. कार्ड बॉर्डर शैली:</strong></span>
+                                            <div class="card-style-chips-wrap">
+                                                <button type="button" class="card-style-chip active" data-card-style-opt="flat">समतल (Flat)</button>
+                                                <button type="button" class="card-style-chip" data-card-style-opt="glass">ग्लास (Glass)</button>
+                                                <button type="button" class="card-style-chip" data-card-style-opt="cel">उभरा (Elevated)</button>
+                                                <button type="button" class="card-style-chip" data-card-style-opt="minimal">सूक्ष्म (Minimal)</button>
+                                            </div>
                                         </div>
-                                        <button type="button" id="btn-reset-color-palette" class="btn btn-outline btn-sm">
-                                            ↺ डिफ़ॉल्ट रंग रीसेट
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -454,8 +459,9 @@
                         <div class="user-logs-section" style="margin-top: 0; padding-top: 0; border-top: none;">
                             <div class="user-logs-toolbar">
                                 <div>
-                                    <span class="anime-hud-tag">✦ CLOUD & LOCAL ACTIVITY LOGS ✦</span>
-                                    <h3 class="user-logs-heading">📜 मेरी हालिया गतिविधि एवं विश्लेषित लेख लॉग</h3>
+                                    <span class="anime-hud-tag">📜 स्थायी खाता एवं गतिविधि इतिहास</span>
+                                    <h3 class="user-logs-heading">मेरी हालिया गतिविधि एवं विश्लेषित लेख लॉग</h3>
+                                    <small class="form-hint">लॉगआउट करने के बाद भी आपकी जानकारी व पुराने लॉग सुरक्षित रहते हैं और दोबारा लॉगिन करने पर स्वतः दिखते हैं।</small>
                                 </div>
                                 <div class="user-logs-actions">
                                     <input type="text" id="user-logs-search" class="form-control form-control-sm" placeholder="लॉग में लेख या क्रिया खोजें..." style="max-width: 220px;">
@@ -493,7 +499,7 @@
                     <div id="admin-panel-card" class="card workbench-card admin-panel-card anime-cel-card" style="display: none; margin-top: 0;">
                         <div class="workbench-card-header admin-panel-header">
                             <div>
-                                <span class="anime-hud-tag">🛡️ SUPREME ADMIN CONSOLE // केवल विक्रम प्रताप ✦</span>
+                                <span class="anime-hud-tag">🛡️ मुख्य प्रशासक नियंत्रण कक्ष • केवल विक्रम प्रताप</span>
                                 <h2 class="workbench-card-title">🛡️ एडमिन नियंत्रण पैनल (Admin Control Panel — विक्रम प्रताप)</h2>
                                 <small class="form-hint">केवल अधिकृत एडमिन (<strong>सदस्य नाम: विक्रम प्रताप</strong> | <code>amankumar.wikimedian@gmail.com</code>) के प्रोफ़ाइल के भीतर प्रदर्शित • बहिष्कार सूची अनुरोधों की समीक्षा एवं स्वीकृति</small>
                             </div>
@@ -560,7 +566,7 @@
             <div class="footer-zero-login-strip">
                 <span class="zero-login-badge">🔓 शून्य-लॉगिन स्वतंत्रता</span>
                 <p>
-                    <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। लॉगिन करने पर आप अपने नाम पर क्लिक करके इस विशेष एनीमे प्रोफ़ाइल पेज को खोल सकते हैं।
+                    <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। लॉगिन करने पर आप अपने नाम पर क्लिक करके इस विशेष प्रोफ़ाइल पेज को खोल सकते हैं।
                 </p>
             </div>
 
@@ -570,8 +576,8 @@
                     <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
                 <a href="logs.html" class="footer-page-card active" data-auth-only="true" style="display: none;">
-                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Anime Profile & Logs)</strong>
-                    <span>ऊर्ध्वाधर विकल्प, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Member Profile & Logs)</strong>
+                    <span>यूज़रनेम, 5 आइकन, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
                 </a>
                 <a href="about.html" class="footer-page-card">
                     <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
@@ -597,7 +603,7 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js"></script>
-    <script src="app.js" defer></script>
+    <script type="module" src="firebase-client.js?v=11"></script>
+    <script src="app.js?v=11" defer></script>
 </body>
 </html>

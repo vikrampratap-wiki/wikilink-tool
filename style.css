@@ -6534,7 +6534,42 @@ body[data-card-style="glass"] .workbench-flow-strip {
     }
 }
 
-/* ================== विशेष एनीमे-स्टाइल प्रोफ़ाइल पेज एवं ऊर्ध्वाधर विकल्प पट्टी (Anime Profile & Vertical Sidebar) ================== */
+/* ================== आधुनिक एनिमेटेड सदस्य प्रोफ़ाइल पोर्टल, आइकन चयन एवं ऑप्टिमाइज़्ड थीम स्टूडियो ================== */
+@keyframes profileAvatarPulse {
+    0%, 100% {
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25), 0 0 0 0 rgba(99, 102, 241, 0.28);
+    }
+    50% {
+        box-shadow: 0 12px 32px rgba(99, 102, 241, 0.36), 0 0 0 10px rgba(99, 102, 241, 0);
+    }
+}
+
+@keyframes profileFloatGentle {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-4px) scale(1.03);
+    }
+}
+
+@keyframes profilePaneReveal {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes iconPopBounce {
+    0% { transform: scale(0.88); }
+    60% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+
 .anime-profile-main {
     padding-top: 22px;
     padding-bottom: 44px;
@@ -6544,16 +6579,14 @@ body[data-card-style="glass"] .workbench-flow-strip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 4px 12px;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(236, 72, 153, 0.16));
+    background: var(--primary-light);
     color: var(--primary-color);
-    border: 1.5px solid var(--primary-color);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
     margin-bottom: 8px;
 }
 
@@ -6564,11 +6597,12 @@ body[data-card-style="glass"] .workbench-flow-strip {
     max-width: 680px;
     margin: 28px auto;
     background: var(--bg-card);
-    border: 2.5px solid var(--primary-color);
+    border: 1.5px solid var(--border-color);
     border-radius: 20px;
     padding: 36px 28px;
     text-align: center;
-    box-shadow: 0 14px 36px rgba(30, 27, 75, 0.14), 6px 6px 0 var(--primary-color);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+    animation: profilePaneReveal 0.35s ease both;
 }
 
 .anime-guest-lock-inner {
@@ -6580,8 +6614,18 @@ body[data-card-style="glass"] .workbench-flow-strip {
     gap: 12px;
 }
 
-.anime-chibi-guardian {
-    animation: mascotFloat 3.4s ease-in-out infinite;
+.profile-animated-lock-emblem {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    border: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    animation: profileFloatGentle 3s ease-in-out infinite;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
 }
 
 .anime-guest-lock-title {
@@ -6605,48 +6649,49 @@ body[data-card-style="glass"] .workbench-flow-strip {
     margin-top: 10px;
 }
 
-/* 2. मुख्य 2-स्तंभ एनीमे प्रोफ़ाइल शेल (बायाँ ऊर्ध्वाधर साइडबार + दायाँ मंच) */
+/* 2. मुख्य 2-स्तंभ प्रोफ़ाइल शेल (बायाँ ऊर्ध्वाधर साइडबार + दायाँ मंच) */
 .anime-profile-shell {
     display: grid;
-    grid-template-columns: 310px minmax(0, 1fr);
+    grid-template-columns: 305px minmax(0, 1fr);
     gap: 22px;
     align-items: start;
 }
 
-/* बायाँ ऊर्ध्वाधर साइडबार (Anime Vertical Sidebar) */
+/* बायाँ ऊर्ध्वाधर साइडबार (Modern Vertical Sidebar) */
 .anime-profile-sidebar {
     position: sticky;
     top: 84px;
     background: var(--bg-card);
-    border: 2.5px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     border-radius: 18px;
     padding: 18px 16px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 4px 4px 0 var(--primary-color);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
     display: flex;
     flex-direction: column;
     gap: 14px;
     overflow: hidden;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .anime-sidebar-hero-card {
     position: relative;
     background: linear-gradient(145deg, var(--primary-light), var(--bg-alt));
-    border: 2px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     border-radius: 14px;
-    padding: 18px 14px 14px;
+    padding: 20px 14px 16px;
     text-align: center;
     overflow: hidden;
 }
 
-.anime-sidebar-sparkles {
+.profile-hero-ambient-glow {
     position: absolute;
-    top: 8px;
-    right: 12px;
-    display: flex;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: var(--primary-color);
-    opacity: 0.75;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--primary-color) 25%, transparent) 0%, transparent 70%);
+    top: -45px;
+    right: -45px;
+    pointer-events: none;
 }
 
 .anime-avatar-halo-wrap {
@@ -6654,27 +6699,39 @@ body[data-card-style="glass"] .workbench-flow-strip {
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .anime-avatar-ring {
     position: relative;
-    width: 78px;
-    height: 78px;
+    width: 82px;
+    height: 82px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), #ec4899, #f59e0b);
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-blue, #3b82f6));
     padding: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.28);
+    animation: profileAvatarPulse 3.2s ease-in-out infinite;
+    transition: transform 0.25s ease;
 }
 
-.anime-chibi-portrait {
+.anime-avatar-ring:hover {
+    transform: scale(1.06);
+}
+
+.profile-main-avatar-icon {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.35rem;
+    line-height: 1;
+    user-select: none;
+    animation: profileFloatGentle 3.6s ease-in-out infinite;
 }
 
 .anime-avatar-initial-badge {
@@ -6686,32 +6743,53 @@ body[data-card-style="glass"] .workbench-flow-strip {
     border-radius: 50%;
     background: var(--primary-color);
     color: #ffffff;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--bg-card);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.anime-rank-pill {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: #1e1b4b;
-    color: #facc15;
-    border: 1.5px solid #facc15;
+.sidebar-username-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    max-width: 100%;
+    margin-bottom: 2px;
 }
 
 .anime-sidebar-username {
-    font-size: 1.18rem;
+    font-size: 1.16rem;
     font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: 2px;
+    margin: 0;
     word-break: break-word;
+}
+
+.sidebar-edit-name-btn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.76rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.sidebar-edit-name-btn:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: #ffffff;
+    transform: scale(1.1);
 }
 
 .anime-sidebar-email {
@@ -6722,10 +6800,9 @@ body[data-card-style="glass"] .workbench-flow-strip {
 }
 
 .anime-vnav-section-label {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.07em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
     color: var(--text-muted);
     padding: 0 4px;
 }
@@ -6744,26 +6821,26 @@ body[data-card-style="glass"] .workbench-flow-strip {
     gap: 12px;
     padding: 11px 12px;
     border-radius: 12px;
-    border: 2px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     background: var(--bg-alt);
     color: var(--text-primary);
     text-align: left;
     cursor: pointer;
-    transition: all 0.18s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     font-family: inherit;
 }
 
 .anime-vnav-btn:hover {
     border-color: var(--primary-color);
     background: var(--primary-light);
-    transform: translateX(3px);
+    transform: translateX(4px);
 }
 
 .anime-vnav-btn.active {
     background: linear-gradient(135deg, var(--primary-color), var(--accent-blue, #3b82f6));
     color: #ffffff;
     border-color: var(--primary-color);
-    box-shadow: 3px 3px 0 rgba(30, 27, 75, 0.28);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--primary-color) 28%, transparent);
 }
 
 .anime-vnav-btn .vnav-icon {
@@ -6807,6 +6884,12 @@ body[data-card-style="glass"] .workbench-flow-strip {
     font-size: 0.95rem;
     font-weight: 800;
     opacity: 0.75;
+    transition: transform 0.2s ease;
+}
+
+.anime-vnav-btn:hover .vnav-arrow,
+.anime-vnav-btn.active .vnav-arrow {
+    transform: translateX(2px);
 }
 
 .anime-vnav-admin-btn:not(.active) {
@@ -6819,7 +6902,7 @@ body[data-card-style="glass"] .workbench-flow-strip {
     flex-direction: column;
     gap: 8px;
     padding-top: 12px;
-    border-top: 1.5px dashed var(--border-color);
+    border-top: 1px dashed var(--border-color);
 }
 
 .anime-vnav-action-link {
@@ -6827,7 +6910,7 @@ body[data-card-style="glass"] .workbench-flow-strip {
     justify-content: center;
 }
 
-/* दायाँ मंच (Anime Profile Stage) */
+/* दायाँ मंच (Profile Stage) */
 .anime-profile-stage {
     min-width: 0;
     display: flex;
@@ -6836,14 +6919,14 @@ body[data-card-style="glass"] .workbench-flow-strip {
 }
 
 .anime-profile-pane {
-    animation: fadeIn 0.22s ease;
+    animation: profilePaneReveal 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .anime-stage-banner {
     position: relative;
     overflow: hidden;
     background: linear-gradient(135deg, var(--bg-card) 0%, var(--primary-light) 100%);
-    border: 2.5px solid var(--primary-color);
+    border: 1.5px solid color-mix(in srgb, var(--primary-color) 35%, var(--border-color));
     border-radius: 18px;
     padding: 22px 24px;
     margin-bottom: 18px;
@@ -6851,7 +6934,7 @@ body[data-card-style="glass"] .workbench-flow-strip {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    box-shadow: 4px 4px 0 var(--primary-color);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
 .anime-stage-title {
@@ -6870,43 +6953,433 @@ body[data-card-style="glass"] .workbench-flow-strip {
 
 .anime-stat-crest {
     font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 800;
     padding: 10px 16px;
     border-radius: 12px;
     background: var(--bg-card);
-    border: 2px solid var(--primary-color);
+    border: 1.5px solid var(--primary-color);
     color: var(--primary-color);
-    box-shadow: 3px 3px 0 var(--primary-color);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
     white-space: nowrap;
+    animation: profileFloatGentle 3.8s ease-in-out infinite;
 }
 
+/* 3. प्रोफ़ाइल वैयक्तिकीकरण कार्ड: यूज़रनेम संपादन + 5 आइकन चयन */
+.profile-customizer-card {
+    margin-bottom: 18px;
+    border-radius: 18px !important;
+    border: 1.5px solid var(--border-color) !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06) !important;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.profile-customizer-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-username-edit-box {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+.profile-username-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.profile-username-input-row .form-control {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-icon-picker-box {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+.profile-icon-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.profile-icon-options-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.profile-icon-option-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.profile-icon-option-btn:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.profile-icon-option-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 24%, transparent), 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.profile-icon-option-btn.active .pio-emoji {
+    animation: iconPopBounce 0.38s ease;
+}
+
+.pio-emoji {
+    font-size: 1.85rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+}
+
+.profile-icon-option-btn.active .pio-emoji {
+    background: var(--bg-card);
+    border-color: var(--primary-color);
+}
+
+.pio-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.25;
+}
+
+/* 4. ऑप्टिमाइज़्ड प्रोफ़ाइल रंग एवं थीम स्टूडियो (Optimized Theme & Color Studio) */
+.profile-theme-studio-card {
+    border-radius: 18px !important;
+    border: 1.5px solid var(--border-color) !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06) !important;
+}
+
+.profile-theme-studio-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.theme-studio-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-theme-logical-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.theme-studio-block {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.theme-block-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.theme-block-title-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.theme-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 35%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.theme-studio-subtitle {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+}
+
+.theme-studio-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.45;
+}
+
+.skin-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.skin-preset-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.skin-preset-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.skin-preset-card.active {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 22%, transparent);
+}
+
+.skin-swatch {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.swatch-wiki {
+    background: linear-gradient(135deg, #2a4b8d 0%, #3b82f6 55%, #f8fafc 100%);
+}
+
+.swatch-sakura {
+    background: linear-gradient(135deg, #db2777 0%, #f472b6 55%, #fdf2f8 100%);
+}
+
+.swatch-anime {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 55%, #06b6d4 100%);
+}
+
+.swatch-cyber {
+    background: linear-gradient(135deg, #090d16 0%, #1e293b 55%, #38bdf8 100%);
+}
+
+.skin-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.skin-meta strong {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.skin-meta small {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    line-height: 1.35;
+}
+
+.palette-active-badge {
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+}
+
+.touch-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.palette-swatch-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 11px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.palette-swatch-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.08);
+}
+
+.palette-swatch-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 22%, transparent);
+}
+
+.swatch-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.swatch-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-card-style-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.card-style-selector {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+}
+
+.card-style-label {
+    font-size: 0.84rem;
+    color: var(--text-primary);
+}
+
+.card-style-chips-wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.card-style-chip {
+    padding: 6px 13px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.18s ease;
+}
+
+.card-style-chip:hover {
+    border-color: var(--primary-color);
+}
+
+.card-style-chip.active {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+}
+
+/* 5. अन्य प्रोफ़ाइल कार्ड्स एवं टाइल्स */
 .anime-cel-box {
-    border: 2px solid var(--border-color) !important;
+    border: 1.5px solid var(--border-color) !important;
     border-radius: 14px !important;
-    box-shadow: 3px 3px 0 var(--border-color);
-    transition: transform 0.16s ease, border-color 0.16s ease;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .anime-cel-box:hover {
     transform: translateY(-2px);
     border-color: var(--primary-color) !important;
-    box-shadow: 3px 3px 0 var(--primary-color);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.09);
 }
 
 .anime-cel-card {
-    border: 2.5px solid var(--border-color) !important;
+    border: 1.5px solid var(--border-color) !important;
     border-radius: 18px !important;
-    box-shadow: 4px 4px 0 var(--primary-color) !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06) !important;
 }
 
 .anime-admin-spotlight-card {
     margin-top: 18px;
     padding: 18px 20px;
     border-radius: 16px;
-    border: 2.5px solid #f59e0b;
+    border: 1.5px solid #f59e0b;
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), var(--bg-card));
-    box-shadow: 4px 4px 0 #d97706;
+    box-shadow: 0 10px 24px rgba(217, 119, 6, 0.12);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -6935,20 +7408,20 @@ body[data-card-style="glass"] .workbench-flow-strip {
 
 .anime-feature-tile {
     background: var(--bg-card);
-    border: 2px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     border-radius: 16px;
     padding: 18px;
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    box-shadow: 3px 3px 0 var(--border-color);
-    transition: transform 0.16s ease, border-color 0.16s ease;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .anime-feature-tile:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     border-color: var(--primary-color);
-    box-shadow: 3px 3px 0 var(--primary-color);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.09);
 }
 
 .anime-tile-icon {
@@ -6956,7 +7429,7 @@ body[data-card-style="glass"] .workbench-flow-strip {
     height: 44px;
     border-radius: 12px;
     background: var(--primary-light);
-    border: 1.5px solid var(--primary-color);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6978,6 +7451,7 @@ body[data-card-style="glass"] .workbench-flow-strip {
     margin-bottom: 12px;
 }
 
+/* प्रोफ़ाइल व थीम स्टूडियो सर्व-उपकरण रिस्पॉन्सिव नियम */
 @media (max-width: 920px) {
     .anime-profile-shell {
         grid-template-columns: 1fr;
@@ -6992,8 +7466,115 @@ body[data-card-style="glass"] .workbench-flow-strip {
         align-items: flex-start;
         padding: 18px;
     }
+
+    .profile-icon-options-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .touch-palette-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
+@media (max-width: 640px) {
+    .profile-username-input-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
+    .profile-username-input-row .btn {
+        width: 100%;
+        justify-content: center;
+    }
 
+    .profile-icon-options-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
+    .skin-preset-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .touch-palette-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .theme-studio-block {
+        padding: 12px;
+    }
+}
+
+/* ================== प्रोफ़ाइल थीम स्टूडियो के 4 प्रीसेट एवं कार्ड बॉर्डर शैलियों के समन्वित वेरिएबल्स ================== */
+body[data-skin="sakura-day"] {
+    --primary-color: #db2777;
+    --primary-hover: #be185d;
+    --primary-light: #fdf2f8;
+    --accent-blue: #ec4899;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --bg-main: #fff9fc;
+    --bg-card: #ffffff;
+    --bg-alt: #fce7f3;
+    --bg-input: #ffffff;
+    --border-color: #f9a8d4;
+    --border-focus: #db2777;
+}
+
+[data-theme="dark"] body[data-skin="sakura-day"],
+body[data-theme="dark"][data-skin="sakura-day"] {
+    --primary-color: #f472b6;
+    --primary-hover: #f9a8d4;
+    --primary-light: #3b1734;
+    --accent-blue: #f472b6;
+    --bg-main: #180d16;
+    --bg-card: #241322;
+    --bg-alt: #331a30;
+    --bg-input: #1d0f1b;
+    --border-color: #6b2957;
+}
+
+body[data-skin="anime-spirit"],
+[data-theme="dark"] body[data-skin="anime-spirit"] {
+    --primary-color: #818cf8;
+    --primary-hover: #a5b4fc;
+    --primary-light: #1e294b;
+    --accent-blue: #38bdf8;
+    --accent-green: #34d399;
+    --accent-orange: #fbbf24;
+    --accent-red: #f87171;
+    --bg-main: #0b0f1d;
+    --bg-card: #131b31;
+    --bg-alt: #1e294a;
+    --bg-input: #0e1526;
+    --border-color: #37497e;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+}
+
+body[data-skin="cyber-shonen"],
+[data-theme="dark"] body[data-skin="cyber-shonen"] {
+    --primary-color: #38bdf8;
+    --primary-hover: #7dd3fc;
+    --primary-light: #15314b;
+    --accent-blue: #22d3ee;
+    --accent-green: #34d399;
+    --accent-orange: #fbbf24;
+    --accent-red: #fb7185;
+    --bg-main: #070b14;
+    --bg-card: #0f172a;
+    --bg-alt: #162238;
+    --bg-input: #09101d;
+    --border-color: #263c5e;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+}
+
+body[data-card-style="minimal"] .workbench-card,
+body[data-card-style="minimal"] .card {
+    border: 1px solid var(--border-light) !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 12px !important;
+}

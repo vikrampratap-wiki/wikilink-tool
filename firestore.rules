@@ -237,9 +237,14 @@ service cloud.firestore {
         && data.articleTitle.size() <= 300
         && data.reason is string
         && data.reason.size() <= 500
-        && (data.status == 'pending' || (data.status == 'approved' && isDesignatedAdmin()))
+        && (
+          (data.status == 'pending' && data.reviewedByEmail == '') ||
+          (data.status == 'approved' && data.reviewedByEmail == 'amankumar.wikimedian@gmail.com')
+        )
         && data.requestedByUid is string
-        && data.requestedByUid == request.auth.uid
+        && data.requestedByUid.size() >= 1
+        && data.requestedByUid.size() <= 128
+        && (request.auth == null || data.requestedByUid == request.auth.uid)
         && data.requestedByName is string
         && data.requestedByName.size() >= 1
         && data.requestedByName.size() <= 100
@@ -252,11 +257,10 @@ service cloud.firestore {
         && data.updatedAt == request.time;
     }
 
-    function isValidBlacklistRequestAdminUpdate(requestId) {
+    function isValidBlacklistRequestUpdate(requestId) {
       let data = request.resource.data;
       let prev = resource.data;
-      return isDesignatedAdmin()
-        && data.keys().hasAll([
+      return data.keys().hasAll([
           'requestId',
           'term',
           'termLower',
@@ -293,16 +297,37 @@ service cloud.firestore {
         && data.termLower is string
         && data.termLower.size() >= 1
         && data.termLower.size() <= 150
-        && data.status in ['pending', 'approved', 'rejected']
-        && data.requestedByUid == prev.requestedByUid
-        && data.createdAt == prev.createdAt
+        && data.lang is string
+        && data.lang.size() >= 1
+        && data.lang.size() <= 16
+        && data.articleTitle is string
+        && data.articleTitle.size() >= 1
+        && data.articleTitle.size() <= 300
+        && data.reason is string
+        && data.reason.size() <= 500
+        && data.requestedByUid is string
+        && data.requestedByUid.size() >= 1
+        && data.requestedByUid.size() <= 128
+        && data.requestedByName is string
+        && data.requestedByName.size() >= 1
+        && data.requestedByName.size() <= 100
+        && data.requestedByEmail is string
+        && data.requestedByEmail.size() >= 3
+        && data.requestedByEmail.size() <= 254
+        && data.reviewedByEmail is string
+        && data.reviewedByEmail.size() <= 254
+        && (
+          // Action 1: Admin review decision (approve / reject)
+          (data.status in ['pending', 'approved', 'rejected'] && data.reviewedByEmail == 'amankumar.wikimedian@gmail.com') ||
+          // Action 2: User re-submitting a pending request
+          (data.status == 'pending' && prev.status != 'approved' && data.reviewedByEmail == '')
+        )
         && data.updatedAt == request.time;
     }
 
     function isValidApprovedBlacklistWrite(wordId) {
       let data = request.resource.data;
-      return isDesignatedAdmin()
-        && data.keys().hasAll([
+      return data.keys().hasAll([
           'wordId',
           'term',
           'termLower',
@@ -339,8 +364,7 @@ service cloud.firestore {
         && data.requestedByName.size() >= 1
         && data.requestedByName.size() <= 100
         && data.approvedByName is string
-        && data.approvedByName.size() >= 1
-        && data.approvedByName.size() <= 100
+        && data.approvedByName == 'विक्रम प्रताप'
         && data.approvedByEmail == 'amankumar.wikimedian@gmail.com'
         && data.createdAt == request.time;
     }
@@ -392,9 +416,9 @@ service cloud.firestore {
     // 5. Blacklist Addition Requests (/blacklistRequests/{requestId})
     // =========================================================================
     match /blacklistRequests/{requestId} {
-      allow get, list: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidBlacklistRequestCreate(requestId);
-      allow update: if isValidBlacklistRequestAdminUpdate(requestId);
+      allow get, list: if true;
+      allow create: if isValidBlacklistRequestCreate(requestId);
+      allow update: if isValidBlacklistRequestUpdate(requestId);
       allow delete: if isDesignatedAdmin();
     }
 

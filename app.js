@@ -636,14 +636,19 @@
             showToast('ऑफ़लाइन मोड सक्रिय: मुख्य कार्यपटल बिना इंटरनेट के कार्यशील है');
         });
 
-        // Service Worker पंजीकरण (./sw.js को लोड के बाद शांत समय में पंजीकृत करें ताकि मोबाइल PageSpeed LCP/TBT बाधित न हो)
+        // Service Worker पंजीकरण (./sw.js?v=9 को अपडेट करें ताकि पुराना कैश तुरंत हटे)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 setTimeout(() => {
-                    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
+                    navigator.serviceWorker.register('./sw.js?v=9', { scope: './' }).then((reg) => {
+                        reg.update().catch(() => {});
+                        if (reg.waiting) {
+                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    }).catch((err) => {
                         console.warn('Service Worker registration warning:', err);
                     });
-                }, 3500);
+                }, 1200);
             }, { once: true });
         }
     }
@@ -2447,6 +2452,13 @@
         DOM.suggestionsTbody.innerHTML = '';
         const visibleList = getFilteredSuggestions();
         const isLoggedIn = Boolean(currentUser && currentUser.email);
+        const isUserAdmin = Boolean(
+            currentUser &&
+            currentUser.email &&
+            currentUser.email.trim().toLowerCase() === 'amankumar.wikimedian@gmail.com' &&
+            currentUser.name &&
+            (currentUser.name.trim() === 'विक्रम प्रताप' || currentUser.name.trim().includes('विक्रम प्रताप'))
+        );
 
         if (visibleList.length === 0) {
             DOM.suggestionsTbody.innerHTML = `
@@ -2481,6 +2493,13 @@
                 `<span class="context-highlight">${escapeHtml(s.term)}</span>`
             );
 
+            const globalBlBtnLabel = isUserAdmin
+                ? '🚫 बहिष्कार सूची में जोड़ें'
+                : '📩 बहिष्कार हेतु अनुरोध करें';
+            const globalBlBtnTitle = isUserAdmin
+                ? 'एडमिन अधिकार: इस शब्द को सीधे वैश्विक बहिष्कार सूची में जोड़ें'
+                : 'इस शब्द को वैश्विक बहिष्कार सूची में जोड़ने हेतु एडमिन (विक्रम प्रताप) को अनुरोध भेजें';
+
             tr.innerHTML = `
                 <td class="td-checkbox-cell" data-label="चयन">
                     <input type="checkbox" class="suggestion-checkbox" data-id="${s.id}" ${s.checked ? 'checked' : ''} aria-label="${escapeHtml(s.term)} चुनें">
@@ -2506,10 +2525,10 @@
                 <td class="td-actions-cell" data-label="क्रियाएँ">
                     <div class="review-action-btns">
                         <button type="button" class="btn btn-outline btn-sm edit-target-btn" data-id="${s.id}" title="लक्ष्य पृष्ठ संशोधित करें">संशोधन</button>
-                        <button type="button" class="btn btn-outline btn-sm blacklist-term-btn text-danger" data-term="${escapeHtml(s.term)}" title="इस शब्द को अपनी स्थानीय सूची में अनदेखा करें">अनदेखा</button>
+                        <button type="button" class="btn btn-outline btn-sm blacklist-term-btn text-danger" data-term="${escapeHtml(s.term)}" title="इस शब्द को केवल अपनी स्थानीय सूची में अनदेखा करें">अनदेखा</button>
                         ${isLoggedIn ? `
-                            <button type="button" class="btn btn-warning-soft btn-sm request-global-bl-btn" data-term="${escapeHtml(s.term)}" title="एडमिन (विक्रम प्रताप) की सहमति से वैश्विक बहिष्कार सूची में जोड़ने हेतु अनुरोध भेजें">
-                                🚫 बहिष्कार सूची में जोड़ें
+                            <button type="button" class="btn btn-warning-soft btn-sm request-global-bl-btn" data-term="${escapeHtml(s.term)}" title="${globalBlBtnTitle}">
+                                ${globalBlBtnLabel}
                             </button>
                         ` : ''}
                     </div>
@@ -2544,15 +2563,16 @@
             if (reqGlobalBlBtn) {
                 reqGlobalBlBtn.addEventListener('click', async () => {
                     if (!currentUser || !currentUser.email) {
-                        showToast('कृपया वैश्विक बहिष्कार सूची अनुरोध भेजने के लिए लॉगिन करें।');
+                        showToast('कृपया बहिष्कार अनुरोध भेजने के लिए पहले लॉगिन करें।');
                         return;
                     }
                     reqGlobalBlBtn.disabled = true;
-                    reqGlobalBlBtn.textContent = 'अनुरोध भेजा जा रहा है...';
+                    reqGlobalBlBtn.textContent = isUserAdmin ? '⏳ जोड़ा जा रहा है...' : '⏳ अनुरोध भेजा जा रहा है...';
                     try {
-                        // यदि एडमिन स्वयं क्लिक कर रहे हैं तो सीधे स्वीकृत भी कर सकते हैं या अनुरोध भेज सकते हैं
+                        let reqResult = null;
                         if (window.WikiFirebase && window.WikiFirebase.submitBlacklistRequestToFirestore) {
-                            await window.WikiFirebase.submitBlacklistRequestToFirestore({
+                            reqResult = await window.WikiFirebase.submitBlacklistRequestToFirestore({
+                                term: s.term,
                                 word: s.term,
                                 lang: state.lang || 'hi',
                                 articleTitle: state.pageTitle || 'अशीर्षक लेख',
@@ -2561,21 +2581,42 @@
                                 requestedByName: currentUser.name
                             });
                         }
+
+                        if (isUserAdmin || (reqResult && reqResult.isAdmin)) {
+                            addWordToLocalApprovedBlacklist({
+                                word: s.term.toLowerCase(),
+                                lang: state.lang || 'hi',
+                                approvedBy: 'amankumar.wikimedian@gmail.com'
+                            });
+                        }
+
                         // वर्तमान सत्र से भी तुरंत हटाएँ ताकि उपयोगकर्ता को तत्काल लाभ मिले
                         state.customBlacklist.add(s.term.toLowerCase());
                         saveBlacklist();
                         state.suggestions = state.suggestions.filter(item => item.term.toLowerCase() !== s.term.toLowerCase());
                         renderSuggestionsTable();
                         recalculateModifiedWikitext();
-                        showToast(`'${s.term}' को बहिष्कार सूची में जोड़ने का अनुरोध एडमिन की सहमति हेतु भेज दिया गया है!`);
+
+                        logUserActivity(isUserAdmin ? 'वैश्विक बहिष्कार शब्द जोड़ा' : 'बहिष्कार हेतु अनुरोध भेजा', {
+                            title: state.pageTitle || 'अशीर्षक लेख',
+                            lang: state.lang || 'hi',
+                            note: `शब्द: '${s.term}' (${isUserAdmin ? 'एडमिन द्वारा सीधे स्वीकृत' : 'एडमिन सहमति हेतु लंबित'})`
+                        });
+
+                        if (isUserAdmin) {
+                            showToast(`✓ '${s.term}' को एडमिन द्वारा वैश्विक बहिष्कार सूची में सीधे जोड़ दिया गया है!`);
+                        } else {
+                            showToast(`✓ '${s.term}' के लिए बहिष्कार अनुरोध एडमिन (विक्रम प्रताप) की सहमति हेतु भेज दिया गया है!`);
+                        }
+
                         if (typeof refreshAdminAndApprovedBlacklist === 'function') {
                             refreshAdminAndApprovedBlacklist();
                         }
                     } catch (err) {
                         console.warn('Blacklist request error:', err);
-                        showToast(`'${s.term}' अनुरोध सहेजने में त्रुटि: कृपया पुनः प्रयास करें।`);
+                        showToast(`'${s.term}' अनुरोध सहेजने में त्रुटि: ${err.message || 'कृपया पुनः प्रयास करें।'}`);
                         reqGlobalBlBtn.disabled = false;
-                        reqGlobalBlBtn.textContent = '🚫 बहिष्कार सूची में जोड़ें';
+                        reqGlobalBlBtn.textContent = globalBlBtnLabel;
                     }
                 });
             }
@@ -4154,16 +4195,22 @@
     ];
 
     const SKIN_LABELS = {
-        'wikimedia-classic': 'विकी क्लासिक (Classic)',
-        'anime-sakura': 'साकुरा एनीमे (Sakura)',
-        'anime-mecha': 'साइबर मेका (Mecha)',
+        'wikimedia-classic': 'विकिमीडिया क्लासिक (Light)',
+        'sakura-day': 'साकुरा पेस्टल (Soft Light)',
+        'anime-spirit': 'इंडिगो नाइट (Indigo Dark)',
+        'cyber-shonen': 'मिडनाइट डार्क (Midnight)',
+        'anime-sakura': 'साकुरा पेस्टल (Sakura)',
+        'anime-mecha': 'साइबर इंडिगो (Indigo)',
         'anime-shinkai': 'शिनकाई स्काई (Sky)',
-        'anime-forest': 'जिबली फ़ॉरेस्ट (Forest)',
-        'anime-royal': 'रॉयल मैजिक (Royal)'
+        'anime-forest': 'एमराल्ड फ़ॉरेस्ट (Forest)',
+        'anime-royal': 'रॉयल वायलेट (Royal)'
     };
 
     const SKIN_PARTICLE_COLORS = {
         'wikimedia-classic': ['#3366cc', '#93c5fd', '#14866d', '#cbd5e1'],
+        'sakura-day': ['#f472b6', '#fbcfe8', '#ec4899', '#fda4af'],
+        'anime-spirit': ['#6366f1', '#38bdf8', '#a855f7', '#22d3ee'],
+        'cyber-shonen': ['#38bdf8', '#22d3ee', '#818cf8', '#f43f5e'],
         'anime-sakura': ['#f472b6', '#fbcfe8', '#ec4899', '#fda4af'],
         'anime-mecha': ['#6366f1', '#38bdf8', '#a855f7', '#22d3ee'],
         'anime-shinkai': ['#38bdf8', '#bae6fd', '#818cf8', '#f43f5e'],
@@ -4171,11 +4218,12 @@
         'anime-royal': ['#a78bfa', '#f472b6', '#fbbf24', '#c084fc']
     };
 
-    const CARD_STYLES = ['flat', 'cel', 'glass'];
+    const CARD_STYLES = ['flat', 'glass', 'cel', 'minimal'];
     const CARD_STYLE_NAMES = {
-        flat: 'बॉर्डर: Clean Classic',
-        cel: 'बॉर्डर: 3D Anime Cel',
-        glass: 'बॉर्डर: Anime Glass'
+        flat: 'समतल (Flat)',
+        glass: 'ग्लास (Glass)',
+        cel: 'उभरा (Elevated)',
+        minimal: 'सूक्ष्म (Minimal)'
     };
 
     let animeParticlesEnabled = true;
@@ -4203,7 +4251,7 @@
 
         const cycleStyleBtn = $('card-style-cycle-btn');
         if (cycleStyleBtn) {
-            cycleStyleBtn.textContent = CARD_STYLE_NAMES[savedCardStyle] || 'बॉर्डर: Clean Classic';
+            cycleStyleBtn.textContent = CARD_STYLE_NAMES[savedCardStyle] || 'समतल (Flat)';
             cycleStyleBtn.addEventListener('click', () => {
                 const cur = document.body.getAttribute('data-card-style') || 'flat';
                 const nextIdx = (CARD_STYLES.indexOf(cur) + 1) % CARD_STYLES.length;
@@ -4211,15 +4259,34 @@
                 document.body.setAttribute('data-card-style', nextStyle);
                 localStorage.setItem('wikilink_card_style_v3', nextStyle);
                 cycleStyleBtn.textContent = CARD_STYLE_NAMES[nextStyle];
-                showToast(CARD_STYLE_NAMES[nextStyle]);
+                showToast(`कार्ड बॉर्डर शैली: ${CARD_STYLE_NAMES[nextStyle]}`);
             });
         }
 
+        // 1. 1-टच रंग गोले एवं 8 एक्सेंट पैलेट स्वॉच
+        const PALETTE_PRESET_MAP = {
+            'default': null,
+            'wiki-blue': { id: 'wiki-blue', color: '#2a4b8d', accent: '#3b82f6', bg: '#f8fafc', label: 'रॉयल ब्लू' },
+            'sakura-pink': { id: 'sakura-pink', color: '#db2777', accent: '#f472b6', bg: '#fff5f9', label: 'साकुरा पिंक' },
+            'emerald-mint': { id: 'emerald-mint', color: '#059669', accent: '#34d399', bg: '#f2fbf7', label: 'एमराल्ड ग्रीन' },
+            'amethyst-violet': { id: 'amethyst-violet', color: '#7c3aed', accent: '#a78bfa', bg: '#f8f5ff', label: 'वायलेट' },
+            'sunset-amber': { id: 'sunset-amber', color: '#d97706', accent: '#fbbf24', bg: '#fffbeb', label: 'अंबर गोल्ड' },
+            'ocean-cyan': { id: 'ocean-cyan', color: '#0284c7', accent: '#22d3ee', bg: '#f0f9ff', label: 'ओशन सियान' },
+            'crimson-coral': { id: 'crimson-coral', color: '#e11d48', accent: '#fb7185', bg: '#fff1f2', label: 'क्रिमसन' }
+        };
+
         if (savedOneTouch && savedOneTouch.color) {
             applyOneTouchColorPalette(savedOneTouch.color, savedOneTouch.accent, savedOneTouch.bg, false);
+            const badgeEl = $('active-palette-name-badge');
+            if (badgeEl && savedOneTouch.label) {
+                badgeEl.textContent = savedOneTouch.label;
+            }
+            document.querySelectorAll('.palette-swatch-btn[data-palette-id]').forEach(b => {
+                const matchId = savedOneTouch.id || Object.keys(PALETTE_PRESET_MAP).find(k => PALETTE_PRESET_MAP[k]?.color === savedOneTouch.color);
+                b.classList.toggle('active', b.dataset.paletteId === (matchId || 'default'));
+            });
         }
 
-        // 1. 1-टच रंग गोले (Touch any color bubble to immediately recolor the entire UI)
         document.querySelectorAll('.color-bubble[data-onetouch-color]').forEach(bubble => {
             bubble.addEventListener('click', () => {
                 const color = bubble.dataset.onetouchColor;
@@ -4235,10 +4302,87 @@
             });
         });
 
-        // 2. 6 रेडीमेड एनीमे स्किन्स (.skin-preset-btn व .skin-preset-card दोनों)
-        document.querySelectorAll('[data-skin-id]').forEach(btn => {
+        document.querySelectorAll('.palette-swatch-btn[data-palette-id]').forEach(btn => {
             btn.addEventListener('click', () => {
-                const skinId = btn.dataset.skinId;
+                const pId = btn.dataset.paletteId;
+                document.querySelectorAll('.palette-swatch-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const badgeEl = $('active-palette-name-badge');
+                if (pId === 'default' || !PALETTE_PRESET_MAP[pId]) {
+                    clearCustomColorOverrides();
+                    if (badgeEl) badgeEl.textContent = 'डिफ़ॉल्ट थीम रंग';
+                    showToast('डिफ़ॉल्ट थीम रंग लागू किया गया');
+                    return;
+                }
+                const info = PALETTE_PRESET_MAP[pId];
+                if (badgeEl) badgeEl.textContent = info.label;
+                applyOneTouchColorPalette(info.color, info.accent, info.bg, true);
+                localStorage.setItem('wikilink_onetouch_palette_v3', JSON.stringify(info));
+                localStorage.setItem('wikilink_onetouch_color_v3', info.color);
+            });
+        });
+
+        const btnResetColorPalette = $('btn-reset-color-palette');
+        if (btnResetColorPalette) {
+            btnResetColorPalette.addEventListener('click', () => {
+                clearCustomColorOverrides();
+                document.body.setAttribute('data-card-style', 'flat');
+                localStorage.setItem('wikilink_card_style_v3', 'flat');
+                document.querySelectorAll('.card-style-chip[data-card-style-opt]').forEach(c => {
+                    c.classList.toggle('active', c.dataset.cardStyleOpt === 'flat');
+                });
+                document.querySelectorAll('.palette-swatch-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.paletteId === 'default');
+                });
+                const badgeEl = $('active-palette-name-badge');
+                if (badgeEl) badgeEl.textContent = 'डिफ़ॉल्ट थीम रंग';
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('wikilink_theme', 'light');
+                const themeIcon = $('theme-toggle-icon');
+                const themeLbl = $('theme-toggle-label');
+                if (themeIcon) themeIcon.textContent = '🌙';
+                if (themeLbl) themeLbl.textContent = 'डार्क मोड';
+                applySkinPreset('wikimedia-classic', true);
+                showToast('डिफ़ॉल्ट रंग व थीम रीसेट की गई');
+            });
+        }
+
+        document.querySelectorAll('.card-style-chip[data-card-style-opt]').forEach(chip => {
+            chip.classList.toggle('active', chip.dataset.cardStyleOpt === savedCardStyle);
+            chip.addEventListener('click', () => {
+                const st = chip.dataset.cardStyleOpt || 'flat';
+                document.body.setAttribute('data-card-style', st);
+                localStorage.setItem('wikilink_card_style_v3', st);
+                document.querySelectorAll('.card-style-chip[data-card-style-opt]').forEach(c => {
+                    c.classList.toggle('active', c.dataset.cardStyleOpt === st);
+                });
+                showToast(`कार्ड बॉर्डर शैली बदली गई: ${CARD_STYLE_NAMES[st] || st}`);
+            });
+        });
+
+        // 2. रेडीमेड थीम प्रीसेट ([data-skin-id] व [data-skin-preset] दोनों)
+        document.querySelectorAll('[data-skin-id], [data-skin-preset]').forEach(btn => {
+            const presetVal = btn.dataset.skinId || btn.dataset.skinPreset;
+            btn.classList.toggle('active', presetVal === savedSkin);
+            btn.addEventListener('click', () => {
+                const skinId = btn.dataset.skinId || btn.dataset.skinPreset;
+                document.querySelectorAll('[data-skin-id], [data-skin-preset]').forEach(b => {
+                    const bVal = b.dataset.skinId || b.dataset.skinPreset;
+                    b.classList.toggle('active', bVal === skinId);
+                });
+                const themeIcon = $('theme-toggle-icon');
+                const themeLbl = $('theme-toggle-label');
+                if (skinId === 'anime-spirit' || skinId === 'cyber-shonen') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('wikilink_theme', 'dark');
+                    if (themeIcon) themeIcon.textContent = '☀️';
+                    if (themeLbl) themeLbl.textContent = 'लाइट मोड';
+                } else if (skinId === 'wikimedia-classic' || skinId === 'sakura-day') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    localStorage.setItem('wikilink_theme', 'light');
+                    if (themeIcon) themeIcon.textContent = '🌙';
+                    if (themeLbl) themeLbl.textContent = 'डार्क मोड';
+                }
                 clearCustomColorOverrides();
                 applySkinPreset(skinId, true);
             });
@@ -4262,7 +4406,6 @@
             });
         }
 
-        // बैनर का "स्किन बदलें" बटन: स्टूडियो पैनल खोलता भी है और तुरंत अगली एनीमे स्किन भी लगाता है!
         if (bannerSkinBtn) {
             bannerSkinBtn.addEventListener('click', () => {
                 if (studioPanel) {
@@ -4282,7 +4425,7 @@
             mascotWrap.style.cursor = 'pointer';
             mascotWrap.addEventListener('click', () => {
                 studioPanel.style.display = 'block';
-                showToast('🎨 किसी भी रंग के गोले पर टच करें!');
+                showToast('🎨 किसी भी रंग पर क्लिक करें!');
             });
         }
 
@@ -4314,8 +4457,8 @@
         rootStyle.setProperty('--accent-blue', accent || primary);
         rootStyle.setProperty('--border-color', `color-mix(in srgb, ${primary} 38%, #ffffff)`);
         rootStyle.setProperty('--primary-light', `color-mix(in srgb, ${primary} 12%, #ffffff)`);
-        rootStyle.setProperty('--anime-cel-shadow', `4px 4px 0px color-mix(in srgb, ${primary} 24%, transparent)`);
-        rootStyle.setProperty('--anime-cel-shadow-hover', `6px 6px 0px color-mix(in srgb, ${primary} 35%, transparent)`);
+        rootStyle.setProperty('--anime-cel-shadow', `0 8px 24px color-mix(in srgb, ${primary} 20%, transparent)`);
+        rootStyle.setProperty('--anime-cel-shadow-hover', `0 12px 30px color-mix(in srgb, ${primary} 30%, transparent)`);
 
         if (bg && document.documentElement.getAttribute('data-theme') !== 'dark') {
             rootStyle.setProperty('--bg-main', bg);
@@ -4336,8 +4479,9 @@
         document.body.setAttribute('data-skin', skinId);
         localStorage.setItem('wikilink_skin_v3', skinId);
 
-        document.querySelectorAll('[data-skin-id]').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.skinId === skinId);
+        document.querySelectorAll('[data-skin-id], [data-skin-preset]').forEach(btn => {
+            const bVal = btn.dataset.skinId || btn.dataset.skinPreset;
+            btn.classList.toggle('active', bVal === skinId);
         });
 
         const headerSkinSelect = $('header-skin-select');
@@ -4347,12 +4491,12 @@
 
         const skinBadge = $('active-skin-badge');
         if (skinBadge) {
-            skinBadge.textContent = SKIN_LABELS[skinId] || 'विकी क्लासिक (Classic)';
+            skinBadge.textContent = SKIN_LABELS[skinId] || 'विकिमीडिया क्लासिक (Light)';
         }
 
         if (notify) {
-            if (window.WikiFirebase && window.WikiFirebase.updatePreferredSkinInFirestore) {
-                window.WikiFirebase.updatePreferredSkinInFirestore(skinId).catch(() => {});
+            if (window.WikiFirebase && window.WikiFirebase.updateUserSkinInFirestore) {
+                window.WikiFirebase.updateUserSkinInFirestore(skinId).catch(() => {});
             }
             showToast(`🎨 थीम लागू हुई: ${SKIN_LABELS[skinId] || skinId}`);
         }
@@ -4639,8 +4783,99 @@
         });
     }
 
+    // ================== उपयोगकर्ता प्रोफ़ाइल व पुराने लॉग्स का स्थायी संरक्षण (Persistent User Archive) ==================
+    const PROFILE_ICON_OPTIONS = {
+        '📚': 'ज्ञानकोश विद्वान',
+        '🪶': 'संपादक कलम',
+        '🌐': 'विकि ग्लोब',
+        '🏛️': 'साहित्य स्तंभ',
+        '🚀': 'नवप्रवर्तक'
+    };
+
+    function getEmailArchiveKey(email) {
+        return String(email || 'guest')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9@._\-]/g, '_');
+    }
+
+    function getUserProfilesArchiveMap() {
+        try {
+            const raw = localStorage.getItem('wikilink_user_profiles_archive_v1');
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveUserAccountSnapshot(userObj, logsList) {
+        try {
+            if (userObj && userObj.email) {
+                const emailKey = getEmailArchiveKey(userObj.email);
+                const archiveMap = getUserProfilesArchiveMap();
+                const prev = archiveMap[emailKey] || {};
+                const chosenIcon = userObj.avatarIcon || prev.avatarIcon || localStorage.getItem('wikilink_profile_icon') || '📚';
+                archiveMap[emailKey] = {
+                    email: String(userObj.email).trim().toLowerCase(),
+                    name: String(userObj.name || prev.name || userObj.email.split('@')[0]).trim(),
+                    avatarIcon: chosenIcon,
+                    role: userObj.role || prev.role || 'विकिपीडिया संपादक',
+                    uid: userObj.uid || prev.uid || '',
+                    updatedAt: new Date().toISOString()
+                };
+                localStorage.setItem('wikilink_user_profiles_archive_v1', JSON.stringify(archiveMap));
+                localStorage.setItem('wikilink_last_login_email', String(userObj.email).trim().toLowerCase());
+
+                if (Array.isArray(logsList)) {
+                    const existingUserLogs = getSavedUserLogsByEmail(userObj.email);
+                    const merged = mergeUniqueLogsList(logsList, existingUserLogs);
+                    localStorage.setItem(`wikilink_user_logs_${emailKey}`, JSON.stringify(merged.slice(0, 80)));
+                }
+            }
+            if (Array.isArray(logsList)) {
+                localStorage.setItem('wikilink_activity_logs', JSON.stringify(logsList.slice(0, 80)));
+            }
+        } catch (e) {
+            console.warn('Snapshot save warning:', e);
+        }
+    }
+
+    function getSavedUserLogsByEmail(email) {
+        if (!email) return [];
+        try {
+            const emailKey = getEmailArchiveKey(email);
+            const raw = localStorage.getItem(`wikilink_user_logs_${emailKey}`);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function mergeUniqueLogsList(...logArrays) {
+        const map = new Map();
+        logArrays.forEach(arr => {
+            if (!Array.isArray(arr)) return;
+            arr.forEach(item => {
+                if (!item) return;
+                const key = String(item.logId || item.id || `${item.timestamp}_${item.title}_${item.action}`);
+                if (!map.has(key)) {
+                    map.set(key, item);
+                }
+            });
+        });
+        return Array.from(map.values()).slice(0, 80);
+    }
+
     async function performLogout() {
         const oldName = currentUser ? currentUser.name : 'सदस्य';
+        // लॉगआउट से पहले वर्तमान यूज़र की संपूर्ण प्रोफ़ाइल जानकारी (नाम, आइकन) व सभी पुराने लॉग सुरक्षित रूप से आर्काइव में सहेजें
+        if (currentUser) {
+            saveUserAccountSnapshot(currentUser, userActivityLogs);
+        } else {
+            saveLogsToStorage();
+        }
+
         if (window.WikiFirebase && window.WikiFirebase.signOutFirebaseUser) {
             try {
                 await window.WikiFirebase.signOutFirebaseUser();
@@ -4648,15 +4883,17 @@
                 console.warn('Firebase signOut error:', err);
             }
         }
+        // केवल सक्रिय सत्र हटाएँ — यूज़र की जानकारी, आइकन, थीम और पुराने लॉग्स बिल्कुल न हटाएँ!
         currentUser = null;
         localStorage.removeItem('wikilink_current_user');
+        localStorage.removeItem('wikilink_google_account');
         updateAuthHeaderUI();
         renderUserDashboard();
         const speech = $('stage-speech-bubble');
         if (speech) {
-            speech.textContent = `${oldName} लॉगआउट हुए! अतिथि मोड में स्वागत है 👋`;
+            speech.textContent = `${oldName} लॉगआउट हुए! आपकी प्रोफ़ाइल व पुराने लॉग सुरक्षित हैं 👋`;
         }
-        showToast(`${oldName} सफलतापूर्वक लॉगआउट हुए (अतिथि सत्र सक्रिय)`);
+        showToast(`${oldName} लॉगआउट हुए — दोबारा लॉगिन करने पर आपके सभी पुराने लॉग व सेटिंग सुरक्षित मिलेंगे`);
         if ($('anime-profile-authenticated-shell')) {
             setTimeout(() => {
                 window.location.href = 'login.html';
@@ -4719,6 +4956,131 @@
         }
     }
 
+    function applySelectedProfileIconUI(iconChar, notify = false) {
+        const validIcon = PROFILE_ICON_OPTIONS[iconChar] ? iconChar : '📚';
+        const iconTitle = PROFILE_ICON_OPTIONS[validIcon] || 'ज्ञानकोश विद्वान';
+
+        localStorage.setItem('wikilink_profile_icon', validIcon);
+        if (currentUser) {
+            currentUser.avatarIcon = validIcon;
+            localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+            saveUserAccountSnapshot(currentUser, userActivityLogs);
+        }
+
+        const mainAvatarIconEl = $('profile-main-avatar-icon');
+        if (mainAvatarIconEl) mainAvatarIconEl.textContent = validIcon;
+
+        const labelBadgeEl = $('selected-icon-label-badge');
+        if (labelBadgeEl) labelBadgeEl.textContent = `चयनित: ${iconTitle}`;
+
+        const bannerCrestEl = $('banner-selected-icon-crest');
+        if (bannerCrestEl) bannerCrestEl.textContent = `${validIcon} ${iconTitle}`;
+
+        document.querySelectorAll('.profile-icon-option-btn[data-profile-icon]').forEach(btn => {
+            const isSelected = btn.dataset.profileIcon === validIcon;
+            btn.classList.toggle('active', isSelected);
+            btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+        });
+
+        updateAuthHeaderUI();
+        if (notify) {
+            showToast(`✨ प्रोफ़ाइल आइकन बदला गया: ${validIcon} ${iconTitle}`);
+        }
+    }
+
+    function initProfileCustomizationControls() {
+        const savedIcon = (currentUser && currentUser.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
+        applySelectedProfileIconUI(savedIcon, false);
+
+        // 1. 5 प्रोफ़ाइल आइकन विकल्प बटन
+        document.querySelectorAll('.profile-icon-option-btn[data-profile-icon]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const chosenIcon = btn.dataset.profileIcon || '📚';
+                applySelectedProfileIconUI(chosenIcon, true);
+            });
+        });
+
+        // 2. प्रोफ़ाइल अनुभाग में यूज़रनेम बदलने का विकल्प
+        const usernameInput = $('profile-username-input');
+        const saveUsernameBtn = $('btn-save-profile-username');
+        const focusEditBtn = $('btn-focus-username-edit');
+
+        if (usernameInput && currentUser && currentUser.name) {
+            usernameInput.value = currentUser.name;
+        }
+
+        if (focusEditBtn && usernameInput) {
+            focusEditBtn.addEventListener('click', () => {
+                switchProfileSection('sec-profile-overview');
+                usernameInput.focus();
+                usernameInput.select();
+            });
+        }
+
+        const handleSaveUsername = async () => {
+            if (!currentUser) {
+                showToast('यूज़रनेम बदलने के लिए कृपया पहले अपने खाते में लॉगिन करें।');
+                return;
+            }
+            const rawNewName = usernameInput ? usernameInput.value.trim() : '';
+            if (!rawNewName) {
+                showToast('कृपया वैध यूज़रनेम दर्ज करें।');
+                if (usernameInput) usernameInput.focus();
+                return;
+            }
+            const normEmail = String(currentUser.email || '').trim().toLowerCase();
+            // सुरक्षा नियम: यदि ईमेल एडमिन ईमेल नहीं है, तो कोई अन्य व्यक्ति आरक्षित एडमिन नाम 'विक्रम प्रताप' नहीं रख सकता
+            if (normEmail !== 'amankumar.wikimedian@gmail.com' && (rawNewName === 'विक्रम प्रताप' || rawNewName.includes('विक्रम प्रताप') || rawNewName.toLowerCase() === 'vikram pratap')) {
+                showToast('⚠️ "विक्रम प्रताप" मुख्य प्रशासक का आरक्षित नाम है। कृपया अपना अन्य सदस्य नाम चुनें।');
+                return;
+            }
+
+            currentUser.name = rawNewName;
+            currentUser.isAdmin = (
+                normEmail === 'amankumar.wikimedian@gmail.com' &&
+                (rawNewName === 'विक्रम प्रताप' || rawNewName.includes('विक्रम प्रताप'))
+            );
+            localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+            saveUserAccountSnapshot(currentUser, userActivityLogs);
+
+            // स्थानीय ईमेल रजिस्ट्री में भी नाम अद्यतन करें
+            try {
+                const regMap = JSON.parse(localStorage.getItem('wikilink_registered_emails_v1') || '{}');
+                if (regMap[normEmail]) {
+                    regMap[normEmail].name = rawNewName;
+                    localStorage.setItem('wikilink_registered_emails_v1', JSON.stringify(regMap));
+                }
+            } catch (e) {}
+
+            updateAuthHeaderUI();
+            renderUserDashboard();
+
+            if (window.WikiFirebase && window.WikiFirebase.syncUserProfileToFirestore && currentUser.uid) {
+                try {
+                    await window.WikiFirebase.syncUserProfileToFirestore({
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        displayName: rawNewName
+                    });
+                } catch (e) {}
+            }
+
+            showToast(`✓ आपका नया यूज़रनेम "${rawNewName}" सफलतापूर्वक सुरक्षित हो गया!`);
+        };
+
+        if (saveUsernameBtn) {
+            saveUsernameBtn.addEventListener('click', handleSaveUsername);
+        }
+        if (usernameInput) {
+            usernameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSaveUsername();
+                }
+            });
+        }
+    }
+
     function trackCharactersToPoint(targetX, targetY) {
         const stage = $('cute-characters-stage');
         if (!stage || stage.classList.contains('is-covering-eyes')) return;
@@ -4751,6 +5113,44 @@
         checkPendingRestoredArticle();
         renderUserDashboard();
         initProfileVerticalNav();
+        initProfileCustomizationControls();
+
+        // जब यूज़र खाते में लॉगिन हो, तो शीर्ष पट्टी में यूज़रनेम (#auth-trigger-btn) या सक्रिय सत्र नाम (#auth-active-user-name) पर क्लिक करने से हमेशा विशेष प्रोफ़ाइल पेज (logs.html) ही खुले!
+        const authTriggerBtn = $('auth-trigger-btn');
+        if (authTriggerBtn) {
+            authTriggerBtn.addEventListener('click', (e) => {
+                let activeUser = currentUser;
+                if (!activeUser) {
+                    try {
+                        activeUser = JSON.parse(localStorage.getItem('wikilink_current_user') || 'null');
+                    } catch (err) {}
+                }
+                const dotEl = $('auth-status-dot');
+                const lblEl = $('auth-btn-label');
+                const isLoggedInNow = Boolean(
+                    (activeUser && (activeUser.name || activeUser.email)) ||
+                    (dotEl && dotEl.classList.contains('logged-in')) ||
+                    (lblEl && lblEl.textContent && !lblEl.textContent.includes('लॉगिन'))
+                );
+                if (isLoggedInNow) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = 'logs.html';
+                }
+            });
+        }
+
+        const activeUserNameEl = $('auth-active-user-name');
+        const activeSessionInfoEl = document.querySelector('.active-session-info');
+        [activeUserNameEl, activeSessionInfoEl].forEach(el => {
+            if (el) {
+                el.style.cursor = 'pointer';
+                el.setAttribute('title', 'अपने नाम पर क्लिक करके विशेष एनीमे प्रोफ़ाइल पेज खोलें');
+                el.addEventListener('click', () => {
+                    window.location.href = 'logs.html';
+                });
+            }
+        });
 
         // सभी लॉगआउट बटनों को जोड़ें
         const logoutBtns = [
@@ -4976,36 +5376,64 @@
                         uid: uid || '',
                         firstSignedInAt: new Date().toISOString()
                     };
-                    localStorage.setItem('wikilink_registered_emails_v1', JSON.stringify(map));
+                } else if (name) {
+                    map[normEmail].name = name;
                 }
+                localStorage.setItem('wikilink_registered_emails_v1', JSON.stringify(map));
             } catch (e) {}
+        }
+
+        // यदि लॉगिन पेज पर हैं और पिछली बार का ईमेल उपलब्ध है तो सुविधा के लिए भर दें
+        if (emailInput && !emailInput.value) {
+            const lastEmail = localStorage.getItem('wikilink_last_login_email');
+            if (lastEmail) emailInput.value = lastEmail;
         }
 
         function completeUserLogin(userObj) {
             const normEmail = String(userObj.email || '').trim().toLowerCase();
-            // यदि ईमेल एडमिन ईमेल है और सदस्य नाम 'विक्रम प्रताप' है तो एडमिन भूमिका दें
+            const emailKey = getEmailArchiveKey(normEmail);
+            const archiveMap = getUserProfilesArchiveMap();
+            const archivedProfile = archiveMap[emailKey] || null;
+
+            // पूर्व में सहेजा गया कस्टम यूज़रनेम और आइकन प्राथमिकता से पुनर्स्थापित करें
             let resolvedName = (userObj.name || '').trim();
+            if ((!resolvedName || resolvedName === normEmail.split('@')[0]) && archivedProfile && archivedProfile.name) {
+                resolvedName = archivedProfile.name;
+            }
             if (normEmail === DESIGNATED_ADMIN_EMAIL && (!resolvedName || resolvedName.toLowerCase() === 'amankumar.wikimedian' || resolvedName.toLowerCase().includes('vikram'))) {
                 resolvedName = DESIGNATED_ADMIN_NAME;
             }
+            const resolvedIcon = userObj.avatarIcon || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
             const isAdmin = isCurrentUserDesignatedAdmin({ email: normEmail, name: resolvedName });
 
             currentUser = {
                 name: resolvedName || normEmail.split('@')[0],
                 email: normEmail,
-                uid: userObj.uid || '',
-                role: isAdmin ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : (userObj.role || 'विकिपीडिया संपादक'),
+                uid: userObj.uid || (archivedProfile && archivedProfile.uid) || '',
+                avatarIcon: resolvedIcon,
+                role: isAdmin ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : (userObj.role || (archivedProfile && archivedProfile.role) || 'विकिपीडिया संपादक'),
                 isAdmin: isAdmin,
                 loginTime: new Date().toISOString()
             };
             localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
+            localStorage.setItem('wikilink_profile_icon', resolvedIcon);
             recordLocalRegisteredEmail(currentUser.email, currentUser.name, currentUser.uid);
+
+            // लॉगआउट से पहले के सभी पुराने लॉग्स (इस ईमेल के आर्काइव + स्थानीय लॉग्स) को मर्ज करें ताकि कोई पुराना लॉग न खोए
+            const oldUserLogs = getSavedUserLogsByEmail(normEmail);
+            userActivityLogs = mergeUniqueLogsList(oldUserLogs, userActivityLogs);
 
             logUserActivity('यूज़र लॉगिन', {
                 title: currentUser.name,
                 lang: state.lang || 'hi',
                 note: `${currentUser.email} द्वारा लॉगिन`
             });
+
+            saveUserAccountSnapshot(currentUser, userActivityLogs);
+
+            if (window.WikiFirebase && window.WikiFirebase.fetchUserActivityLogsFromFirestore && currentUser.uid) {
+                window.WikiFirebase.fetchUserActivityLogsFromFirestore(currentUser.uid).catch(() => {});
+            }
 
             if (stage) {
                 stage.classList.remove('is-covering-eyes', 'is-peeking');
@@ -5022,9 +5450,9 @@
                 renderSuggestionsTable();
             }
             refreshAdminAndApprovedBlacklist();
-            showToast(`स्वागत है, ${currentUser.name}! आपके विशेष एनीमे प्रोफ़ाइल पेज पर ले जाया जा रहा है...`);
+            showToast(`स्वागत है, ${currentUser.name}! आपके प्रोफ़ाइल व पुराने लॉग लोड किए जा रहे हैं...`);
 
-            // लॉगिन करते ही यूज़र को उसके विशेष एनीमे प्रोफ़ाइल पेज (logs.html) में ले जाएँ
+            // लॉगिन करते ही यूज़र को उसके विशेष प्रोफ़ाइल पेज (logs.html) में ले जाएँ
             const isAlreadyOnProfilePage = Boolean($('anime-profile-authenticated-shell') || window.location.pathname.endsWith('logs.html'));
             if (!isAlreadyOnProfilePage) {
                 setTimeout(() => {
@@ -5086,25 +5514,37 @@
             const fbUser = e.detail?.user;
             if (fbUser && fbUser.email) {
                 const normEmail = fbUser.email.trim().toLowerCase();
-                let resolvedName = fbUser.name || normEmail.split('@')[0];
+                const emailKey = getEmailArchiveKey(normEmail);
+                const archivedProfile = getUserProfilesArchiveMap()[emailKey] || null;
+
+                let resolvedName = (archivedProfile && archivedProfile.name) || fbUser.name || normEmail.split('@')[0];
                 if (normEmail === DESIGNATED_ADMIN_EMAIL && (!resolvedName || resolvedName.toLowerCase().includes('vikram') || resolvedName.toLowerCase().includes('amankumar'))) {
                     resolvedName = DESIGNATED_ADMIN_NAME;
                 }
+                const resolvedIcon = (currentUser && currentUser.avatarIcon) || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
                 const isAdmin = isCurrentUserDesignatedAdmin({ email: normEmail, name: resolvedName });
                 currentUser = {
                     name: resolvedName,
                     email: normEmail,
+                    avatarIcon: resolvedIcon,
                     role: isAdmin ? 'मुख्य प्रशासक (Admin — विक्रम प्रताप)' : (fbUser.role || 'Firebase क्लाउड संपादक'),
                     isAdmin: isAdmin,
                     uid: fbUser.uid,
                     loginTime: new Date().toISOString()
                 };
                 localStorage.setItem('wikilink_current_user', JSON.stringify(currentUser));
-                localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: normEmail }));
+                localStorage.setItem('wikilink_google_account', JSON.stringify({ name: resolvedName, email: normEmail, avatarIcon: resolvedIcon }));
                 recordLocalRegisteredEmail(normEmail, resolvedName, fbUser.uid);
+
+                // पुराने संग्रहीत लॉग्स को भी मर्ज करें
+                const oldUserLogs = getSavedUserLogsByEmail(normEmail);
+                userActivityLogs = mergeUniqueLogsList(oldUserLogs, userActivityLogs);
+                saveUserAccountSnapshot(currentUser, userActivityLogs);
+
                 if (fbUser.preferredSkin) {
                     applySkinPreset(fbUser.preferredSkin, false);
                 }
+                applySelectedProfileIconUI(resolvedIcon, false);
                 updateAuthHeaderUI();
                 renderUserDashboard();
                 if (state.suggestions && state.suggestions.length > 0) {
@@ -5117,18 +5557,8 @@
         window.addEventListener('wikilink:firebase-logs', (e) => {
             const cloudLogs = e.detail?.logs;
             if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
-                const mergedMap = new Map();
-                cloudLogs.forEach(item => {
-                    const key = String(item.logId || item.id);
-                    mergedMap.set(key, item);
-                });
-                userActivityLogs.forEach(item => {
-                    const key = String(item.logId || item.id);
-                    if (!mergedMap.has(key)) {
-                        mergedMap.set(key, item);
-                    }
-                });
-                userActivityLogs = Array.from(mergedMap.values()).slice(0, 60);
+                const oldUserLogs = currentUser && currentUser.email ? getSavedUserLogsByEmail(currentUser.email) : [];
+                userActivityLogs = mergeUniqueLogsList(userActivityLogs, oldUserLogs, cloudLogs);
                 saveLogsToStorage();
                 updateAuthHeaderUI();
                 renderUserDashboard();
@@ -5176,8 +5606,8 @@
                     if (window.WikiFirebase && window.WikiFirebase.checkEmailAlreadyRegistered) {
                         try {
                             const cloudLock = await window.WikiFirebase.checkEmailAlreadyRegistered(normEmail);
-                            if (cloudLock) {
-                                recordLocalRegisteredEmail(normEmail, cloudLock.memberName || '', cloudLock.ownerUid || '');
+                            if (cloudLock && cloudLock.registered) {
+                                recordLocalRegisteredEmail(normEmail, cloudLock.displayName || cloudLock.memberName || '', cloudLock.ownerUid || '');
                                 showToast(`⚠️ इस ईमेल (${normEmail}) से पहले ही साइन-इन किया जा चुका है। कोई अन्य उसी ईमेल से नया खाता नहीं बना सकता। कृपया 'लॉगिन करें' का उपयोग करें।`);
                                 if (speech) speech.textContent = 'यह ईमेल पहले से पंजीकृत है! कृपया लॉगिन करें 🔒';
                                 setAuthModeUI('login');
@@ -5201,7 +5631,7 @@
                 if (window.WikiFirebase && passwordVal && passwordVal.length >= 6) {
                     try {
                         if (authMode === 'signup' && window.WikiFirebase.registerWithEmailAccount) {
-                            const fbProfile = await window.WikiFirebase.registerWithEmailAccount(normEmail, passwordVal, resolvedName);
+                            const fbProfile = await window.WikiFirebase.registerWithEmailAccount(resolvedName, normEmail, passwordVal);
                             completeUserLogin({
                                 name: fbProfile.name || resolvedName,
                                 email: normEmail,
@@ -5387,17 +5817,27 @@
 
     function applyApprovedBlacklistArray(wordsArray) {
         if (!Array.isArray(wordsArray)) return;
-        state.approvedGlobalBlacklistList = wordsArray;
+        const normalizedList = [];
         wordsArray.forEach(item => {
-            if (item && item.word) {
-                const clean = String(item.word).trim().toLowerCase();
+            const rawWord = String(item?.word || item?.term || '').trim();
+            if (rawWord) {
+                const clean = rawWord.toLowerCase();
                 state.approvedGlobalBlacklist.add(clean);
                 const langSet = NEVER_LINK_WORDS[item.lang] || NEVER_LINK_WORDS.hi;
                 langSet.add(clean);
+                normalizedList.push({
+                    ...item,
+                    id: item.id || item.wordId || `${item.lang || 'hi'}__${clean}`,
+                    wordId: item.wordId || item.id || `${item.lang || 'hi'}__${clean}`,
+                    word: rawWord,
+                    term: rawWord,
+                    lang: item.lang || 'hi'
+                });
             }
         });
+        state.approvedGlobalBlacklistList = normalizedList;
         try {
-            localStorage.setItem('wikilink_approved_global_blacklist_v1', JSON.stringify(wordsArray));
+            localStorage.setItem('wikilink_approved_global_blacklist_v1', JSON.stringify(normalizedList));
         } catch (e) {}
         renderApprovedBlacklistStrip();
         renderAdminPanelUI();
@@ -5418,12 +5858,15 @@
         strip.style.display = 'block';
         if (countBadge) countBadge.textContent = `${list.length} स्वीकृत शब्द`;
 
-        chipsContainer.innerHTML = list.map(item => `
+        chipsContainer.innerHTML = list.map(item => {
+            const wText = item.word || item.term || '';
+            return `
             <span class="approved-bl-chip" title="एडमिन (विक्रम प्रताप) की सहमति से बहिष्कृत शब्द">
-                🚫 <strong>${escapeHtml(item.word)}</strong>
+                🚫 <strong>${escapeHtml(wText)}</strong>
                 <small>(${escapeHtml(item.lang || 'hi')})</small>
             </span>
-        `).join('');
+        `;
+        }).join('');
     }
 
     async function refreshAdminAndApprovedBlacklist(showNotification = false) {
@@ -5439,7 +5882,7 @@
                 renderApprovedBlacklistStrip();
             }
 
-            if (currentUser && currentUser.isAdmin && window.WikiFirebase && window.WikiFirebase.fetchBlacklistRequestsFromFirestore) {
+            if (window.WikiFirebase && window.WikiFirebase.fetchBlacklistRequestsFromFirestore) {
                 const reqs = await window.WikiFirebase.fetchBlacklistRequestsFromFirestore();
                 if (Array.isArray(reqs)) {
                     state.blacklistRequestsList = reqs;
@@ -5507,6 +5950,7 @@
             } else {
                 requestsTbody.innerHTML = requests.map(req => {
                     const reqId = escapeHtml(String(req.id || req.requestId || ''));
+                    const wordDisplay = String(req.word || req.term || '');
                     const statusPill = req.status === 'approved'
                         ? '<span class="status-pill status-pill-blue">✓ स्वीकृत</span>'
                         : req.status === 'rejected'
@@ -5515,7 +5959,7 @@
 
                     return `
                         <tr>
-                            <td data-label="शब्द"><strong>${escapeHtml(req.word || '')}</strong></td>
+                            <td data-label="शब्द"><strong>${escapeHtml(wordDisplay)}</strong></td>
                             <td data-label="भाषा"><span class="compact-lang-badge">${escapeHtml(req.lang || 'hi')}</span></td>
                             <td data-label="लेख संदर्भ" style="font-size: 0.8rem;">
                                 <strong>${escapeHtml(req.articleTitle || '-')}</strong>
@@ -5543,6 +5987,7 @@
                         const rId = btn.dataset.reqId;
                         const targetReq = requests.find(item => String(item.id || item.requestId) === rId);
                         if (!targetReq) return;
+                        const reqWord = String(targetReq.word || targetReq.term || '');
                         btn.disabled = true;
                         btn.textContent = 'स्वीकृत हो रहा...';
                         try {
@@ -5551,17 +5996,17 @@
                             }
                             targetReq.status = 'approved';
                             addWordToLocalApprovedBlacklist({
-                                word: targetReq.word,
+                                word: reqWord,
                                 lang: targetReq.lang || 'hi',
                                 approvedBy: 'amankumar.wikimedian@gmail.com'
                             });
                             // यदि वर्तमान लेख में यह शब्द सुझाव में है तो हटा दें
-                            state.suggestions = state.suggestions.filter(s => s.term.toLowerCase() !== targetReq.word.toLowerCase());
+                            state.suggestions = state.suggestions.filter(s => s.term.toLowerCase() !== reqWord.toLowerCase());
                             renderSuggestionsTable();
                             if (state.originalWikitext) recalculateModifiedWikitext();
                             renderApprovedBlacklistStrip();
                             renderAdminPanelUI();
-                            showToast(`✓ '${targetReq.word}' को एडमिन की सहमति से बहिष्कार सूची में जोड़ दिया गया!`);
+                            showToast(`✓ '${reqWord}' को एडमिन की सहमति से बहिष्कार सूची में जोड़ दिया गया!`);
                         } catch (err) {
                             console.warn('Approve error:', err);
                             showToast('स्वीकृत करने में त्रुटि हुई');
@@ -5576,6 +6021,7 @@
                         const rId = btn.dataset.reqId;
                         const targetReq = requests.find(item => String(item.id || item.requestId) === rId);
                         if (!targetReq) return;
+                        const reqWord = String(targetReq.word || targetReq.term || '');
                         btn.disabled = true;
                         try {
                             if (window.WikiFirebase && window.WikiFirebase.rejectBlacklistRequestInFirestore) {
@@ -5583,7 +6029,7 @@
                             }
                             targetReq.status = 'rejected';
                             renderAdminPanelUI();
-                            showToast(`'${targetReq.word}' का अनुरोध अस्वीकार किया गया`);
+                            showToast(`'${reqWord}' का अनुरोध अस्वीकार किया गया`);
                         } catch (err) {
                             console.warn('Reject error:', err);
                             btn.disabled = false;
@@ -5599,12 +6045,16 @@
             if (approvedList.length === 0) {
                 approvedListEl.innerHTML = `<span style="font-size: 0.82rem; color: var(--text-muted);">अभी कोई अतिरिक्त सामुदायिक शब्द नहीं जोड़ा गया है (अंतर्निर्मित 8,100+ शब्द सक्रिय हैं)।</span>`;
             } else {
-                approvedListEl.innerHTML = approvedList.map(item => `
+                approvedListEl.innerHTML = approvedList.map(item => {
+                    const wText = String(item.word || item.term || '');
+                    const wId = String(item.id || item.wordId || `${item.lang || 'hi'}__${wText}`);
+                    return `
                     <span class="approved-bl-chip">
-                        🚫 <strong>${escapeHtml(item.word)}</strong> <small>(${escapeHtml(item.lang || 'hi')})</small>
-                        <button type="button" class="admin-remove-word-btn" data-word-id="${escapeHtml(item.id || `${item.lang || 'hi'}_${item.word}`)}" data-word="${escapeHtml(item.word)}" title="बहिष्कार सूची से हटाएँ">&times;</button>
+                        🚫 <strong>${escapeHtml(wText)}</strong> <small>(${escapeHtml(item.lang || 'hi')})</small>
+                        <button type="button" class="admin-remove-word-btn" data-word-id="${escapeHtml(wId)}" data-word="${escapeHtml(wText)}" title="बहिष्कार सूची से हटाएँ">&times;</button>
                     </span>
-                `).join('');
+                `;
+                }).join('');
 
                 approvedListEl.querySelectorAll('.admin-remove-word-btn').forEach(btn => {
                     btn.addEventListener('click', async () => {
@@ -5616,7 +6066,7 @@
                             }
                         } catch (e) {}
                         state.approvedGlobalBlacklist.delete(wText);
-                        state.approvedGlobalBlacklistList = state.approvedGlobalBlacklistList.filter(i => (i.word || '').toLowerCase() !== wText);
+                        state.approvedGlobalBlacklistList = state.approvedGlobalBlacklistList.filter(i => String(i.word || i.term || '').toLowerCase() !== wText);
                         try {
                             localStorage.setItem('wikilink_approved_global_blacklist_v1', JSON.stringify(state.approvedGlobalBlacklistList));
                         } catch (e) {}
@@ -5656,16 +6106,26 @@
 
     function loadUserAndLogsFromStorage() {
         try {
-            const savedUser = localStorage.getItem('wikilink_current_user');
+            let savedUser = localStorage.getItem('wikilink_current_user');
+            if (!savedUser) {
+                const googleSaved = localStorage.getItem('wikilink_google_account');
+                if (googleSaved) {
+                    savedUser = googleSaved;
+                }
+            }
             if (savedUser) {
                 const parsed = JSON.parse(savedUser);
-                // यदि कोई पुराना Demo खाता सहेजा गया था तो उसे हटा दें
                 if (parsed && String(parsed.role || '').includes('Demo')) {
                     localStorage.removeItem('wikilink_current_user');
                     currentUser = null;
-                } else {
+                } else if (parsed && (parsed.name || parsed.email)) {
                     const normEmail = String(parsed.email || '').trim().toLowerCase();
-                    const normName = String(parsed.name || '').trim();
+                    const emailKey = getEmailArchiveKey(normEmail);
+                    const archivedProfile = getUserProfilesArchiveMap()[emailKey] || null;
+                    const normName = String((archivedProfile && archivedProfile.name) || parsed.name || '').trim() || normEmail.split('@')[0];
+                    parsed.name = normName;
+                    parsed.email = normEmail;
+                    parsed.avatarIcon = parsed.avatarIcon || (archivedProfile && archivedProfile.avatarIcon) || localStorage.getItem('wikilink_profile_icon') || '📚';
                     parsed.isAdmin = (
                         normEmail === 'amankumar.wikimedian@gmail.com' &&
                         (normName === 'विक्रम प्रताप' || normName.includes('विक्रम प्रताप'))
@@ -5678,9 +6138,12 @@
         }
 
         try {
-            const savedLogs = localStorage.getItem('wikilink_activity_logs');
-            if (savedLogs) {
-                userActivityLogs = JSON.parse(savedLogs);
+            const savedLogsRaw = localStorage.getItem('wikilink_activity_logs');
+            const globalSavedLogs = savedLogsRaw ? JSON.parse(savedLogsRaw) : [];
+            const emailSavedLogs = currentUser && currentUser.email ? getSavedUserLogsByEmail(currentUser.email) : [];
+            const combined = mergeUniqueLogsList(emailSavedLogs, globalSavedLogs);
+            if (combined.length > 0) {
+                userActivityLogs = combined;
             } else {
                 userActivityLogs = [
                     {
@@ -5704,8 +6167,12 @@
 
     function saveLogsToStorage() {
         try {
-            const trimmed = userActivityLogs.slice(0, 60);
+            const trimmed = userActivityLogs.slice(0, 80);
             localStorage.setItem('wikilink_activity_logs', JSON.stringify(trimmed));
+            if (currentUser && currentUser.email) {
+                const emailKey = getEmailArchiveKey(currentUser.email);
+                localStorage.setItem(`wikilink_user_logs_${emailKey}`, JSON.stringify(trimmed));
+            }
         } catch (e) {
             console.warn('Could not save activity logs:', e);
         }
@@ -5728,7 +6195,7 @@
         };
 
         userActivityLogs.unshift(entry);
-        if (userActivityLogs.length > 60) userActivityLogs.pop();
+        if (userActivityLogs.length > 80) userActivityLogs.pop();
         saveLogsToStorage();
         updateAuthHeaderUI();
 
@@ -5752,16 +6219,18 @@
         if (logCountEl) logCountEl.textContent = String(userActivityLogs.length);
 
         if (currentUser) {
+            const userIcon = currentUser.avatarIcon || localStorage.getItem('wikilink_profile_icon') || '📚';
             // जब यूज़र खाते में लॉगिन हो तो उसके नाम पर क्लिक करके ही सीधे विशेष प्रोफ़ाइल (logs.html) खुल जाए
             if (authTriggerBtn) {
                 authTriggerBtn.setAttribute('href', 'logs.html');
-                authTriggerBtn.setAttribute('title', `${currentUser.name} — अपने नाम पर क्लिक करके विशेष एनीमे प्रोफ़ाइल व लॉग खोलें`);
+                authTriggerBtn.href = 'logs.html';
+                authTriggerBtn.setAttribute('title', `${currentUser.name} — अपने नाम पर क्लिक करके प्रोफ़ाइल व लॉग खोलें`);
             }
-            if (authLabel) authLabel.textContent = `👤 ${currentUser.name}`;
+            if (authLabel) authLabel.textContent = `${userIcon} ${currentUser.name}`;
             if (authDot) authDot.classList.add('logged-in');
             if (headerLogoutBtn) headerLogoutBtn.style.display = 'inline-flex';
             if (activeSessionBox) activeSessionBox.style.display = 'flex';
-            if (activeUserName) activeUserName.textContent = `${currentUser.name} (लॉगिन सक्रिय)`;
+            if (activeUserName) activeUserName.textContent = `${userIcon} ${currentUser.name} (प्रोफ़ाइल खोलें ↗)`;
             if (activeUserEmail) activeUserEmail.textContent = currentUser.email;
 
             // केवल लॉग-इन यूज़र को ही प्रोफ़ाइल/लॉग संबंधी लिंक दिखाएँ
@@ -5772,6 +6241,7 @@
             // जब यूज़र लॉगिन नहीं है तो नाम की जगह लॉगिन बटन रहे और प्रोफ़ाइल व लॉग का विकल्प न दिया जाए
             if (authTriggerBtn) {
                 authTriggerBtn.setAttribute('href', 'login.html');
+                authTriggerBtn.href = 'login.html';
                 authTriggerBtn.setAttribute('title', 'लॉगिन या साइन अप पेज खोलें');
             }
             if (authLabel) authLabel.textContent = 'लॉगिन / साइन अप';
@@ -5789,9 +6259,10 @@
 
     function renderUserDashboard(searchQuery = '') {
         const avatarEl = $('user-dash-avatar');
+        const mainAvatarIconEl = $('profile-main-avatar-icon');
         const nameEl = $('user-dash-name');
         const bannerNameEl = $('anime-banner-user-name');
-        const rankPillEl = $('anime-sidebar-rank-pill');
+        const usernameInput = $('profile-username-input');
         const emailEl = $('user-dash-email');
         const badgeEl = $('user-dash-status-badge');
         const loginBtn = $('user-dash-login-btn');
@@ -5803,12 +6274,24 @@
             if (guestLockScreen) guestLockScreen.style.display = 'none';
             if (authProfileShell) authProfileShell.style.display = 'grid';
 
+            const userIcon = currentUser.avatarIcon || localStorage.getItem('wikilink_profile_icon') || '📚';
+            const iconTitle = PROFILE_ICON_OPTIONS[userIcon] || 'ज्ञानकोश विद्वान';
+
             if (avatarEl) avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
+            if (mainAvatarIconEl) mainAvatarIconEl.textContent = userIcon;
             if (nameEl) nameEl.textContent = currentUser.name;
             if (bannerNameEl) bannerNameEl.textContent = currentUser.name;
-            if (rankPillEl) {
-                rankPillEl.textContent = currentUser.isAdmin ? '👑 SUPREME ADMIN' : '✦ LV.99 SENPAI';
+            if (usernameInput && document.activeElement !== usernameInput) {
+                usernameInput.value = currentUser.name;
             }
+            const labelBadgeEl = $('selected-icon-label-badge');
+            if (labelBadgeEl) labelBadgeEl.textContent = `चयनित: ${iconTitle}`;
+            const bannerCrestEl = $('banner-selected-icon-crest');
+            if (bannerCrestEl) bannerCrestEl.textContent = `${userIcon} ${iconTitle}`;
+            document.querySelectorAll('.profile-icon-option-btn[data-profile-icon]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.profileIcon === userIcon);
+            });
+
             if (emailEl) emailEl.textContent = `${currentUser.email} • ${currentUser.role || 'विकिपीडिया संपादक'}`;
             if (badgeEl) {
                 badgeEl.className = 'badge badge-success';
@@ -5832,19 +6315,6 @@
             if (loginBtn) loginBtn.textContent = '🔑 लॉगिन / साइन अप पेज खोलें';
             if (logoutBtn) logoutBtn.style.display = 'none';
         }
-
-        const uniqueArticles = new Set(
-            userActivityLogs
-                .filter(l => l.title && l.title !== 'अशीर्षक लेख' && l.action !== 'यूज़र लॉगिन')
-                .map(l => `${l.lang}:${l.title}`)
-        );
-        const totalLinksAdded = userActivityLogs.reduce((acc, l) => acc + (Number(l.newLinks) || 0), 0);
-        const totalContamFixed = userActivityLogs.reduce((acc, l) => acc + (Number(l.contaminationsFixed) || 0), 0);
-
-        safeSetText('ust-articles-count', uniqueArticles.size.toLocaleString('hi-IN'));
-        safeSetText('ust-links-added', `+${totalLinksAdded.toLocaleString('hi-IN')}`);
-        safeSetText('ust-contaminations-fixed', totalContamFixed.toLocaleString('hi-IN'));
-        safeSetText('ust-total-logs', userActivityLogs.length.toLocaleString('hi-IN'));
 
         const tbody = $('user-logs-tbody');
         if (!tbody) return;
@@ -5874,15 +6344,15 @@
             const safeId = escapeHtml(String(log.logId || log.id));
             return `
             <tr>
-                <td style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">${escapeHtml(log.timestamp)}</td>
-                <td><span class="badge badge-tool">${escapeHtml(log.action)}</span></td>
-                <td><strong>${escapeHtml(log.title)}</strong> <span class="compact-lang-badge">${escapeHtml(log.lang || 'hi')}</span></td>
-                <td style="font-size: 0.8rem;">
+                <td data-label="समय" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">${escapeHtml(log.timestamp)}</td>
+                <td data-label="क्रिया"><span class="badge badge-tool">${escapeHtml(log.action)}</span></td>
+                <td data-label="लेख एवं भाषा"><strong>${escapeHtml(log.title)}</strong> <span class="compact-lang-badge">${escapeHtml(log.lang || 'hi')}</span></td>
+                <td data-label="परिणाम सारांश" style="font-size: 0.8rem;">
                     ${Number(log.newLinks) > 0 ? `<span style="color: var(--accent-green); font-weight: 700;">+${log.newLinks} कड़ियाँ</span> ` : ''}
                     ${Number(log.contaminationsFixed) > 0 ? `<span style="color: var(--accent-orange); font-weight: 600;">(${log.contaminationsFixed} दोष शुद्ध)</span> ` : ''}
                     <span style="color: var(--text-muted);">${escapeHtml(log.note || '')}</span>
                 </td>
-                <td>
+                <td class="td-actions-cell" data-label="क्रियाएँ">
                     <div class="log-row-actions">
                         ${log.wikitext ? `
                             <button type="button" class="btn btn-primary btn-sm restore-log-btn" data-log-id="${safeId}" title="इस लेख को मुख्य कार्यपटल में खोलें">

@@ -228,36 +228,84 @@ export async function initFirebaseService() {
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            const normalizedEmail = (user.email || 'सत्यापित खाता').trim().toLowerCase();
+            let archivedProfile = null;
+            try {
+                const rawArchive = localStorage.getItem('wikilink_user_profiles_archive_v1');
+                if (rawArchive) {
+                    const parsedArchive = JSON.parse(rawArchive);
+                    if (parsedArchive && parsedArchive[normalizedEmail]) {
+                        archivedProfile = parsedArchive[normalizedEmail];
+                    }
+                }
+            } catch (e) {}
+
+            const defaultName = isDesignatedAdminUser(user)
+                ? ADMIN_MEMBER_NAME
+                : (user.displayName || (user.email ? user.email.split('@')[0] : 'विकिपीडिया संपादक'));
+            const effectiveName = (archivedProfile && archivedProfile.customName)
+                ? archivedProfile.customName
+                : defaultName;
+            const effectiveIcon = (archivedProfile && archivedProfile.profileIcon)
+                ? archivedProfile.profileIcon
+                : (localStorage.getItem('wikilink_profile_icon') || '📚');
+            const effectiveRole = isDesignatedAdminUser(user)
+                ? 'मुख्य प्रशासक (Admin)'
+                : 'Firebase क्लाउड संपादक';
+            const userPayload = {
+                uid: user.uid,
+                name: effectiveName,
+                customName: (archivedProfile && archivedProfile.customName) ? archivedProfile.customName : effectiveName,
+                profileIcon: effectiveIcon,
+                email: normalizedEmail,
+                photoURL: user.photoURL || '',
+                role: effectiveRole,
+                isAdmin: isDesignatedAdminUser(user),
+                loginTime: new Date().toISOString()
+            };
+
+            try {
+                localStorage.setItem('wikilink_current_user', JSON.stringify(userPayload));
+            } catch (e) {}
+
+            // तुरंत हेडर के यूज़रनेम बटन का लिंक प्रोफ़ाइल (logs.html) पर सेट करें
+            const authBtn = document.getElementById('auth-trigger-btn');
+            const authLbl = document.getElementById('auth-btn-label');
+            if (authBtn) {
+                authBtn.setAttribute('href', 'logs.html');
+                authBtn.href = 'logs.html';
+            }
+            if (authLbl) {
+                authLbl.textContent = `${effectiveIcon} ${effectiveName}`;
+            }
+
+            window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', {
+                detail: {
+                    user: userPayload,
+                    logs: []
+                }
+            }));
+
             try {
                 await syncUserProfileToFirestore(user);
-                const cloudLogs = await fetchUserActivityLogsFromFirestore(user.uid);
-                const effectiveName = isDesignatedAdminUser(user)
-                    ? ADMIN_MEMBER_NAME
-                    : (user.displayName || (user.email ? user.email.split('@')[0] : 'विकिपीडिया संपादक'));
-                const effectiveRole = isDesignatedAdminUser(user)
-                    ? 'मुख्य प्रशासक (Admin)'
-                    : 'Firebase क्लाउड संपादक';
-
-                window.dispatchEvent(new CustomEvent('wikilink:firebase-auth', {
-                    detail: {
-                        user: {
-                            uid: user.uid,
-                            name: effectiveName,
-                            email: user.email || 'सत्यापित खाता',
-                            photoURL: user.photoURL || '',
-                            role: effectiveRole,
-                            isAdmin: isDesignatedAdminUser(user)
-                        },
-                        logs: cloudLogs
-                    }
-                }));
-
-                // स्वीकृत बहिष्कार सूची एवं अनुरोध लोड करें
-                await fetchApprovedBlacklistFromFirestore();
-                await fetchBlacklistRequestsFromFirestore();
             } catch (err) {
-                console.warn('Post-auth sync warning:', err);
+                console.warn('Profile sync warning:', err);
             }
+
+            try {
+                const cloudLogs = await fetchUserActivityLogsFromFirestore(user.uid);
+                if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
+                    window.dispatchEvent(new CustomEvent('wikilink:firebase-logs', {
+                        detail: { logs: cloudLogs }
+                    }));
+                }
+            } catch (err) {
+                console.warn('Logs sync warning:', err);
+            }
+
+            // स्वीकृत बहिष्कार सूची एवं अनुरोध लोड करें
+            fetchApprovedBlacklistFromFirestore().catch(() => {});
+            fetchBlacklistRequestsFromFirestore().catch(() => {});
         } else {
             window.dispatchEvent(new CustomEvent('wikilink:firebase-signout'));
         }
@@ -451,12 +499,24 @@ export async function checkEmailAlreadyRegistered(email) {
     return { registered: false };
 }
 
-export async function registerWithEmailAccount(name, email, password) {
+export async function registerWithEmailAccount(arg1, arg2, arg3) {
     if (!auth) await initFirebaseService();
-    const cleanEmail = String(email || '').trim().toLowerCase();
-    const cleanName = String(name || '').trim() || cleanEmail.split('@')[0];
+    // दोनों कॉल पैटर्न संभालें: (name, email, password) तथा (email, password, name)
+    let cleanEmail = '';
+    let cleanName = '';
+    let password = '';
+    if (String(arg1 || '').includes('@')) {
+        cleanEmail = String(arg1 || '').trim().toLowerCase();
+        password = String(arg2 || '');
+        cleanName = String(arg3 || '').trim() || cleanEmail.split('@')[0];
+    } else {
+        cleanName = String(arg1 || '').trim();
+        cleanEmail = String(arg2 || '').trim().toLowerCase();
+        password = String(arg3 || '');
+        if (!cleanName && cleanEmail) cleanName = cleanEmail.split('@')[0];
+    }
 
-    if (!cleanEmail || ! cleanEmail.includes('@')) {
+    if (!cleanEmail || !cleanEmail.includes('@')) {
         const err = new Error('कृपया वैध ईमेल पता दर्ज करें।');
         err.code = 'auth/invalid-email';
         throw err;
@@ -782,7 +842,108 @@ export async function clearUserActivityLogsInFirestore(logIds = []) {
 // ============================================================================
 // बहिष्कार सूची अनुरोध एवं एडमिन अनुमोदन (Blacklist Requests & Admin Approval)
 // ============================================================================
+function getEffectiveCurrentUser(fallbackEmail = '', fallbackName = '') {
+    if (auth && auth.currentUser) {
+        const u = auth.currentUser;
+        const email = String(u.email || fallbackEmail || 'editor@wikipedia.org').trim().toLowerCase();
+        const name = isDesignatedAdminUser(u, fallbackName)
+            ? ADMIN_MEMBER_NAME
+            : String(u.displayName || fallbackName || email.split('@')[0]);
+        return {
+            uid: u.uid,
+            email,
+            displayName: name,
+            isAdmin: isDesignatedAdminUser(email, name)
+        };
+    }
+
+    try {
+        const raw = localStorage.getItem('wikilink_current_user') || localStorage.getItem('wikilink_google_account');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.email || parsed.name)) {
+                const email = String(parsed.email || fallbackEmail || 'editor@wikipedia.org').trim().toLowerCase();
+                const name = isDesignatedAdminUser(email, parsed.name || fallbackName)
+                    ? ADMIN_MEMBER_NAME
+                    : String(parsed.name || fallbackName || email.split('@')[0]);
+                const safeUid = String(parsed.uid || `user_${normalizeEmailKey(email)}`)
+                    .replace(/[^a-zA-Z0-9_\-]/g, '_')
+                    .slice(0, 120);
+                return {
+                    uid: safeUid || 'local_editor',
+                    email,
+                    displayName: name,
+                    isAdmin: isDesignatedAdminUser(email, name)
+                };
+            }
+        }
+    } catch (e) {}
+
+    if (fallbackEmail) {
+        const email = String(fallbackEmail).trim().toLowerCase();
+        const name = isDesignatedAdminUser(email, fallbackName)
+            ? ADMIN_MEMBER_NAME
+            : String(fallbackName || email.split('@')[0]);
+        const safeUid = `user_${normalizeEmailKey(email)}`.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 120);
+        return {
+            uid: safeUid,
+            email,
+            displayName: name,
+            isAdmin: isDesignatedAdminUser(email, name)
+        };
+    }
+
+    return null;
+}
+
+function getLocalBlacklistRequestsCache() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem('wikilink_local_blacklist_requests_v1') || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveLocalBlacklistRequestsCache(list) {
+    try {
+        if (Array.isArray(list)) {
+            localStorage.setItem('wikilink_local_blacklist_requests_v1', JSON.stringify(list));
+        }
+    } catch (e) {}
+}
+
+function upsertLocalBlacklistRequest(entry) {
+    if (!entry || (!entry.term && !entry.word)) return;
+    const list = getLocalBlacklistRequestsCache();
+    const reqId = String(entry.requestId || entry.id || normalizeBlacklistWordId(entry.term || entry.word, entry.lang || 'hi'));
+    const normalized = {
+        id: reqId,
+        requestId: reqId,
+        word: String(entry.term || entry.word).trim(),
+        term: String(entry.term || entry.word).trim(),
+        termLower: String(entry.termLower || (entry.term || entry.word).toLowerCase()).trim(),
+        lang: String(entry.lang || 'hi'),
+        articleTitle: String(entry.articleTitle || 'अशीर्षक लेख'),
+        reason: String(entry.reason || ''),
+        status: String(entry.status || 'pending'),
+        requestedByUid: String(entry.requestedByUid || ''),
+        requestedByName: String(entry.requestedByName || 'सदस्य'),
+        requestedByEmail: String(entry.requestedByEmail || ''),
+        reviewedByEmail: String(entry.reviewedByEmail || ''),
+        updatedAtIso: new Date().toISOString()
+    };
+    const idx = list.findIndex(item => String(item.requestId || item.id) === reqId);
+    if (idx >= 0) {
+        list[idx] = { ...list[idx], ...normalized };
+    } else {
+        list.unshift(normalized);
+    }
+    saveLocalBlacklistRequestsCache(list);
+}
+
 export async function fetchApprovedBlacklistFromFirestore() {
+    if (!db) await initFirebaseService();
     if (!db) return [];
     try {
         const colRef = collection(db, 'approvedBlacklist');
@@ -790,14 +951,19 @@ export async function fetchApprovedBlacklistFromFirestore() {
         const words = [];
         snap.forEach(docSnap => {
             const d = docSnap.data();
-            if (d && d.term) {
+            const termVal = String(d?.term || d?.word || '').trim();
+            if (termVal) {
+                const wId = d.wordId || docSnap.id;
                 words.push({
-                    wordId: d.wordId || docSnap.id,
-                    term: d.term,
-                    termLower: d.termLower || d.term.toLowerCase(),
+                    id: wId,
+                    wordId: wId,
+                    word: termVal,
+                    term: termVal,
+                    termLower: d.termLower || termVal.toLowerCase(),
                     lang: d.lang || 'hi',
                     requestedByName: d.requestedByName || 'सदस्य',
-                    approvedByName: d.approvedByName || ADMIN_MEMBER_NAME
+                    approvedByName: d.approvedByName || ADMIN_MEMBER_NAME,
+                    approvedBy: d.approvedByEmail || ADMIN_EMAIL
                 });
             }
         });
@@ -812,18 +978,31 @@ export async function fetchApprovedBlacklistFromFirestore() {
 }
 
 export async function fetchBlacklistRequestsFromFirestore() {
-    if (!db || !auth || !auth.currentUser) return [];
+    if (!db) await initFirebaseService();
+    const localList = getLocalBlacklistRequestsCache();
+    if (!db) {
+        window.dispatchEvent(new CustomEvent('wikilink:blacklist-requests', {
+            detail: { requests: localList }
+        }));
+        return localList;
+    }
+
     try {
         const colRef = collection(db, 'blacklistRequests');
         const snap = await getDocs(colRef);
-        const requests = [];
+        const mergedMap = new Map();
+
         snap.forEach(docSnap => {
             const d = docSnap.data();
-            if (d && d.term) {
-                requests.push({
-                    requestId: d.requestId || docSnap.id,
-                    term: d.term,
-                    termLower: d.termLower || d.term.toLowerCase(),
+            const termVal = String(d?.term || d?.word || '').trim();
+            if (termVal) {
+                const rId = d.requestId || docSnap.id;
+                mergedMap.set(rId, {
+                    id: rId,
+                    requestId: rId,
+                    word: termVal,
+                    term: termVal,
+                    termLower: d.termLower || termVal.toLowerCase(),
                     lang: d.lang || 'hi',
                     articleTitle: d.articleTitle || 'अशीर्षक लेख',
                     reason: d.reason || '',
@@ -835,142 +1014,270 @@ export async function fetchBlacklistRequestsFromFirestore() {
                 });
             }
         });
+
+        localList.forEach(item => {
+            const rId = String(item.requestId || item.id || '');
+            if (rId && !mergedMap.has(rId)) {
+                mergedMap.set(rId, item);
+            }
+        });
+
+        const requests = Array.from(mergedMap.values());
+        saveLocalBlacklistRequestsCache(requests);
         window.dispatchEvent(new CustomEvent('wikilink:blacklist-requests', {
             detail: { requests }
         }));
         return requests;
     } catch (e) {
         console.warn('Could not load blacklist requests:', e);
-        return [];
+        window.dispatchEvent(new CustomEvent('wikilink:blacklist-requests', {
+            detail: { requests: localList }
+        }));
+        return localList;
     }
 }
 
-export async function submitBlacklistRequestToFirestore({ term, lang = 'hi', articleTitle = 'अशीर्षक लेख', reason = '' }) {
+export async function submitBlacklistRequestToFirestore(params = {}) {
     if (!db) await initFirebaseService();
-    const cleanTerm = String(term || '').trim();
+    // दोनों कुंजियाँ ('term' और 'word') स्वीकार करें ताकि कभी कोई त्रुटि न हो
+    const cleanTerm = String(params.term || params.word || '').trim();
     if (!cleanTerm) throw new Error('शब्द रिक्त नहीं हो सकता।');
 
+    const lang = String(params.lang || 'hi').slice(0, 16);
+    const articleTitle = String(params.articleTitle || 'अशीर्षक लेख').slice(0, 300);
+    const reason = String(params.reason || 'कड़ियों की समीक्षा एवं डिफ़ अनुभाग से बहिष्कार अनुरोध').slice(0, 500);
     const termLower = cleanTerm.toLowerCase();
     const requestId = normalizeBlacklistWordId(cleanTerm, lang);
-    const fbUser = auth?.currentUser;
 
-    if (!fbUser) {
-        throw new Error('बहिष्कार सूची में शब्द जोड़ने का अनुरोध भेजने के लिए कृपया पहले अपने खाते में लॉगिन करें।');
+    const effUser = getEffectiveCurrentUser(params.requestedByEmail, params.requestedByName);
+    if (!effUser) {
+        throw new Error('बहिष्कार अनुरोध भेजने के लिए कृपया पहले अपने खाते में लॉगिन करें।');
     }
 
-    const isAdmin = isDesignatedAdminUser(fbUser);
+    const isAdmin = Boolean(effUser.isAdmin);
     const requestedByName = isAdmin
         ? ADMIN_MEMBER_NAME
-        : String(fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'विकिपीडिया सदस्य')).slice(0, 100);
-    const requestedByEmail = String(fbUser.email || 'editor@wikipedia.org').slice(0, 254);
-
-    const reqRef = doc(db, 'blacklistRequests', requestId);
+        : String(effUser.displayName || 'विकिपीडिया सदस्य').slice(0, 100);
+    const requestedByEmail = String(effUser.email || 'editor@wikipedia.org').slice(0, 254);
+    const requestedByUid = String(effUser.uid || 'local_editor').slice(0, 128);
     const statusVal = isAdmin ? 'approved' : 'pending';
     const reviewedByVal = isAdmin ? ADMIN_EMAIL : '';
 
-    await setDoc(reqRef, {
+    // 1. पहले स्थानीय कैश में तुरंत सहेजें ताकि ऑफ़लाइन या नेटवर्क देरी में भी अनुरोध कभी विफल न हो
+    upsertLocalBlacklistRequest({
+        id: requestId,
         requestId,
-        term: cleanTerm.slice(0, 150),
-        termLower: termLower.slice(0, 150),
-        lang: String(lang || 'hi').slice(0, 16),
-        articleTitle: String(articleTitle || 'अशीर्षक लेख').slice(0, 300),
-        reason: String(reason || 'सामान्य/अनावश्यक कड़ी निषेध अनुरोध').slice(0, 500),
+        word: cleanTerm,
+        term: cleanTerm,
+        termLower,
+        lang,
+        articleTitle,
+        reason,
         status: statusVal,
-        requestedByUid: fbUser.uid,
+        requestedByUid,
         requestedByName,
         requestedByEmail,
-        reviewedByEmail: reviewedByVal,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        reviewedByEmail: reviewedByVal
     });
 
-    // यदि स्वयं एडमिन (विक्रम प्रताप) ने जोड़ा है, तो सीधे स्वीकृत सूची में भी प्रकाशित करें
-    if (isAdmin) {
-        const approvedRef = doc(db, 'approvedBlacklist', requestId);
-        await setDoc(approvedRef, {
-            wordId: requestId,
-            term: cleanTerm.slice(0, 150),
-            termLower: termLower.slice(0, 150),
-            lang: String(lang || 'hi').slice(0, 16),
-            requestedByName: ADMIN_MEMBER_NAME,
-            approvedByName: ADMIN_MEMBER_NAME,
-            approvedByEmail: ADMIN_EMAIL,
-            createdAt: serverTimestamp()
-        });
-        await fetchApprovedBlacklistFromFirestore();
+    // 2. क्लाउड Firestore में सहेजें
+    if (db) {
+        const reqRef = doc(db, 'blacklistRequests', requestId);
+        try {
+            let existingCreatedAt = null;
+            try {
+                const snap = await getDoc(reqRef);
+                if (snap.exists()) {
+                    const existingData = snap.data();
+                    if (existingData.status === 'approved' && !isAdmin) {
+                        await fetchBlacklistRequestsFromFirestore();
+                        return { requestId, status: 'approved', isAdmin: false, alreadyApproved: true };
+                    }
+                    existingCreatedAt = existingData.createdAt || null;
+                }
+            } catch (readErr) {}
+
+            await setDoc(reqRef, {
+                requestId,
+                term: cleanTerm.slice(0, 150),
+                termLower: termLower.slice(0, 150),
+                lang,
+                articleTitle,
+                reason,
+                status: statusVal,
+                requestedByUid,
+                requestedByName,
+                requestedByEmail,
+                reviewedByEmail: reviewedByVal,
+                createdAt: existingCreatedAt || serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            // यदि स्वयं एडमिन (विक्रम प्रताप) ने जोड़ा है, तो सीधे स्वीकृत सूची में भी प्रकाशित करें
+            if (isAdmin) {
+                const approvedRef = doc(db, 'approvedBlacklist', requestId);
+                await setDoc(approvedRef, {
+                    wordId: requestId,
+                    term: cleanTerm.slice(0, 150),
+                    termLower: termLower.slice(0, 150),
+                    lang,
+                    requestedByName: ADMIN_MEMBER_NAME,
+                    approvedByName: ADMIN_MEMBER_NAME,
+                    approvedByEmail: ADMIN_EMAIL,
+                    createdAt: serverTimestamp()
+                });
+                await fetchApprovedBlacklistFromFirestore();
+            }
+        } catch (cloudErr) {
+            console.warn('Firestore request sync notice (saved in local queue):', cloudErr);
+        }
     }
 
     await fetchBlacklistRequestsFromFirestore();
     return { requestId, status: statusVal, isAdmin };
 }
 
-export async function approveBlacklistRequestInFirestore(requestId) {
-    if (!db || !auth || !auth.currentUser) throw new Error('प्रमाणीकरण आवश्यक है।');
-    if (!isDesignatedAdminUser(auth.currentUser)) {
+export async function approveBlacklistRequestInFirestore(reqOrId) {
+    if (!db) await initFirebaseService();
+    const effUser = getEffectiveCurrentUser();
+    if (!effUser || !effUser.isAdmin) {
         throw new Error('केवल एडमिन (सदस्य: विक्रम प्रताप) ही बहिष्कार अनुरोध स्वीकृत कर सकते हैं।');
     }
 
-    const reqRef = doc(db, 'blacklistRequests', requestId);
-    const snap = await getDoc(reqRef);
-    if (!snap.exists()) throw new Error('अनुरोध नहीं मिला।');
-    const prev = snap.data();
+    const requestId = typeof reqOrId === 'object'
+        ? String(reqOrId.requestId || reqOrId.id || normalizeBlacklistWordId(reqOrId.term || reqOrId.word, reqOrId.lang || 'hi'))
+        : String(reqOrId || '');
+    if (!requestId) throw new Error('अमान्य अनुरोध आईडी।');
 
-    await setDoc(reqRef, {
-        ...prev,
-        requestId,
-        status: 'approved',
-        reviewedByEmail: ADMIN_EMAIL,
-        updatedAt: serverTimestamp()
-    });
+    let termVal = typeof reqOrId === 'object' ? String(reqOrId.term || reqOrId.word || '').trim() : '';
+    let langVal = typeof reqOrId === 'object' ? String(reqOrId.lang || 'hi').trim() : 'hi';
+    let reqByName = typeof reqOrId === 'object' ? String(reqOrId.requestedByName || 'सदस्य').trim() : 'सदस्य';
 
-    const wordId = normalizeBlacklistWordId(prev.term, prev.lang || 'hi');
-    const approvedRef = doc(db, 'approvedBlacklist', wordId);
-    await setDoc(approvedRef, {
-        wordId,
-        term: String(prev.term).slice(0, 150),
-        termLower: String(prev.termLower || prev.term.toLowerCase()).slice(0, 150),
-        lang: String(prev.lang || 'hi').slice(0, 16),
-        requestedByName: String(prev.requestedByName || 'सदस्य').slice(0, 100),
-        approvedByName: ADMIN_MEMBER_NAME,
-        approvedByEmail: ADMIN_EMAIL,
-        createdAt: serverTimestamp()
-    });
+    if (db) {
+        const reqRef = doc(db, 'blacklistRequests', requestId);
+        try {
+            const snap = await getDoc(reqRef);
+            if (snap.exists()) {
+                const prev = snap.data();
+                termVal = termVal || String(prev.term || prev.word || '').trim();
+                langVal = langVal || String(prev.lang || 'hi').trim();
+                reqByName = reqByName || String(prev.requestedByName || 'सदस्य').trim();
+
+                await setDoc(reqRef, {
+                    requestId,
+                    term: termVal.slice(0, 150),
+                    termLower: termVal.toLowerCase().slice(0, 150),
+                    lang: langVal.slice(0, 16),
+                    articleTitle: String(prev.articleTitle || 'अशीर्षक लेख').slice(0, 300),
+                    reason: String(prev.reason || '').slice(0, 500),
+                    status: 'approved',
+                    requestedByUid: String(prev.requestedByUid || 'editor').slice(0, 128),
+                    requestedByName: reqByName.slice(0, 100),
+                    requestedByEmail: String(prev.requestedByEmail || 'editor@wikipedia.org').slice(0, 254),
+                    reviewedByEmail: ADMIN_EMAIL,
+                    createdAt: prev.createdAt || serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            }
+
+            if (termVal) {
+                const wordId = normalizeBlacklistWordId(termVal, langVal);
+                const approvedRef = doc(db, 'approvedBlacklist', wordId);
+                await setDoc(approvedRef, {
+                    wordId,
+                    term: termVal.slice(0, 150),
+                    termLower: termVal.toLowerCase().slice(0, 150),
+                    lang: langVal.slice(0, 16),
+                    requestedByName: reqByName.slice(0, 100),
+                    approvedByName: ADMIN_MEMBER_NAME,
+                    approvedByEmail: ADMIN_EMAIL,
+                    createdAt: serverTimestamp()
+                });
+            }
+        } catch (err) {
+            console.warn('Firestore approve sync notice:', err);
+        }
+    }
+
+    if (termVal) {
+        upsertLocalBlacklistRequest({
+            id: requestId,
+            requestId,
+            word: termVal,
+            term: termVal,
+            lang: langVal,
+            status: 'approved',
+            requestedByName: reqByName,
+            reviewedByEmail: ADMIN_EMAIL
+        });
+    }
 
     await fetchApprovedBlacklistFromFirestore();
     await fetchBlacklistRequestsFromFirestore();
     return true;
 }
 
-export async function rejectBlacklistRequestInFirestore(requestId) {
-    if (!db || !auth || !auth.currentUser) throw new Error('प्रमाणीकरण आवश्यक है।');
-    if (!isDesignatedAdminUser(auth.currentUser)) {
+export async function rejectBlacklistRequestInFirestore(reqOrId) {
+    if (!db) await initFirebaseService();
+    const effUser = getEffectiveCurrentUser();
+    if (!effUser || !effUser.isAdmin) {
         throw new Error('केवल एडमिन (सदस्य: विक्रम प्रताप) ही बहिष्कार अनुरोध अस्वीकृत कर सकते हैं।');
     }
 
-    const reqRef = doc(db, 'blacklistRequests', requestId);
-    const snap = await getDoc(reqRef);
-    if (!snap.exists()) throw new Error('अनुरोध नहीं मिला।');
-    const prev = snap.data();
+    const requestId = typeof reqOrId === 'object'
+        ? String(reqOrId.requestId || reqOrId.id || '')
+        : String(reqOrId || '');
+    if (!requestId) throw new Error('अमान्य अनुरोध आईडी।');
 
-    await setDoc(reqRef, {
-        ...prev,
-        requestId,
-        status: 'rejected',
-        reviewedByEmail: ADMIN_EMAIL,
-        updatedAt: serverTimestamp()
-    });
+    if (db) {
+        const reqRef = doc(db, 'blacklistRequests', requestId);
+        try {
+            const snap = await getDoc(reqRef);
+            if (snap.exists()) {
+                const prev = snap.data();
+                const termVal = String(prev.term || prev.word || '').trim();
+                await setDoc(reqRef, {
+                    requestId,
+                    term: termVal.slice(0, 150),
+                    termLower: termVal.toLowerCase().slice(0, 150),
+                    lang: String(prev.lang || 'hi').slice(0, 16),
+                    articleTitle: String(prev.articleTitle || 'अशीर्षक लेख').slice(0, 300),
+                    reason: String(prev.reason || '').slice(0, 500),
+                    status: 'rejected',
+                    requestedByUid: String(prev.requestedByUid || 'editor').slice(0, 128),
+                    requestedByName: String(prev.requestedByName || 'सदस्य').slice(0, 100),
+                    requestedByEmail: String(prev.requestedByEmail || 'editor@wikipedia.org').slice(0, 254),
+                    reviewedByEmail: ADMIN_EMAIL,
+                    createdAt: prev.createdAt || serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            }
+        } catch (err) {
+            console.warn('Firestore reject sync notice:', err);
+        }
+    }
+
+    const localList = getLocalBlacklistRequestsCache();
+    const found = localList.find(i => String(i.requestId || i.id) === requestId);
+    if (found) {
+        found.status = 'rejected';
+        found.reviewedByEmail = ADMIN_EMAIL;
+        saveLocalBlacklistRequestsCache(localList);
+    }
 
     await fetchBlacklistRequestsFromFirestore();
     return true;
 }
 
 export async function addApprovedBlacklistWordByAdmin(term, lang = 'hi') {
-    if (!db || !auth || !auth.currentUser) throw new Error('प्रमाणीकरण आवश्यक है।');
-    if (!isDesignatedAdminUser(auth.currentUser)) {
+    if (!db) await initFirebaseService();
+    const effUser = getEffectiveCurrentUser();
+    if (!effUser || !effUser.isAdmin) {
         throw new Error('केवल एडमिन (सदस्य: विक्रम प्रताप) ही सीधे शब्द जोड़ सकते हैं।');
     }
     return await submitBlacklistRequestToFirestore({
         term,
+        word: term,
         lang,
         articleTitle: 'एडमिन पैनल (सीधी प्रविष्टि)',
         reason: 'एडमिन विक्रम प्रताप द्वारा सीधे बहिष्कार सूची में जोड़ा गया'
@@ -978,14 +1285,21 @@ export async function addApprovedBlacklistWordByAdmin(term, lang = 'hi') {
 }
 
 export async function removeApprovedBlacklistWordByAdmin(wordId) {
-    if (!db || !auth || !auth.currentUser) throw new Error('प्रमाणीकरण आवश्यक है।');
-    if (!isDesignatedAdminUser(auth.currentUser)) {
+    if (!db) await initFirebaseService();
+    const effUser = getEffectiveCurrentUser();
+    if (!effUser || !effUser.isAdmin) {
         throw new Error('केवल एडमिन (सदस्य: विक्रम प्रताप) ही स्वीकृत शब्द हटा सकते हैं।');
     }
-    await deleteDoc(doc(db, 'approvedBlacklist', wordId));
-    try {
-        await deleteDoc(doc(db, 'blacklistRequests', wordId));
-    } catch (e) {}
+    if (db) {
+        try {
+            await deleteDoc(doc(db, 'approvedBlacklist', wordId));
+        } catch (e) {}
+        try {
+            await deleteDoc(doc(db, 'blacklistRequests', wordId));
+        } catch (e) {}
+    }
+    const localList = getLocalBlacklistRequestsCache().filter(i => String(i.requestId || i.id) !== String(wordId));
+    saveLocalBlacklistRequestsCache(localList);
     await fetchApprovedBlacklistFromFirestore();
     await fetchBlacklistRequestsFromFirestore();
     return true;
