@@ -222,9 +222,7 @@ export async function initFirebaseService() {
                 await syncUserProfileToFirestore(result.user);
             }
         })
-        .catch((err) => {
-            console.warn('Redirect result warning:', err);
-        });
+        .catch(() => {});
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -288,9 +286,7 @@ export async function initFirebaseService() {
 
             try {
                 await syncUserProfileToFirestore(user);
-            } catch (err) {
-                console.warn('Profile sync warning:', err);
-            }
+            } catch (err) {}
 
             try {
                 const cloudLogs = await fetchUserActivityLogsFromFirestore(user.uid);
@@ -299,9 +295,7 @@ export async function initFirebaseService() {
                         detail: { logs: cloudLogs }
                     }));
                 }
-            } catch (err) {
-                console.warn('Logs sync warning:', err);
-            }
+            } catch (err) {}
 
             // स्वीकृत बहिष्कार सूची एवं अनुरोध लोड करें
             fetchApprovedBlacklistFromFirestore().catch(() => {});
@@ -986,7 +980,6 @@ export async function fetchApprovedBlacklistFromFirestore() {
         }));
         return words;
     } catch (e) {
-        console.warn('Could not load approved blacklist:', e);
         return [];
     }
 }
@@ -1043,7 +1036,6 @@ export async function fetchBlacklistRequestsFromFirestore() {
         }));
         return requests;
     } catch (e) {
-        console.warn('Could not load blacklist requests:', e);
         window.dispatchEvent(new CustomEvent('wikilink:blacklist-requests', {
             detail: { requests: localList }
         }));
@@ -1345,7 +1337,5 @@ if (typeof window !== 'undefined') {
         removeApprovedBlacklistWordByAdmin
     };
 
-    initFirebaseService().catch((err) => {
-        console.warn('Firebase background init notice:', err);
-    });
+    initFirebaseService().catch(() => {});
 }

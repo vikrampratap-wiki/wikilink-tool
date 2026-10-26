@@ -197,7 +197,7 @@
             'जीवन', 'मृत्यु', 'मौत', 'जन्म', 'आयु', 'उम्र', 'स्वास्थ्य', 'बीमारी', 'रोग',
             'काम', 'कार्य', 'नौकरी', 'धंधा', 'मेहनत', 'मदद', 'सहायता', 'सहयोग',
             'नाम', 'बात', 'चीज', 'वस्तु', 'भाग', 'हिंसा', 'शांति', 'युद्ध',
-            'देश', 'विदेश', 'शहर', 'गाँव', 'स्थान', 'जगह', 'संसार', 'दुनिया', 'विश्व', 'धरती', 'पृथ्वी', 'आकाश', 'समुद्र', 'नदी', 'पहाड़', 'पेड़', 'जंगल', 'पशु', 'पक्षी', 'जानवर',
+            'देश', 'विदेश', 'शहर', 'गाँव', 'स्थान', 'जगह', 'संसार', 'दुनिया', 'विश्व', 'धरती', 'आकाश', 'समुद्र', 'नदी', 'पहाड़', 'पेड़', 'जंगल', 'पशु', 'पक्षी', 'जानवर',
             'पुस्तक', 'किताब', 'पत्र', 'अखबार', 'कागज', 'कलम',
             'भाषा', 'शब्द', 'अर्थ', 'वाक्य', 'बातचीत', 'विचार', 'सोच', 'ज्ञान', 'शिक्षा',
             'रूप', 'रंग', 'आकार', 'प्रकार', 'तरह', 'विधि', 'तरीका', 'नियम', 'कारण', 'प्रभाव', 'उद्देश्य', 'लक्ष्य',
@@ -212,7 +212,7 @@
             // सामान्य विशेषण (Generic Descriptive Adjectives)
             'बड़ा', 'बड़ी', 'बड़े', 'छोटा', 'छोटी', 'छोटे', 'अच्छा', 'अच्छी', 'अच्छे', 'बुरा', 'बुरी', 'बुरे',
             'नया', 'नई', 'नए', 'पुराना', 'पुरानी', 'पुराने', 'सुंदर', 'महत्वपूर्ण', 'प्रसिद्ध', 'प्रमुख', 'विशेष',
-            'सत्य', 'झूठ', 'सही', 'गलत', 'कठिन', 'सरल', 'आसान', 'भारी', 'हल्का', 'गहरा', 'ऊँचा', 'नीचा',
+            'झूठ', 'सही', 'गलत', 'कठिन', 'सरल', 'आसान', 'भारी', 'हल्का', 'गहरा', 'ऊँचा', 'नीचा',
             'गर्म', 'ठंडा', 'मीठा', 'कड़वा', 'सफेद', 'काला', 'लाल', 'नीला', 'हरा', 'पीला',
             
             // संख्याएँ व क्रम (Numbers & Ordinals)
@@ -379,10 +379,10 @@
         'अपना', 'अपनी', 'अपने', 'उनका', 'उनकी', 'उनके', 'इसका', 'इसकी', 'इसके', 'हमारा', 'हमारी', 'हमारे',
         'मेरा', 'मेरी', 'मेरे', 'आपका', 'आपकी', 'आपके', 'स्वयं', 'खुद', 'कोई', 'किसी', 'कुछ', 'सब', 'सभी', 'प्रत्येक', 'हर',
         // सामान्य विशेषण व संख्यावाचक जो संज्ञा पद के साथ जुड़कर गलत N-gram बनाते हैं
-        'महान', 'प्रमुख', 'प्रसिद्ध', 'विशाल', 'समृद्ध', 'ऐतिहासिक', 'प्राचीन', 'आधुनिक', 'मुख्य', 'विशेष',
+        'महान', 'प्रमुख', 'प्रसिद्ध', 'विशाल', 'समृद्ध', 'मुख्य', 'विशेष',
         'सामान्य', 'विभिन्न', 'अनेक', 'कई', 'अधिक', 'कम', 'बहुत', 'अत्यंत', 'अति', 'काफी', 'पर्याप्त',
-        'बड़ा', 'बड़ी', 'बड़े', 'छोटा', 'छोटी', 'छोटे', 'अच्छा', 'अच्छी', 'अच्छे', 'नया', 'नई', 'नए',
-        'पुराना', 'पुरानी', 'पुराने', 'सुंदर', 'महत्वपूर्ण', 'अमूल्य', 'संपूर्ण', 'समस्त', 'प्रथम', 'द्वितीय', 'तृतीय', 'अंतिम',
+        'बड़ा', 'बड़ी', 'बड़े', 'छोटा', 'छोटी', 'छोटे', 'अच्छा', 'अच्छी', 'अच्छे',
+        'पुराना', 'पुरानी', 'पुराने', 'सुंदर', 'महत्वपूर्ण', 'अमूल्य', 'संपूर्ण', 'समस्त', 'अंतिम',
         'स्थित', 'शामिल', 'संबंधित', 'आधारित', 'प्रचलित', 'उपलब्ध', 'निर्मित', 'स्थापित', 'संचालित', 'विभाजित', 'समर्पित',
         'जाना', 'जानी', 'जाने', 'माना', 'मानी', 'माने', 'कहा', 'कही', 'कहे', 'रखा', 'रखी', 'रखे', 'बना', 'बनी', 'बने',
         'नामक', 'रचयिता', 'अवतार', 'नेतृत्व', 'मार्ग', 'चलकर', 'पैदल', 'चले', 'किया', 'किए', 'हुआ', 'हुई', 'हुए',
@@ -464,8 +464,11 @@
 
     function isNonLinkableWord(term, lang = 'hi') {
         if (!term) return false;
+        const trimmed = term.trim();
+        if (OFFLINE_VERIFIED_WIKI_TITLES.has(trimmed)) return false;
+
         ensureExtendedBlacklistLoaded();
-        const clean = term.trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+        const clean = trimmed.toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
         const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
 
         // एडमिन द्वारा स्वीकृत वैश्विक बहिष्कार सूची जाँचें
@@ -488,8 +491,8 @@
         // यदि पूरा बहु-शब्द पद स्वयं बहिष्कार सूची में है
         if (langSet.has(clean)) return true;
 
-        // यदि बहु-शब्द पद में केवल स्टॉपवर्ड्स या सामान्य शब्द हैं तो कड़ी न बनाएं
-        if (rawParts.every(p => hiStop.has(p) || enStop.has(p) || langSet.has(p))) return true;
+        // यदि बहु-शब्द पद के सभी शब्द केवल स्टॉपवर्ड्स हैं तो कड़ी न बनाएं
+        if (rawParts.every(p => hiStop.has(p) || enStop.has(p))) return true;
 
         return false;
     }
@@ -763,18 +766,16 @@
             showToast('ऑफ़लाइन मोड सक्रिय: मुख्य कार्यपटल बिना इंटरनेट के कार्यशील है');
         });
 
-        // Service Worker पंजीकरण (./sw.js?v=12 को अपडेट करें ताकि पुराना कैश तुरंत हटे)
+        // Service Worker पंजीकरण (./sw.js?v=13 को अपडेट करें ताकि पुराना कैश तुरंत हटे)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 setTimeout(() => {
-                    navigator.serviceWorker.register('./sw.js?v=12', { scope: './' }).then((reg) => {
+                    navigator.serviceWorker.register('./sw.js?v=13', { scope: './' }).then((reg) => {
                         reg.update().catch(() => {});
                         if (reg.waiting) {
                             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                         }
-                    }).catch((err) => {
-                        console.warn('Service Worker registration warning:', err);
-                    });
+                    }).catch(() => {});
                 }, 1200);
             }, { once: true });
         }
@@ -1332,9 +1333,7 @@
 
         try {
             const endpoint = `https://${state.lang}.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=1&format=json&origin=*`;
-            const resp = await fetch(endpoint, {
-                headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
-            });
+            const resp = await fetch(endpoint);
             const data = await resp.json();
             const randomPage = data.query?.random?.[0];
 
@@ -1368,9 +1367,7 @@
             const normCat = cat.startsWith('श्रेणी:') || cat.startsWith('Category:') ? cat : `श्रेणी:${cat}`;
             const endpoint = `https://${state.lang}.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=${encodeURIComponent(normCat)}&cmnamespace=0&cmlimit=30&format=json&origin=*`;
 
-            const resp = await fetch(endpoint, {
-                headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
-            });
+            const resp = await fetch(endpoint);
             const data = await resp.json();
             const members = data.query?.categorymembers || [];
 
@@ -1432,9 +1429,7 @@
     async function fetchArticleWikitext(lang, title) {
         const endpoint = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=revisions&titles=${encodeURIComponent(title)}&rvslots=*&rvprop=content&formatversion=2&format=json&origin=*`;
         
-        const response = await fetch(endpoint, {
-            headers: { 'Api-User-Agent': 'WikiLinkAssistant/2.0' }
-        });
+        const response = await fetch(endpoint);
 
         if (!response.ok) {
             throw new Error(`विकिपीडिया सर्वर से त्रुटि: ${response.status} ${response.statusText}`);
@@ -1482,8 +1477,8 @@
     }
 
     async function verifyBatchTitles(lang, titles) {
-        // MediaWiki API POST के माध्यम से 50 शीर्षकों के बैच और समानांतर (Parallel) सत्यापन का उपयोग करें
-        const BATCH_SIZE = 50;
+        // MediaWiki API के माध्यम से CORS-सुरक्षित (बिना कस्टम हेडर प्रीफ़्लाइट के) बैच और समानांतर (Parallel) सत्यापन
+        const BATCH_SIZE = 40;
         const CONCURRENCY = 4;
         const results = new Map();
 
@@ -1496,7 +1491,7 @@
             return results;
         }
 
-        const endpoint = `https://${lang}.wikipedia.org/w/api.php`;
+        const endpoint = `https://${lang}.wikipedia.org/w/api.php?origin=*`;
         const chunks = [];
         for (let i = 0; i < titles.length; i += BATCH_SIZE) {
             chunks.push(titles.slice(i, i + BATCH_SIZE));
@@ -1504,7 +1499,7 @@
 
         let completedCount = 0;
 
-        async function processChunk(chunk) {
+        async function fetchMediaWikiBatch(chunk) {
             const bodyParams = new URLSearchParams({
                 action: 'query',
                 titles: chunk.join('|'),
@@ -1516,18 +1511,36 @@
                 origin: '*'
             });
 
+            // 1. पहले CORS-Simple POST अनुरोध (कोई कस्टम हेडर नहीं, ताकि OPTIONS प्रीफ़्लाइट कभी विफल न हो)
             try {
-                const response = await fetch(endpoint, {
+                const postResp = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                        'Api-User-Agent': 'WikiLinkAssistant/2.5'
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                     },
                     body: bodyParams.toString()
                 });
-                const data = await response.json();
+                if (postResp && postResp.ok) {
+                    return await postResp.json();
+                }
+            } catch (postErr) {
+                // यदि POST बाधित हो तो तुरंत GET फ़ॉलबैक आज़माएँ
+            }
 
-                if (data && data.offline) {
+            // 2. मानक CORS GET फ़ॉलबैक
+            const getUrl = `https://${lang}.wikipedia.org/w/api.php?${bodyParams.toString()}`;
+            const getResp = await fetch(getUrl);
+            if (!getResp || !getResp.ok) {
+                throw new Error(`HTTP ${getResp ? getResp.status : 'Failed'}`);
+            }
+            return await getResp.json();
+        }
+
+        async function processChunk(chunk) {
+            try {
+                const data = await fetchMediaWikiBatch(chunk);
+
+                if (!data || data.offline || data.offlineMode) {
                     applySafeOfflineVerification(chunk, results);
                     return;
                 }
@@ -1595,7 +1608,6 @@
                     });
                 });
             } catch (err) {
-                console.warn('Batch verification fallback:', err);
                 applySafeOfflineVerification(chunk, results);
             } finally {
                 completedCount += chunk.length;
@@ -2546,20 +2558,17 @@
             if (filterCommonWords) {
                 if (isNonLinkableWord(phrase, lang)) return false;
 
-                // बहु-शब्द पद का प्रत्येक घटक या तो विशिष्ट संज्ञा हो (NEVER_LINK_WORDS से बाहर), या वैध संयुक्त संज्ञा घटक/सम्मानसूचक हो
-                const hasInvalidCommonPart = parts.some((p, idx) => {
-                    if (!langSet.has(p)) return false;
-                    if (COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST.has(p)) return false;
-                    if (idx === 0 && HONORIFIC_PREFIXES.has(p)) return false;
-                    return true;
-                });
-                if (hasInvalidCommonPart) return false;
+                // बहु-शब्द पद में कम-से-कम एक विशिष्ट/ज्ञानकोशीय घटक होना चाहिए (या संयुक्त संज्ञा घटक हो)
+                const hasAtLeastOneSpecificOrCompoundPart = parts.some(p =>
+                    !langSet.has(p) || COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST.has(p)
+                );
+                if (!hasAtLeastOneSpecificOrCompoundPart) return false;
 
-                // 3 या 4 शब्दों के पद तभी स्वीकार्य हैं जब उनमें कोई ज्ञानकोशीय संयुक्त सूचक हो अथवा सभी शब्द विशिष्ट नाम हों
+                // 3 या 4 शब्दों के पद तभी स्वीकार्य हैं जब उनमें कोई ज्ञानकोशीय संयुक्त सूचक हो अथवा कम-से-कम दो विशिष्ट शब्द हों
                 if (parts.length >= 3) {
                     const hasCompoundMarker = parts.some(p => COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST.has(p));
-                    const allProperWords = parts.every(p => !langSet.has(p));
-                    if (!hasCompoundMarker && !allProperWords) return false;
+                    const specificCount = parts.filter(p => !langSet.has(p) || HONORIFIC_PREFIXES.has(p)).length;
+                    if (!hasCompoundMarker && specificCount < 2) return false;
                 }
             }
         } else {
@@ -2645,6 +2654,7 @@
             const info = candidateMap.get(term);
             if (!info) continue;
 
+            const isMulti = term.trim().includes(' ');
             const resolvedWikiTarget = (info.target || term).trim();
 
             // यदि कोई पद या उसका रीडायरेक्ट लक्ष्य स्वयं वर्तमान लेख का शीर्षक है (WP:CIRCULAR)
@@ -6703,7 +6713,6 @@
                 showToast('एडमिन पैनल एवं स्वीकृत बहिष्कार सूची अद्यतन हो गई');
             }
         } catch (err) {
-            console.warn('Refresh admin & blacklist warning:', err);
             renderApprovedBlacklistStrip();
             renderAdminPanelUI();
         }

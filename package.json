@@ -1,6 +1,7 @@
 {
   "name": "wikilink-assistant",
   "version": "2.1.0",
+  "private": true,
   "description": "विकीलिंक सहायक (WikiLink Assistant) - विकिपीडिया आंतरिक कड़ी टूल",
   "type": "commonjs",
   "scripts": {
