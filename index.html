@@ -98,19 +98,13 @@
                 <a href="index.html" class="btn btn-primary btn-sm nav-page-btn active" title="मुख्य कार्यपटल">
                     🛠️ कार्यपटल
                 </a>
-                <a href="logs.html" class="btn btn-outline btn-sm nav-page-btn" title="उपयोगकर्ता प्रोफ़ाइल, थीम स्टूडियो एवं गतिविधि लॉग पेज">
-                    👤 प्रोफ़ाइल व लॉग (<span id="header-log-count">0</span>)
-                </a>
                 <a href="about.html" class="btn btn-outline btn-sm nav-page-btn" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
                     ℹ️ परिचय व मानक
                 </a>
-                <button type="button" id="admin-header-btn" class="btn btn-warning btn-sm nav-page-btn" style="display: none;" title="एडमिन पैनल (केवल विक्रम प्रताप हेतु)">
-                    🛡️ एडमिन पैनल (<span id="admin-pending-badge">0</span>)
-                </button>
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
                     <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
-                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें">
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन करें अथवा अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
@@ -749,63 +743,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- 4. एडमिन नियंत्रण पैनल (केवल सदस्य नाम: विक्रम प्रताप एवं ईमेल: amankumar.wikimedian@gmail.com के लिए प्रदर्शित) -->
-        <section id="admin-panel-card" class="card workbench-card admin-panel-card" style="display: none; margin-top: 22px;">
-            <div class="workbench-card-header admin-panel-header">
-                <div>
-                    <h2 class="workbench-card-title">🛡️ एडमिन नियंत्रण पैनल (Admin Control Panel — विक्रम प्रताप)</h2>
-                    <small class="form-hint">केवल अधिकृत एडमिन (<strong>सदस्य नाम: विक्रम प्रताप</strong> | <code>amankumar.wikimedian@gmail.com</code>) के लिए प्रदर्शित • बहिष्कार सूची अनुरोधों की समीक्षा एवं स्वीकृति</small>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge badge-success">✓ अधिकृत एडमिन: विक्रम प्रताप</span>
-                    <button type="button" id="btn-refresh-admin-panel" class="btn btn-secondary btn-sm">🔄 ताज़ा करें</button>
-                </div>
-            </div>
-
-            <div class="workbench-card-body">
-                <!-- सीधा शब्द जोड़ने का एडमिन बॉक्स -->
-                <div class="admin-direct-add-bar">
-                    <input type="text" id="admin-direct-word-input" class="form-control form-control-sm" placeholder="सीधे वैश्विक बहिष्कार सूची में नया शब्द जोड़ें (उदा: जनता, दल, समिति)...">
-                    <select id="admin-direct-lang-select" class="form-control form-control-sm" style="max-width: 120px;">
-                        <option value="hi" selected>हिन्दी (hi)</option>
-                        <option value="en">English (en)</option>
-                        <option value="sa">संस्कृतम् (sa)</option>
-                    </select>
-                    <button type="button" id="btn-admin-direct-add" class="btn btn-primary btn-sm">+ सीधे स्वीकृत सूची में जोड़ें</button>
-                </div>
-
-                <!-- लंबित उपयोगकर्ता अनुरोध तालिका -->
-                <div class="admin-section-block" style="margin-top: 16px;">
-                    <h3 class="admin-sub-heading">1. सदस्यों द्वारा भेजे गए 'बहिष्कार सूची में जोड़ें' अनुरोध (<span id="admin-pending-req-count">0</span> लंबित)</h3>
-                    <div class="suggestions-table-container">
-                        <table class="table suggestions-table">
-                            <thead>
-                                <tr>
-                                    <th>शब्द (Word)</th>
-                                    <th>भाषा</th>
-                                    <th>लेख संदर्भ (Article & Context)</th>
-                                    <th>अनुरोधकर्ता (Requested By)</th>
-                                    <th>स्थिति (Status)</th>
-                                    <th width="190">एडमिन निर्णय (Action)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-requests-tbody">
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: 18px; color: var(--text-muted);">अनुरोध लोड हो रहे हैं...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- स्वीकृत शब्द सूची प्रबंधन -->
-                <div class="admin-section-block" style="margin-top: 18px;">
-                    <h3 class="admin-sub-heading">2. एडमिन द्वारा स्वीकृत वैश्विक बहिष्कार शब्द (<span id="admin-approved-words-count">0</span> सक्रिय)</h3>
-                    <div id="admin-approved-words-list" class="approved-blacklist-chips"></div>
-                </div>
-            </div>
-        </section>
         </div><!-- /#main-workbench-page-view -->
     </main>
 
@@ -980,9 +917,9 @@
                     <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
                     <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
-                <a href="logs.html" class="footer-page-card">
-                    <strong>👤 2. प्रोफ़ाइल, थीम व मेरा लॉग (Profile & Logs)</strong>
-                    <span>यूज़र डेटा, गतिविधि इतिहास एवं 1-टच रंग व थीम स्टूडियो</span>
+                <a href="logs.html" class="footer-page-card" data-auth-only="true" style="display: none;">
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Anime Profile & Logs)</strong>
+                    <span>ऊर्ध्वाधर विकल्प, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
                 </a>
                 <a href="about.html" class="footer-page-card">
                     <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>

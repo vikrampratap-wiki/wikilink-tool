@@ -4657,6 +4657,66 @@
             speech.textContent = `${oldName} लॉगआउट हुए! अतिथि मोड में स्वागत है 👋`;
         }
         showToast(`${oldName} सफलतापूर्वक लॉगआउट हुए (अतिथि सत्र सक्रिय)`);
+        if ($('anime-profile-authenticated-shell')) {
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 450);
+        }
+    }
+
+    function switchProfileSection(sectionId) {
+        if (!sectionId) return;
+        if (sectionId === 'sec-profile-admin') {
+            const isAdmin = Boolean(
+                currentUser &&
+                currentUser.email &&
+                currentUser.email.trim().toLowerCase() === 'amankumar.wikimedian@gmail.com' &&
+                currentUser.name &&
+                (currentUser.name.trim() === 'विक्रम प्रताप' || currentUser.name.trim().includes('विक्रम प्रताप'))
+            );
+            if (!isAdmin) {
+                sectionId = 'sec-profile-overview';
+            }
+        }
+
+        document.querySelectorAll('.anime-vnav-btn[data-profile-section]').forEach(btn => {
+            const isMatch = btn.dataset.profileSection === sectionId;
+            btn.classList.toggle('active', isMatch);
+            btn.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+        });
+
+        document.querySelectorAll('.anime-profile-pane').forEach(pane => {
+            const isMatch = pane.id === sectionId;
+            pane.classList.toggle('active', isMatch);
+            pane.style.display = isMatch ? 'block' : 'none';
+        });
+
+        if (sectionId === 'sec-profile-admin') {
+            refreshAdminAndApprovedBlacklist();
+        }
+    }
+
+    function initProfileVerticalNav() {
+        document.querySelectorAll('.anime-vnav-btn[data-profile-section]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchProfileSection(btn.dataset.profileSection);
+            });
+        });
+
+        document.querySelectorAll('[data-jump-profile-section]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchProfileSection(btn.dataset.jumpProfileSection);
+            });
+        });
+
+        const hash = (window.location.hash || '').replace('#', '');
+        if (hash === 'profile-theme-studio' || hash === 'sec-profile-theme') {
+            switchProfileSection('sec-profile-theme');
+        } else if (hash === 'sec-profile-logs' || hash === 'logs') {
+            switchProfileSection('sec-profile-logs');
+        } else if (hash === 'sec-profile-admin' || hash === 'admin') {
+            switchProfileSection('sec-profile-admin');
+        }
     }
 
     function trackCharactersToPoint(targetX, targetY) {
@@ -4690,6 +4750,7 @@
         updateAuthHeaderUI();
         checkPendingRestoredArticle();
         renderUserDashboard();
+        initProfileVerticalNav();
 
         // सभी लॉगआउट बटनों को जोड़ें
         const logoutBtns = [
@@ -4961,7 +5022,15 @@
                 renderSuggestionsTable();
             }
             refreshAdminAndApprovedBlacklist();
-            showToast(`स्वागत है, ${currentUser.name}! आपका प्रोफ़ाइल व लॉग सक्रिय हो गया।`);
+            showToast(`स्वागत है, ${currentUser.name}! आपके विशेष एनीमे प्रोफ़ाइल पेज पर ले जाया जा रहा है...`);
+
+            // लॉगिन करते ही यूज़र को उसके विशेष एनीमे प्रोफ़ाइल पेज (logs.html) में ले जाएँ
+            const isAlreadyOnProfilePage = Boolean($('anime-profile-authenticated-shell') || window.location.pathname.endsWith('logs.html'));
+            if (!isAlreadyOnProfilePage) {
+                setTimeout(() => {
+                    window.location.href = 'logs.html';
+                }, 480);
+            }
         }
 
         const googleFirebaseBtn = $('auth-google-firebase-btn');
@@ -5189,11 +5258,12 @@
         const adminHeaderBtn = $('admin-header-btn');
         if (adminHeaderBtn) {
             adminHeaderBtn.addEventListener('click', () => {
-                const adminCard = $('admin-panel-card');
-                if (adminCard && isCurrentUserDesignatedAdmin()) {
-                    adminCard.style.display = 'block';
-                    adminCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    refreshAdminAndApprovedBlacklist();
+                if (isCurrentUserDesignatedAdmin()) {
+                    if ($('anime-profile-authenticated-shell')) {
+                        switchProfileSection('sec-profile-admin');
+                    } else {
+                        window.location.href = 'logs.html#sec-profile-admin';
+                    }
                 }
             });
         }
@@ -5388,6 +5458,8 @@
 
     function renderAdminPanelUI() {
         const adminHeaderBtn = $('admin-header-btn');
+        const vnavAdminBtn = $('vnav-btn-admin');
+        const overviewAdminQuickCard = $('overview-admin-quick-card');
         const adminPanelCard = $('admin-panel-card');
         const pendingBadge = $('admin-pending-badge');
         const pendingCountSpan = $('admin-pending-req-count');
@@ -5403,14 +5475,18 @@
             (currentUser.name.trim() === 'विक्रम प्रताप' || currentUser.name.trim().includes('विक्रम प्रताप'))
         );
 
-        // कठोर नियम: केवल सदस्य नाम 'विक्रम प्रताप' एवं ईमेल 'amankumar.wikimedian@gmail.com' के लिए ही प्रदर्शित करें
+        // कठोर नियम: केवल सदस्य नाम 'विक्रम प्रताप' एवं ईमेल 'amankumar.wikimedian@gmail.com' के लिए ही प्रोफ़ाइल के अंदर प्रदर्शित करें
         if (!isAdmin) {
             if (adminHeaderBtn) adminHeaderBtn.style.display = 'none';
+            if (vnavAdminBtn) vnavAdminBtn.style.display = 'none';
+            if (overviewAdminQuickCard) overviewAdminQuickCard.style.display = 'none';
             if (adminPanelCard) adminPanelCard.style.display = 'none';
             return;
         }
 
         if (adminHeaderBtn) adminHeaderBtn.style.display = 'inline-flex';
+        if (vnavAdminBtn) vnavAdminBtn.style.display = 'flex';
+        if (overviewAdminQuickCard) overviewAdminQuickCard.style.display = 'flex';
         if (adminPanelCard) adminPanelCard.style.display = 'block';
 
         const requests = state.blacklistRequestsList || [];
@@ -5664,6 +5740,7 @@
     }
 
     function updateAuthHeaderUI() {
+        const authTriggerBtn = $('auth-trigger-btn');
         const authLabel = $('auth-btn-label');
         const authDot = $('auth-status-dot');
         const logCountEl = $('header-log-count');
@@ -5675,18 +5752,37 @@
         if (logCountEl) logCountEl.textContent = String(userActivityLogs.length);
 
         if (currentUser) {
-            const firstName = currentUser.name.split(' ')[0];
-            if (authLabel) authLabel.textContent = `${firstName} (खाता)`;
+            // जब यूज़र खाते में लॉगिन हो तो उसके नाम पर क्लिक करके ही सीधे विशेष प्रोफ़ाइल (logs.html) खुल जाए
+            if (authTriggerBtn) {
+                authTriggerBtn.setAttribute('href', 'logs.html');
+                authTriggerBtn.setAttribute('title', `${currentUser.name} — अपने नाम पर क्लिक करके विशेष एनीमे प्रोफ़ाइल व लॉग खोलें`);
+            }
+            if (authLabel) authLabel.textContent = `👤 ${currentUser.name}`;
             if (authDot) authDot.classList.add('logged-in');
             if (headerLogoutBtn) headerLogoutBtn.style.display = 'inline-flex';
             if (activeSessionBox) activeSessionBox.style.display = 'flex';
             if (activeUserName) activeUserName.textContent = `${currentUser.name} (लॉगिन सक्रिय)`;
             if (activeUserEmail) activeUserEmail.textContent = currentUser.email;
+
+            // केवल लॉग-इन यूज़र को ही प्रोफ़ाइल/लॉग संबंधी लिंक दिखाएँ
+            document.querySelectorAll('[data-auth-only]').forEach(el => {
+                el.style.display = '';
+            });
         } else {
+            // जब यूज़र लॉगिन नहीं है तो नाम की जगह लॉगिन बटन रहे और प्रोफ़ाइल व लॉग का विकल्प न दिया जाए
+            if (authTriggerBtn) {
+                authTriggerBtn.setAttribute('href', 'login.html');
+                authTriggerBtn.setAttribute('title', 'लॉगिन या साइन अप पेज खोलें');
+            }
             if (authLabel) authLabel.textContent = 'लॉगिन / साइन अप';
             if (authDot) authDot.classList.remove('logged-in');
             if (headerLogoutBtn) headerLogoutBtn.style.display = 'none';
             if (activeSessionBox) activeSessionBox.style.display = 'none';
+
+            // लॉग-आउट स्थिति में सभी प्रोफ़ाइल व लॉग विकल्प छुपा दें
+            document.querySelectorAll('[data-auth-only]').forEach(el => {
+                el.style.display = 'none';
+            });
         }
         renderAdminPanelUI();
     }
@@ -5694,14 +5790,25 @@
     function renderUserDashboard(searchQuery = '') {
         const avatarEl = $('user-dash-avatar');
         const nameEl = $('user-dash-name');
+        const bannerNameEl = $('anime-banner-user-name');
+        const rankPillEl = $('anime-sidebar-rank-pill');
         const emailEl = $('user-dash-email');
         const badgeEl = $('user-dash-status-badge');
         const loginBtn = $('user-dash-login-btn');
         const logoutBtn = $('user-dash-logout-btn');
+        const guestLockScreen = $('anime-guest-lock-screen');
+        const authProfileShell = $('anime-profile-authenticated-shell');
 
         if (currentUser) {
+            if (guestLockScreen) guestLockScreen.style.display = 'none';
+            if (authProfileShell) authProfileShell.style.display = 'grid';
+
             if (avatarEl) avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
             if (nameEl) nameEl.textContent = currentUser.name;
+            if (bannerNameEl) bannerNameEl.textContent = currentUser.name;
+            if (rankPillEl) {
+                rankPillEl.textContent = currentUser.isAdmin ? '👑 SUPREME ADMIN' : '✦ LV.99 SENPAI';
+            }
             if (emailEl) emailEl.textContent = `${currentUser.email} • ${currentUser.role || 'विकिपीडिया संपादक'}`;
             if (badgeEl) {
                 badgeEl.className = 'badge badge-success';
@@ -5710,12 +5817,17 @@
             if (loginBtn) loginBtn.textContent = '🔑 खाता बदलें';
             if (logoutBtn) logoutBtn.style.display = 'inline-flex';
         } else {
+            // यदि यूज़र लॉगिन नहीं है और सीधे logs.html पर आता है तो प्रोफ़ाइल छुपाकर लॉक स्क्रीन दिखाएँ
+            if (guestLockScreen) guestLockScreen.style.display = 'block';
+            if (authProfileShell) authProfileShell.style.display = 'none';
+
             if (avatarEl) avatarEl.textContent = 'वि';
-            if (nameEl) nameEl.textContent = 'अतिथि संपादक (Guest Mode)';
-            if (emailEl) emailEl.textContent = 'बिना लॉगिन के स्थानीय सत्र सक्रिय • स्थायी क्लाउड प्रोफ़ाइल हेतु लॉगिन करें';
+            if (nameEl) nameEl.textContent = 'लॉगिन आवश्यक';
+            if (bannerNameEl) bannerNameEl.textContent = 'सदस्य';
+            if (emailEl) emailEl.textContent = 'कृपया प्रोफ़ाइल व लॉग देखने हेतु अपने खाते में लॉगिन करें';
             if (badgeEl) {
                 badgeEl.className = 'badge badge-tool';
-                badgeEl.textContent = 'अतिथि सत्र (Guest Mode)';
+                badgeEl.textContent = 'लॉगिन आवश्यक';
             }
             if (loginBtn) loginBtn.textContent = '🔑 लॉगिन / साइन अप पेज खोलें';
             if (logoutBtn) logoutBtn.style.display = 'none';

@@ -90,16 +90,13 @@
                 <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल">
                     🛠️ कार्यपटल
                 </a>
-                <a href="logs.html" class="btn btn-outline btn-sm nav-page-btn" title="उपयोगकर्ता प्रोफ़ाइल, थीम स्टूडियो एवं गतिविधि लॉग पेज">
-                    👤 प्रोफ़ाइल व लॉग (<span id="header-log-count">0</span>)
-                </a>
                 <a href="about.html" class="btn btn-primary btn-sm nav-page-btn active" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
                     ℹ️ परिचय व मानक
                 </a>
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
                     <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
-                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें">
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन करें अथवा अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
@@ -123,7 +120,7 @@
                 <h2 class="top-auth-banner-title">टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक</h2>
             </div>
             <div class="top-auth-bar-actions">
-                <a href="logs.html#profile-theme-studio" class="btn btn-outline btn-sm">🎨 प्रोफ़ाइल में थीम/रंग बदलें</a>
+                <a href="logs.html#profile-theme-studio" class="btn btn-outline btn-sm" data-auth-only="true" style="display: none;">🎨 प्रोफ़ाइल में थीम/रंग बदलें</a>
                 <a href="index.html" class="btn btn-primary btn-sm">← मुख्य कार्यपटल (Workbench) खोलें</a>
             </div>
         </div>
@@ -155,10 +152,10 @@
                         </ul>
                     </div>
                     <div class="guide-box">
-                        <h4>☁️ प्रोफ़ाइल थीम स्टूडियो एवं क्लाउड लॉग</h4>
+                        <h4>☁️ विशेष एनीमे प्रोफ़ाइल एवं क्लाउड लॉग</h4>
                         <ul>
                             <li>बिना किसी लॉगिन के 100% फीचर्स (विश्लेषण, डिफ़, 1-क्लिक विकिटेक्स्ट कॉपी) का उपयोग करें।</li>
-                            <li><a href="logs.html">प्रोफ़ाइल व लॉग पृष्ठ</a> के भीतर आप अपनी पसंदीदा थीम व रंग पैलेट चुन सकते हैं तथा विश्लेषित लेखों का इतिहास सहेज सकते हैं।</li>
+                            <li>खाते में लॉगिन करने पर आप सीधे अपने नाम पर क्लिक करके अपने विशेष एनीमे प्रोफ़ाइल पेज में थीम स्टूडियो, गतिविधि लॉग और (अधिकृत होने पर) एडमिन पैनल का उपयोग कर सकते हैं।</li>
                         </ul>
                     </div>
                 </div>
@@ -278,9 +275,9 @@
                     <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
                     <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
-                <a href="logs.html" class="footer-page-card">
-                    <strong>👤 2. प्रोफ़ाइल, थीम व मेरा लॉग (Profile & Logs)</strong>
-                    <span>यूज़र डेटा, गतिविधि इतिहास एवं 1-टच रंग व थीम स्टूडियो</span>
+                <a href="logs.html" class="footer-page-card" data-auth-only="true" style="display: none;">
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Anime Profile & Logs)</strong>
+                    <span>ऊर्ध्वाधर विकल्प, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
                 </a>
                 <a href="about.html" class="footer-page-card active">
                     <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
