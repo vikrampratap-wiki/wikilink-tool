@@ -18,7 +18,7 @@ Official Antigravity Skills Documentation: [https://antigravity.google/docs/skil
    - **Box 1 (Source / Clean Input)**: Receives source wikitext or loads it from Wikipedia Action API with configurable filter criteria.
    - **Box 2 (Contaminated / Flagged Text)**: Automatically isolates overlinks, ambiguous links, red links, and broken syntax with detailed logical diagnostic arguments.
 2. **Wikipedia Logical Policies Enforced**:
-   - **Everyday Common Words Suppression (WP:NOTLINKED / WP:COMMONWORDS)**: Suppress wikilinking plain, everyday words (e.g., दिन, पानी, घर, लोग, बड़ा, काम) without special context.
+   - **Everyday Common Words Suppression (WP:NOTLINKED / WP:COMMONWORDS)**: Suppress wikilinking plain, everyday words across a comprehensive 7,400+ terms blacklist directory (`words_blacklist.js` including everyday nouns, verb forms, adjectives, numerals, and time expressions).
    - **Circular Self-Link Prevention (WP:CIRCULAR / WP:SELFREF)**: Suppress and strip circular links pointing to the current article's title.
    - **First Occurrence Rule (WP:OVERLINKING)**: Only link a concept once per article/section.
    - **Disambiguation Page Prevention (WP:DISAMBIG)**: Check Wikimedia Action API (`pageprops.disambiguation`) and avoid linking directly to disambiguation pages.

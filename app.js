@@ -183,6 +183,39 @@
         ])
     };
 
+    // लोड करें विस्तारित 5000+ बहिष्कार महा-सूची (WP:NOTLINKED / WP:COMMONWORDS)
+    try {
+        let extList = null;
+        if (typeof COMMON_5000_WORDS !== 'undefined' && Array.isArray(COMMON_5000_WORDS)) {
+            extList = COMMON_5000_WORDS;
+        } else if (typeof window !== 'undefined' && Array.isArray(window.COMMON_5000_WORDS)) {
+            extList = window.COMMON_5000_WORDS;
+        } else if (typeof global !== 'undefined' && Array.isArray(global.COMMON_5000_WORDS)) {
+            extList = global.COMMON_5000_WORDS;
+        } else if (typeof require !== 'undefined') {
+            try {
+                extList = require('./words_blacklist.js');
+            } catch (e) { }
+        }
+
+        if (Array.isArray(extList)) {
+            extList.forEach(w => {
+                if (w && typeof w === 'string') {
+                    const clean = w.trim().toLowerCase();
+                    if (/^[\u0900-\u097F]/.test(clean)) {
+                        NEVER_LINK_WORDS.hi.add(clean);
+                    } else if (/^[a-z]/.test(clean)) {
+                        NEVER_LINK_WORDS.en.add(clean);
+                    } else {
+                        NEVER_LINK_WORDS.hi.add(clean);
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('विस्तारित बहिष्कार सूची लोड करने में त्रुटि:', e);
+    }
+
     function isNonLinkableWord(term, lang = 'hi') {
         if (!term) return false;
         const clean = term.trim().toLowerCase().replace(/_/g, ' ');
@@ -2757,28 +2790,53 @@
 
         const filtered = q ? wordsArray.filter(w => w.toLowerCase().includes(q)) : wordsArray;
 
-        safeSetText(DOM.policyWordsCount, `कुल ${filtered.length} सामान्य शब्द सुरक्षित`);
+        const totalFormatted = wordsArray.length.toLocaleString('hi-IN');
+        const filteredFormatted = filtered.length.toLocaleString('hi-IN');
+
+        if (q) {
+            safeSetText(DOM.policyWordsCount, `खोज परिणाम: ${filteredFormatted} शब्द (कुल ${totalFormatted} सुरक्षित शब्दों में से)`);
+        } else {
+            safeSetText(DOM.policyWordsCount, `कुल ${totalFormatted} सामान्य शब्द सुरक्षित (WP:NOTLINKED)`);
+        }
 
         if (filtered.length === 0) {
             DOM.policyChipsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.82rem; padding: 10px;">कोई मिलान नहीं मिला।</span>';
             return;
         }
 
-        DOM.policyChipsContainer.innerHTML = filtered.map(w => `
+        // ब्राउज़र गति बनाए रखने के लिए अधिकतम 250 चिप्स प्रदर्शित करें
+        const maxDisplay = 250;
+        const displayList = filtered.slice(0, maxDisplay);
+
+        let html = displayList.map(w => `
             <span class="policy-chip" title="क्लिक कर नियम जाँचें" style="cursor: pointer;" data-word="${escapeHtml(w)}">
                 ${escapeHtml(w)}
             </span>
         `).join('');
 
-        DOM.policyChipsContainer.querySelectorAll('.policy-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
+        if (filtered.length > maxDisplay) {
+            html += `
+                <div style="width: 100%; text-align: center; color: var(--text-muted); font-size: 0.82rem; margin-top: 12px; padding: 8px; border-top: 1px dashed var(--border-color);">
+                    प्रारंभिक ${maxDisplay} शब्द प्रदर्शित (कुल ${filteredFormatted} में से)। अन्य शब्द देखने के लिए ऊपर खोज बॉक्स में टाइप करें...
+                </div>
+            `;
+        }
+
+        DOM.policyChipsContainer.innerHTML = html;
+
+        // एकल इवेंट डेलिगेशन द्वारा तेज़ क्लिक हैंडलिंग
+        if (!DOM.policyChipsContainer._delegatedClick) {
+            DOM.policyChipsContainer.addEventListener('click', (e) => {
+                const chip = e.target.closest('.policy-chip');
+                if (!chip) return;
                 const w = chip.dataset.word;
                 const tabTester = $('btn-tab-bl-tester');
                 if (tabTester) tabTester.click();
                 safeSetValue(DOM.wordTesterInput, w);
                 handleTestWordLinkability();
             });
-        });
+            DOM.policyChipsContainer._delegatedClick = true;
+        }
     }
 
     // ================== ऑफ़लाइन ऑल-इन-वन HTML ==================
@@ -2788,6 +2846,14 @@
             const cssRes = await fetch('style.css');
             const cssText = await cssRes.text();
 
+            let blacklistText = '';
+            try {
+                const blRes = await fetch('words_blacklist.js');
+                blacklistText = await blRes.text();
+            } catch (e) {
+                console.warn('words_blacklist.js fetch error for offline bundle', e);
+            }
+
             const jsRes = await fetch('app.js');
             const jsText = await jsRes.text();
 
@@ -2795,6 +2861,9 @@
             let htmlText = await htmlRes.text();
 
             htmlText = htmlText.replace('<link rel="stylesheet" href="style.css">', `<style>\n${cssText}\n</style>`);
+            if (blacklistText) {
+                htmlText = htmlText.replace('<script src="words_blacklist.js"></script>', `<script>\n${blacklistText}\n</script>`);
+            }
             htmlText = htmlText.replace('<script src="app.js"></script>', `<script>\n${jsText}\n</script>`);
 
             const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
