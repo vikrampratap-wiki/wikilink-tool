@@ -1,203 +1,415 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 1. Global Safety Net (Default-Deny Catch-All)
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    // =========================================================================
+    // Helper Functions (Zero-Trust ABAC & Strict Schema Validation)
+    // =========================================================================
 
-    // 2. Hardened Global Helpers
-    function isSignedIn() {
+    function isAuthenticated() {
       return request.auth != null;
     }
 
-    function isVerifiedUser() {
-      return isSignedIn() && request.auth.token.email_verified == true;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // केवल नामित एडमिन: सदस्य नाम विक्रम प्रताप (amankumar.wikimedian@gmail.com)
+    function isDesignatedAdmin() {
+      return isAuthenticated()
+        && ('email' in request.auth.token)
+        && request.auth.token.email == 'amankumar.wikimedian@gmail.com';
     }
 
     function isValidSkin(skin) {
-      return skin is string && skin.size() <= 40 && (
-        skin == 'wikimedia-classic' ||
-        skin == 'anime-sakura' ||
-        skin == 'anime-mecha' ||
-        skin == 'anime-shinkai' ||
-        skin == 'anime-forest' ||
-        skin == 'anime-royal'
-      );
+      return skin in [
+        'wikimedia-classic',
+        'anime-sakura',
+        'anime-mecha',
+        'anime-shinkai',
+        'anime-forest',
+        'anime-royal'
+      ];
     }
 
-    // 3. Entity Validation Blueprints
-    function isValidUserProfile(data) {
+    function isValidUserProfileCreate(userId) {
+      let data = request.resource.data;
       return data.keys().hasAll(['uid', 'displayName', 'role', 'preferredSkin', 'createdAt', 'updatedAt'])
         && data.keys().hasOnly(['uid', 'displayName', 'role', 'preferredSkin', 'createdAt', 'updatedAt'])
-        && isValidId(data.uid)
-        && data.uid == request.auth.uid
-        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
-        && data.role is string && data.role.size() <= 32 && data.role == 'editor'
+        && data.uid is string
+        && data.uid == userId
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.role is string
+        && (data.role == 'editor' || (data.role == 'admin' && isDesignatedAdmin()))
+        && data.preferredSkin is string
         && isValidSkin(data.preferredSkin)
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
     }
 
-    function isValidUserPrivateInfo(data) {
+    function isValidUserProfileUpdate(userId) {
+      let data = request.resource.data;
+      let prev = resource.data;
+      return data.keys().hasAll(['uid', 'displayName', 'role', 'preferredSkin', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'role', 'preferredSkin', 'createdAt', 'updatedAt'])
+        && data.uid == prev.uid
+        && data.uid == userId
+        && (data.role == prev.role || (data.role == 'admin' && isDesignatedAdmin()))
+        && data.createdAt == prev.createdAt
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.preferredSkin is string
+        && isValidSkin(data.preferredSkin)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidPrivateInfoWrite(userId) {
+      let data = request.resource.data;
       return data.keys().hasAll(['uid', 'email', 'updatedAt'])
         && data.keys().hasOnly(['uid', 'email', 'updatedAt'])
-        && isValidId(data.uid)
-        && data.uid == request.auth.uid
-        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
-        && data.updatedAt is timestamp;
+        && data.uid is string
+        && data.uid == userId
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 254
+        && ('email' in request.auth.token && data.email == request.auth.token.email)
+        && data.updatedAt == request.time;
     }
 
-    function isValidActivityLog(data) {
+    function isValidActivityLogCreate(userId, logId) {
+      let data = request.resource.data;
       return data.keys().hasAll([
-          'logId', 'ownerId', 'action', 'title', 'lang',
-          'newLinks', 'contaminationsFixed', 'note', 'wikitext',
-          'timestampDisplay', 'createdAt'
+          'logId',
+          'ownerId',
+          'action',
+          'title',
+          'lang',
+          'newLinks',
+          'contaminationsFixed',
+          'note',
+          'wikitext',
+          'timestampDisplay',
+          'createdAt'
         ])
         && data.keys().hasOnly([
-          'logId', 'ownerId', 'action', 'title', 'lang',
-          'newLinks', 'contaminationsFixed', 'note', 'wikitext',
-          'timestampDisplay', 'createdAt'
+          'logId',
+          'ownerId',
+          'action',
+          'title',
+          'lang',
+          'newLinks',
+          'contaminationsFixed',
+          'note',
+          'wikitext',
+          'timestampDisplay',
+          'createdAt'
         ])
-        && isValidId(data.logId)
-        && isValidId(data.ownerId)
-        && data.ownerId == request.auth.uid
-        && data.action is string && data.action.size() >= 1 && data.action.size() <= 120
-        && data.title is string && data.title.size() >= 1 && data.title.size() <= 300
-        && data.lang is string && data.lang.size() >= 1 && data.lang.size() <= 16
-        && (data.newLinks is int || data.newLinks is number) && data.newLinks >= 0 && data.newLinks <= 10000
-        && (data.contaminationsFixed is int || data.contaminationsFixed is number) && data.contaminationsFixed >= 0 && data.contaminationsFixed <= 10000
-        && data.note is string && data.note.size() <= 500
-        && data.wikitext is string && data.wikitext.size() <= 50000
-        && data.timestampDisplay is string && data.timestampDisplay.size() >= 1 && data.timestampDisplay.size() <= 100
-        && data.createdAt is timestamp;
+        && data.logId is string
+        && data.logId == logId
+        && data.logId.size() >= 1
+        && data.logId.size() <= 128
+        && data.ownerId is string
+        && data.ownerId == userId
+        && data.action is string
+        && data.action.size() >= 1
+        && data.action.size() <= 120
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 300
+        && data.lang is string
+        && data.lang.size() >= 1
+        && data.lang.size() <= 16
+        && data.newLinks is int
+        && data.newLinks >= 0
+        && data.newLinks <= 10000
+        && data.contaminationsFixed is int
+        && data.contaminationsFixed >= 0
+        && data.contaminationsFixed <= 10000
+        && data.note is string
+        && data.note.size() <= 500
+        && data.wikitext is string
+        && data.wikitext.size() <= 50000
+        && data.timestampDisplay is string
+        && data.timestampDisplay.size() >= 1
+        && data.timestampDisplay.size() <= 100
+        && data.createdAt == request.time;
     }
 
-    // 4. Collection: /users/{userId}
+    function isValidActivityLogUpdate(userId, logId) {
+      let data = request.resource.data;
+      let prev = resource.data;
+      return isValidActivityLogCreate(userId, logId)
+        && data.ownerId == prev.ownerId
+        && data.logId == prev.logId
+        && data.createdAt == prev.createdAt;
+    }
+
+    function isValidRegisteredEmailCreate(emailKey) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['emailKey', 'ownerUid', 'displayName', 'provider', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['emailKey', 'ownerUid', 'displayName', 'provider', 'createdAt', 'updatedAt'])
+        && data.emailKey is string
+        && data.emailKey == emailKey
+        && data.emailKey.size() >= 3
+        && data.emailKey.size() <= 254
+        && data.ownerUid is string
+        && data.ownerUid == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.provider is string
+        && data.provider.size() >= 1
+        && data.provider.size() <= 40
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function isValidRegisteredEmailUpdate(emailKey) {
+      let data = request.resource.data;
+      let prev = resource.data;
+      return data.keys().hasAll(['emailKey', 'ownerUid', 'displayName', 'provider', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['emailKey', 'ownerUid', 'displayName', 'provider', 'createdAt', 'updatedAt'])
+        && data.emailKey == prev.emailKey
+        && data.emailKey == emailKey
+        && data.ownerUid == prev.ownerUid
+        && data.ownerUid == request.auth.uid
+        && data.createdAt == prev.createdAt
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.provider is string
+        && data.provider.size() >= 1
+        && data.provider.size() <= 40
+        && data.updatedAt == request.time;
+    }
+
+    function isValidBlacklistRequestCreate(requestId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'requestId',
+          'term',
+          'termLower',
+          'lang',
+          'articleTitle',
+          'reason',
+          'status',
+          'requestedByUid',
+          'requestedByName',
+          'requestedByEmail',
+          'reviewedByEmail',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'requestId',
+          'term',
+          'termLower',
+          'lang',
+          'articleTitle',
+          'reason',
+          'status',
+          'requestedByUid',
+          'requestedByName',
+          'requestedByEmail',
+          'reviewedByEmail',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.requestId is string
+        && data.requestId == requestId
+        && data.requestId.size() >= 1
+        && data.requestId.size() <= 150
+        && data.term is string
+        && data.term.size() >= 1
+        && data.term.size() <= 150
+        && data.termLower is string
+        && data.termLower.size() >= 1
+        && data.termLower.size() <= 150
+        && data.lang is string
+        && data.lang.size() >= 1
+        && data.lang.size() <= 16
+        && data.articleTitle is string
+        && data.articleTitle.size() >= 1
+        && data.articleTitle.size() <= 300
+        && data.reason is string
+        && data.reason.size() <= 500
+        && (data.status == 'pending' || (data.status == 'approved' && isDesignatedAdmin()))
+        && data.requestedByUid is string
+        && data.requestedByUid == request.auth.uid
+        && data.requestedByName is string
+        && data.requestedByName.size() >= 1
+        && data.requestedByName.size() <= 100
+        && data.requestedByEmail is string
+        && data.requestedByEmail.size() >= 3
+        && data.requestedByEmail.size() <= 254
+        && data.reviewedByEmail is string
+        && data.reviewedByEmail.size() <= 254
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function isValidBlacklistRequestAdminUpdate(requestId) {
+      let data = request.resource.data;
+      let prev = resource.data;
+      return isDesignatedAdmin()
+        && data.keys().hasAll([
+          'requestId',
+          'term',
+          'termLower',
+          'lang',
+          'articleTitle',
+          'reason',
+          'status',
+          'requestedByUid',
+          'requestedByName',
+          'requestedByEmail',
+          'reviewedByEmail',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'requestId',
+          'term',
+          'termLower',
+          'lang',
+          'articleTitle',
+          'reason',
+          'status',
+          'requestedByUid',
+          'requestedByName',
+          'requestedByEmail',
+          'reviewedByEmail',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.requestId == requestId
+        && data.term is string
+        && data.term.size() >= 1
+        && data.term.size() <= 150
+        && data.termLower is string
+        && data.termLower.size() >= 1
+        && data.termLower.size() <= 150
+        && data.status in ['pending', 'approved', 'rejected']
+        && data.requestedByUid == prev.requestedByUid
+        && data.createdAt == prev.createdAt
+        && data.updatedAt == request.time;
+    }
+
+    function isValidApprovedBlacklistWrite(wordId) {
+      let data = request.resource.data;
+      return isDesignatedAdmin()
+        && data.keys().hasAll([
+          'wordId',
+          'term',
+          'termLower',
+          'lang',
+          'requestedByName',
+          'approvedByName',
+          'approvedByEmail',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'wordId',
+          'term',
+          'termLower',
+          'lang',
+          'requestedByName',
+          'approvedByName',
+          'approvedByEmail',
+          'createdAt'
+        ])
+        && data.wordId is string
+        && data.wordId == wordId
+        && data.wordId.size() >= 1
+        && data.wordId.size() <= 150
+        && data.term is string
+        && data.term.size() >= 1
+        && data.term.size() <= 150
+        && data.termLower is string
+        && data.termLower.size() >= 1
+        && data.termLower.size() <= 150
+        && data.lang is string
+        && data.lang.size() >= 1
+        && data.lang.size() <= 16
+        && data.requestedByName is string
+        && data.requestedByName.size() >= 1
+        && data.requestedByName.size() <= 100
+        && data.approvedByName is string
+        && data.approvedByName.size() >= 1
+        && data.approvedByName.size() <= 100
+        && data.approvedByEmail == 'amankumar.wikimedian@gmail.com'
+        && data.createdAt == request.time;
+    }
+
+    // =========================================================================
+    // 1. User Profile Rules (/users/{userId})
+    // =========================================================================
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
-      allow list: if false;
+      allow get: if isOwner(userId) || isDesignatedAdmin();
+      allow list: if isDesignatedAdmin();
+      allow create: if isOwner(userId) && isValidUserProfileCreate(userId);
+      allow update: if isOwner(userId) && isValidUserProfileUpdate(userId);
+      allow delete: if isOwner(userId);
 
-      allow create: if isVerifiedUser()
-        && isOwner(userId)
-        && isValidId(userId)
-        && isValidUserProfile(incoming())
-        && incoming().createdAt == request.time
-        && incoming().updatedAt == request.time;
-
-      allow update: if isVerifiedUser()
-        && isOwner(userId)
-        && isValidId(userId)
-        && isValidUserProfile(incoming())
-        && incoming().uid == existing().uid
-        && incoming().role == existing().role
-        && incoming().createdAt == existing().createdAt
-        && incoming().updatedAt == request.time
-        && (
-          // Action: Update Profile & Preferred Skin
-          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredSkin', 'updatedAt'])
-        );
-
-      allow delete: if false;
-
-      // 5. Subcollection: /users/{userId}/private/{infoId} (PII Isolation)
+      // =======================================================================
+      // 2. Isolated User PII Subcollection (/users/{userId}/private/{infoId})
+      // =======================================================================
       match /private/{infoId} {
-        allow get: if isOwner(userId) && isValidId(userId) && isValidId(infoId) && infoId == 'info';
+        allow get: if isOwner(userId) && infoId == 'info';
         allow list: if false;
-
-        allow create: if isVerifiedUser()
-          && isOwner(userId)
-          && isValidId(userId)
-          && isValidId(infoId)
-          && infoId == 'info'
-          && isValidUserPrivateInfo(incoming())
-          && incoming().updatedAt == request.time
-          && (
-            exists(/databases/$(database)/documents/users/$(userId)) ||
-            existsAfter(/databases/$(database)/documents/users/$(userId))
-          );
-
-        allow update: if isVerifiedUser()
-          && isOwner(userId)
-          && isValidId(userId)
-          && isValidId(infoId)
-          && infoId == 'info'
-          && isValidUserPrivateInfo(incoming())
-          && incoming().uid == existing().uid
-          && incoming().updatedAt == request.time
-          && (
-            // Action: Sync Verified Email
-            incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt'])
-          )
-          && exists(/databases/$(database)/documents/users/$(userId));
-
-        allow delete: if false;
+        allow create, update: if isOwner(userId) && infoId == 'info' && isValidPrivateInfoWrite(userId);
+        allow delete: if isOwner(userId) && infoId == 'info';
       }
 
-      // 6. Subcollection: /users/{userId}/activityLogs/{logId}
+      // =======================================================================
+      // 3. User Activity Logs (/users/{userId}/activityLogs/{logId})
+      // =======================================================================
       match /activityLogs/{logId} {
-        allow get: if isOwner(userId)
-          && isValidId(userId)
-          && isValidId(logId)
-          && (resource == null || existing().ownerId == request.auth.uid)
-          && exists(/databases/$(database)/documents/users/$(userId));
-
-        allow list: if isOwner(userId)
-          && resource.data.ownerId == request.auth.uid;
-
-        allow create: if isVerifiedUser()
-          && isOwner(userId)
-          && isValidId(userId)
-          && isValidId(logId)
-          && isValidActivityLog(incoming())
-          && incoming().logId == logId
-          && incoming().createdAt == request.time
-          && (
-            exists(/databases/$(database)/documents/users/$(userId)) ||
-            existsAfter(/databases/$(database)/documents/users/$(userId))
-          );
-
-        allow update: if isVerifiedUser()
-          && isOwner(userId)
-          && isValidId(userId)
-          && isValidId(logId)
-          && isValidActivityLog(incoming())
-          && incoming().logId == existing().logId
-          && incoming().ownerId == existing().ownerId
-          && incoming().createdAt == request.time
-          && (
-            // Action: Sync Activity Log Snapshot
-            incoming().diff(existing()).affectedKeys().hasOnly([
-              'action', 'title', 'lang', 'newLinks', 'contaminationsFixed',
-              'note', 'wikitext', 'timestampDisplay', 'createdAt'
-            ])
-          )
-          && exists(/databases/$(database)/documents/users/$(userId));
-
-        allow delete: if isVerifiedUser()
-          && isOwner(userId)
-          && isValidId(userId)
-          && isValidId(logId)
-          && existing().ownerId == request.auth.uid
-          && exists(/databases/$(database)/documents/users/$(userId));
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidActivityLogCreate(userId, logId);
+        allow update: if isOwner(userId) && isValidActivityLogUpdate(userId, logId);
+        allow delete: if isOwner(userId);
       }
+    }
+
+    // =========================================================================
+    // 4. Global Email Uniqueness Lock (/registeredEmails/{emailKey})
+    // =========================================================================
+    match /registeredEmails/{emailKey} {
+      // Point-lookup (get) allowed to verify if an email is already registered before signup
+      allow get: if true;
+      allow list: if isDesignatedAdmin();
+      allow create: if isAuthenticated() && isValidRegisteredEmailCreate(emailKey);
+      allow update: if isAuthenticated() && isValidRegisteredEmailUpdate(emailKey);
+      allow delete: if isDesignatedAdmin();
+    }
+
+    // =========================================================================
+    // 5. Blacklist Addition Requests (/blacklistRequests/{requestId})
+    // =========================================================================
+    match /blacklistRequests/{requestId} {
+      allow get, list: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidBlacklistRequestCreate(requestId);
+      allow update: if isValidBlacklistRequestAdminUpdate(requestId);
+      allow delete: if isDesignatedAdmin();
+    }
+
+    // =========================================================================
+    // 6. Admin-Approved Global Blacklist (/approvedBlacklist/{wordId})
+    // =========================================================================
+    match /approvedBlacklist/{wordId} {
+      allow get, list: if true;
+      allow create, update: if isValidApprovedBlacklistWrite(wordId);
+      allow delete: if isDesignatedAdmin();
+    }
+
+    // Default deny for all other paths
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

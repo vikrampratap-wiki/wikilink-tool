@@ -20,8 +20,8 @@
         },
         "role": {
           "type": "string",
-          "description": "Editor role label (fixed to 'editor').",
-          "enum": ["editor"],
+          "description": "Editor role label ('editor' or 'admin').",
+          "enum": ["editor", "admin"],
           "maxLength": 32
         },
         "preferredSkin": {
@@ -76,6 +76,48 @@
         }
       },
       "required": ["uid", "email", "updatedAt"]
+    },
+    "RegisteredEmailLock": {
+      "title": "RegisteredEmailLock",
+      "description": "Global email uniqueness lock ensuring that once an email has signed in, no other user can create a duplicate account with that email.",
+      "type": "object",
+      "properties": {
+        "emailKey": {
+          "type": "string",
+          "description": "Normalized email key.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Firebase Auth UID that owns this email.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Member display name associated with this account.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "provider": {
+          "type": "string",
+          "description": "Authentication provider used (e.g. google.com, password).",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the email was first claimed."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the email lock was last verified."
+        }
+      },
+      "required": ["emailKey", "ownerUid", "displayName", "provider", "createdAt", "updatedAt"]
     },
     "ActivityLog": {
       "title": "ActivityLog",
@@ -157,6 +199,166 @@
         "timestampDisplay",
         "createdAt"
       ]
+    },
+    "BlacklistRequest": {
+      "title": "BlacklistRequest",
+      "description": "User-submitted request to add a non-linkable word to the global blacklist, pending approval by Admin Vikram Pratap.",
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "description": "Unique identifier of the blacklist request.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "term": {
+          "type": "string",
+          "description": "Original word or phrase requested for exclusion.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "termLower": {
+          "type": "string",
+          "description": "Normalized lowercase form of the word.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "lang": {
+          "type": "string",
+          "description": "Wikipedia language code.",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "articleTitle": {
+          "type": "string",
+          "description": "Article context where the word was encountered.",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "reason": {
+          "type": "string",
+          "description": "Rationale for excluding the word from wikilinks.",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "description": "Approval workflow status.",
+          "enum": ["pending", "approved", "rejected"],
+          "maxLength": 20
+        },
+        "requestedByUid": {
+          "type": "string",
+          "description": "UID of the user who submitted the request.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "requestedByName": {
+          "type": "string",
+          "description": "Display name of the requesting user.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "requestedByEmail": {
+          "type": "string",
+          "description": "Email of the requesting user.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "reviewedByEmail": {
+          "type": "string",
+          "description": "Email of the admin who reviewed the request.",
+          "maxLength": 254
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the request was submitted."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the request was last updated."
+        }
+      },
+      "required": [
+        "requestId",
+        "term",
+        "termLower",
+        "lang",
+        "articleTitle",
+        "reason",
+        "status",
+        "requestedByUid",
+        "requestedByName",
+        "requestedByEmail",
+        "reviewedByEmail",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ApprovedBlacklistWord": {
+      "title": "ApprovedBlacklistWord",
+      "description": "Globally active non-linkable word approved by Admin Vikram Pratap.",
+      "type": "object",
+      "properties": {
+        "wordId": {
+          "type": "string",
+          "description": "Document identifier for the approved word.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "term": {
+          "type": "string",
+          "description": "Approved non-linkable word.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "termLower": {
+          "type": "string",
+          "description": "Lowercase normalized word.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "lang": {
+          "type": "string",
+          "description": "Language code (e.g. hi, en, sa).",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "requestedByName": {
+          "type": "string",
+          "description": "Name of the member who proposed or added the word.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "approvedByName": {
+          "type": "string",
+          "description": "Admin display name (विक्रम प्रताप).",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "approvedByEmail": {
+          "type": "string",
+          "description": "Admin email (amankumar.wikimedian@gmail.com).",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when approved."
+        }
+      },
+      "required": [
+        "wordId",
+        "term",
+        "termLower",
+        "lang",
+        "requestedByName",
+        "approvedByName",
+        "approvedByEmail",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -177,6 +379,24 @@
         "$ref": "#/entities/ActivityLog"
       },
       "description": "Subcollection of Wikipedia article analysis and wikilink activity logs belonging to the user."
+    },
+    "/registeredEmails/{emailKey}": {
+      "schema": {
+        "$ref": "#/entities/RegisteredEmailLock"
+      },
+      "description": "Stores email ownership locks so no duplicate account can be created with an already signed-in email."
+    },
+    "/blacklistRequests/{requestId}": {
+      "schema": {
+        "$ref": "#/entities/BlacklistRequest"
+      },
+      "description": "Stores user requests to add words to the blacklist awaiting Admin approval."
+    },
+    "/approvedBlacklist/{wordId}": {
+      "schema": {
+        "$ref": "#/entities/ApprovedBlacklistWord"
+      },
+      "description": "Stores Admin-approved blacklist words displayed and enforced across the tool."
     }
   }
 }
