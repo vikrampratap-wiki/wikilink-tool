@@ -1,13 +1,14 @@
 /**
  * विकीलिंक सहायक (WikiLink Assistant) — Firebase (Firestore + Google Auth) Client Integration
- * Supports both AI Studio Cloud Run (/) and GitHub Pages (/wikilink-tool/) deployments.
+ * Primary Production URL: https://vikrampratap-wiki.github.io/wikilink-tool/
+ * Supports both GitHub Pages (/wikilink-tool/) and AI Studio Cloud Run (/) deployments.
  *
  * Key architecture:
  * - firebase-app.js & firebase-auth.js are imported statically so `auth` is ready synchronously
  *   and popup windows open in the exact user click gesture (never popup-blocked).
  * - Proactively checks Firebase `authorizedDomains` and warms up the popup resolver on authorized
  *   origins, while providing a zero-error `/__/auth/handler` Google Account Chooser popup flow
- *   on custom/GitHub Pages domains (`vikrampratap-wiki.github.io`, `localhost`, etc.).
+ *   for `https://vikrampratap-wiki.github.io/wikilink-tool/` even before custom domain whitelisting.
  * - firebase-firestore.js (~300 KB) is loaded on-demand when a user is authenticated or reading/writing logs,
  *   keeping initial Mobile PageSpeed Insights fast.
  */
@@ -24,18 +25,20 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
 
 export const TOOL_DISPLAY_NAME = 'विकीलिंक सहायक (WikiLink Assistant)';
+export const CANONICAL_APP_URL = 'https://vikrampratap-wiki.github.io/wikilink-tool/';
+export const CANONICAL_DOMAIN = 'vikrampratap-wiki.github.io';
 
 const DEFAULT_FIREBASE_CONFIG = {
   appName: TOOL_DISPLAY_NAME,
-  projectId: 'gen-lang-client-0674523264',
-  appId: '1:427939105273:web:f28b4dff0f837055675528',
-  apiKey: 'AIzaSyB53REyQ8sajBSd9pAafMO3V7-fggJ36b4',
-  authDomain: 'gen-lang-client-0674523264.firebaseapp.com',
-  firestoreDatabaseId: 'ai-studio-wikilinktool-edb12aa5-8e5d-4788-a1e8-8cf16feeb5e1',
-  storageBucket: 'gen-lang-client-0674523264.firebasestorage.app',
-  messagingSenderId: '427939105273',
+  projectId: 'gen-lang-client-0146349956',
+  appId: '1:1062954952450:web:c467b46bb36677d9f7841b',
+  apiKey: 'AIzaSyDr-PdbpvG_0i0Dqzt4_RBp_h1chsYOiFg',
+  authDomain: 'gen-lang-client-0146349956.firebaseapp.com',
+  firestoreDatabaseId: 'ai-studio-wikilinktool-5bf407c8-9bb8-439f-9c90-090f39ca9f91',
+  storageBucket: 'gen-lang-client-0146349956.firebasestorage.app',
+  messagingSenderId: '1062954952450',
   measurementId: '',
-  oAuthClientId: '427939105273-5cd0s50fupo14af8d7vegdm1kalhhi4q.apps.googleusercontent.com',
+  oAuthClientId: '1062954952450-8t2vkssa1h7o80bknjpm2dqjbe9dsbjo.apps.googleusercontent.com',
   recaptchaSiteKey: ''
 };
 
@@ -59,15 +62,15 @@ const ALLOWED_SKINS = [
 
 // Known authorized domains for synchronous zero-latency check on user click
 let knownAuthorizedDomains = [
-  'gen-lang-client-0674523264.firebaseapp.com',
-  'gen-lang-client-0674523264.web.app',
-  'ais-dev-ohkqutdfza6pr3wpyoqnhp-695031629003.asia-east1.run.app',
-  'ais-pre-ohkqutdfza6pr3wpyoqnhp-695031629003.asia-east1.run.app',
-  'ais-mob-ohkqutdfza6pr3wpyoqnhp-695031629003.asia-east1.run.app'
+  'gen-lang-client-0146349956.firebaseapp.com',
+  'gen-lang-client-0146349956.web.app',
+  'ais-dev-5xm2n44flirxnjrqkglp2r-641990514953.asia-southeast1.run.app',
+  'ais-pre-5xm2n44flirxnjrqkglp2r-641990514953.asia-southeast1.run.app',
+  'ais-mob-5xm2n44flirxnjrqkglp2r-641990514953.asia-southeast1.run.app'
 ];
 
 try {
-  const cachedDomains = sessionStorage.getItem('wikilink_authorized_domains');
+  const cachedDomains = sessionStorage.getItem('wikilink_authorized_domains_v2');
   if (cachedDomains) {
     const parsed = JSON.parse(cachedDomains);
     if (Array.isArray(parsed) && parsed.length > 0) {
@@ -179,7 +182,7 @@ async function refreshAuthorizedDomainsAndWarmResolver() {
       if (Array.isArray(data.authorizedDomains) && data.authorizedDomains.length > 0) {
         knownAuthorizedDomains = data.authorizedDomains;
         try {
-          sessionStorage.setItem('wikilink_authorized_domains', JSON.stringify(knownAuthorizedDomains));
+          sessionStorage.setItem('wikilink_authorized_domains_v2', JSON.stringify(knownAuthorizedDomains));
         } catch (e) {}
       }
     }
@@ -475,12 +478,8 @@ function resolveFallbackGoogleUserProfile() {
 
 /**
  * Opens the official Firebase `/__/auth/handler` Google Account Chooser popup WITHOUT `redirectUrl`
- * when the current hostname (e.g. `vikrampratap-wiki.github.io` or a new preview URL) is not yet listed
- * in Firebase Console's `authorizedDomains`.
- *
- * Omitting `redirectUrl` allows `/__/auth/handler` to skip its client-domain error screen and
- * redirect directly to `accounts.google.com` using the authorized `firebaseapp.com/__/auth/handler`
- * redirect URI, so the user gets the genuine Google Account Chooser with zero `redirect_uri_mismatch` errors.
+ * when `https://vikrampratap-wiki.github.io/wikilink-tool/` (or another custom domain) has not yet
+ * been added in Firebase Console's `authorizedDomains`.
  */
 function openUniversalGoogleHandlerPopup() {
   return new Promise((resolve, reject) => {
@@ -519,7 +518,6 @@ function openUniversalGoogleHandlerPopup() {
       if (popupWin.closed) {
         window.clearInterval(pollTimer);
         const elapsedMs = Date.now() - openedAt;
-        // If closed within 1.8s, the user immediately closed the window before selecting an account
         if (elapsedMs < 1800) {
           const closedErr = new Error('Popup closed by user');
           closedErr.code = 'auth/popup-closed-by-user';
@@ -537,14 +535,13 @@ async function signInWithGooglePopup() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
-  // If the current hostname is not yet in Firebase's authorizedDomains (e.g. GitHub Pages or new preview URL),
-  // open the universal `/__/auth/handler` popup directly in the user click gesture so it never fails or double-popups.
+  // If the current hostname (e.g. vikrampratap-wiki.github.io) is not yet in Firebase's authorizedDomains,
+  // open the universal `/__/auth/handler` popup directly in the user click gesture so it never fails.
   if (typeof window !== 'undefined' && !isHostnameAuthorized(window.location.hostname)) {
     return await openUniversalGoogleHandlerPopup();
   }
 
   try {
-    // Synchronous call on user click so browser never blocks the Google Account Chooser popup
     const result = await signInWithPopup(auth, provider);
     if (result.user && result.user.emailVerified) {
       try {
@@ -556,14 +553,12 @@ async function signInWithGooglePopup() {
     return result.user;
   } catch (err) {
     const code = err && err.code ? String(err.code) : '';
-    // If mobile browser blocks popups, redirect directly to official Google Account Chooser
     if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
       if (typeof window !== 'undefined' && isHostnameAuthorized(window.location.hostname)) {
         await signInWithRedirect(auth, provider);
         return null;
       }
     }
-    // If domain was dynamically rejected with auth/unauthorized-domain, open the universal handler popup
     if (code === 'auth/unauthorized-domain') {
       return await openUniversalGoogleHandlerPopup();
     }
@@ -586,7 +581,6 @@ function bindFirebaseAuthListener() {
   if (authListenerBound) return;
   authListenerBound = true;
 
-  // Handle redirect sign-in completion if signInWithRedirect was used on mobile
   if (typeof window !== 'undefined' && isHostnameAuthorized(window.location.hostname)) {
     getRedirectResult(auth)
       .then(async (result) => {
@@ -639,6 +633,9 @@ bindFirebaseAuthListener();
 window.WikiFirebase = {
   isReady: true,
   toolName: TOOL_DISPLAY_NAME,
+  canonicalUrl: CANONICAL_APP_URL,
+  canonicalDomain: CANONICAL_DOMAIN,
+  projectId: DEFAULT_FIREBASE_CONFIG.projectId,
   getCurrentUser: () => auth?.currentUser || null,
   isCurrentDomainAuthorized: () =>
     typeof window !== 'undefined' ? isHostnameAuthorized(window.location.hostname) : false,

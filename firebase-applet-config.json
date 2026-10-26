@@ -1,13 +1,12 @@
 {
-  "appName": "विकीलिंक सहायक (WikiLink Assistant)",
-  "projectId": "gen-lang-client-0674523264",
-  "appId": "1:427939105273:web:f28b4dff0f837055675528",
-  "apiKey": "AIzaSyB53REyQ8sajBSd9pAafMO3V7-fggJ36b4",
-  "authDomain": "gen-lang-client-0674523264.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-wikilinktool-edb12aa5-8e5d-4788-a1e8-8cf16feeb5e1",
-  "storageBucket": "gen-lang-client-0674523264.firebasestorage.app",
-  "messagingSenderId": "427939105273",
+  "projectId": "gen-lang-client-0146349956",
+  "appId": "1:1062954952450:web:c467b46bb36677d9f7841b",
+  "apiKey": "AIzaSyDr-PdbpvG_0i0Dqzt4_RBp_h1chsYOiFg",
+  "authDomain": "gen-lang-client-0146349956.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-wikilinktool-5bf407c8-9bb8-439f-9c90-090f39ca9f91",
+  "storageBucket": "gen-lang-client-0146349956.firebasestorage.app",
+  "messagingSenderId": "1062954952450",
   "measurementId": "",
-  "oAuthClientId": "427939105273-5cd0s50fupo14af8d7vegdm1kalhhi4q.apps.googleusercontent.com",
+  "oAuthClientId": "1062954952450-8t2vkssa1h7o80bknjpm2dqjbe9dsbjo.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }
