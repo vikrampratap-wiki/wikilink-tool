@@ -2707,7 +2707,8 @@
                 status = 'redirect';
             }
 
-            if (status === 'red' && skipRed) continue;
+            // लाल कड़ियों (अस्तित्वहीन पृष्ठों) को स्थिति व सुझाव भाग में कभी न दिखाएँ
+            if (!exists || status === 'red') continue;
             if (status === 'disambig' && skipDisambig) continue;
 
             // यदि इस लक्ष्य पृष्ठ (या रीडायरेक्ट लक्ष्य) की कड़ी पहले ही लेख में या सुझावों में चुनी जा चुकी है (WP:OVERLINKING)
@@ -2812,10 +2813,10 @@
 
     function getFilteredSuggestions() {
         return state.suggestions.filter(s => {
+            if (s.status === 'red') return false;
             if (state.filterStatus === 'blue' && s.status !== 'blue') return false;
             if (state.filterStatus === 'redirect' && s.status !== 'redirect') return false;
             if (state.filterStatus === 'disambig' && s.status !== 'disambig') return false;
-            if (state.filterStatus === 'red' && s.status !== 'red') return false;
 
             if (state.filterType === 'multi' && !s.isMultiWord) return false;
             if (state.filterType === 'single' && s.isMultiWord) return false;
@@ -2876,7 +2877,7 @@
             } else if (s.status === 'disambig') {
                 statusBadge = `<span class="status-pill status-pill-disambig" title="चेतावनी: बहुविकल्पी पृष्ठ (WP:DISAMBIG)">बहुविकल्पी</span>`;
             } else {
-                statusBadge = `<span class="status-pill status-pill-red" title="अस्तित्वहीन पृष्ठ">लाल कड़ी</span>`;
+                statusBadge = `<span class="status-pill status-pill-blue" title="सत्यापित विकिपीडिया लेख">नीली कड़ी</span>`;
             }
 
             const highlightedContext = escapeHtml(s.context).replace(
