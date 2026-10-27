@@ -18,7 +18,22 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="icon" type="image/svg+xml" href="./icon.svg">
-    <link rel="stylesheet" href="style.css?v=18">
+    <style id="critical-above-fold-css">
+        :root{--primary-color:#2a4b8d;--primary-light:#eaf3ff;--accent-blue:#3366cc;--accent-green:#14866d;--accent-orange:#d97706;--bg-main:#f8f9fa;--bg-card:#ffffff;--bg-alt:#f1f3f5;--border-color:#c8ccd1;--text-primary:#202122;--text-secondary:#475569;--text-muted:#64748b;--font-sans:'Mukta','Noto Sans Devanagari',system-ui,-apple-system,sans-serif}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:var(--font-sans);background:var(--bg-main);color:var(--text-primary);line-height:1.55;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+        .logical-bg-backdrop,.anime-bg-canvas,.toast{display:none}
+        .container{width:100%;max-width:1240px;margin:0 auto;padding:0 16px}
+        .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
+        .header-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+        .logo-area,.brand-home-link{display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+        .app-title{font-size:1.35rem;font-weight:700;color:var(--text-primary);line-height:1.2}
+        .mobile-menu-toggle-btn{display:none;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--primary-color);background:var(--primary-light);color:var(--primary-color);font-weight:700;font-size:.82rem}
+        @media (max-width:768px){.container{padding:0 12px}.mobile-menu-toggle-btn{display:inline-flex!important}.logo-area{width:100%;justify-content:space-between}.app-subtitle,.app-header .header-actions{display:none!important}}
+    </style>
+    <link rel="preload" href="style.css?v=19" as="style" fetchpriority="high">
+    <link rel="stylesheet" href="style.css?v=19" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="style.css?v=19"></noscript>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -307,7 +322,13 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js?v=18"></script>
-    <script src="app.js?v=18" defer></script>
+    <script src="app.js?v=19" defer></script>
+    <script>
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            import('./firebase-client.js?v=19').catch(function(){});
+        }, 3500);
+    }, { once: true });
+    </script>
 </body>
 </html>

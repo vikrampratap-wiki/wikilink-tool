@@ -3,29 +3,20 @@
  * Supports both root (/) and GitHub Pages subpath (/wikilink-tool/) deployments.
  */
 
-const SHELL_CACHE_NAME = 'wikilink-shell-v18';
-const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v18';
-const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v18';
+const SHELL_CACHE_NAME = 'wikilink-shell-v19';
+const WIKI_API_CACHE_NAME = 'wikilink-wiki-api-v19';
+const STATIC_ASSET_CACHE_NAME = 'wikilink-static-v19';
 
 const RELATIVE_WORKBENCH_ASSETS = [
   './',
   './index.html',
-  './logs.html',
-  './about.html',
-  './login.html',
-  './style.css',
-  './words_blacklist.js',
-  './app.js',
-  './firebase-client.js',
+  './style.css?v=19',
+  './app.js?v=19',
   './manifest.json',
-  './icon.svg',
-  './apple-touch-icon.png',
-  './pwa-192x192.png',
-  './pwa-512x512.png',
-  './pwa-maskable-512x512.png'
+  './icon.svg'
 ];
 
-// 1. Install Event: Precache all core workbench files relative to Service Worker scope
+// 1. Install Event: Precache core workbench shell using browser cache to avoid duplicate network downloads
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE_NAME).then(async (cache) => {
@@ -33,7 +24,7 @@ self.addEventListener('install', (event) => {
         RELATIVE_WORKBENCH_ASSETS.map(async (relPath) => {
           try {
             const fullUrl = new URL(relPath, self.registration.scope).href;
-            const response = await fetch(fullUrl, { cache: 'no-cache' });
+            const response = await fetch(fullUrl, { cache: 'default' });
             if (response && response.ok) {
               await cache.put(fullUrl, response.clone());
             }

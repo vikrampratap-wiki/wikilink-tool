@@ -1381,5 +1381,19 @@ if (typeof window !== 'undefined') {
         removeApprovedBlacklistWordByAdmin
     };
 
-    initFirebaseService().catch(() => {});
+    const isAuthOrProfilePage = Boolean(
+        document.getElementById('cute-auth-form') ||
+        document.getElementById('anime-profile-authenticated-shell')
+    );
+    if (isAuthOrProfilePage) {
+        initFirebaseService().catch(() => {});
+    } else if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => {
+            initFirebaseService().catch(() => {});
+        }, { timeout: 4000 });
+    } else {
+        setTimeout(() => {
+            initFirebaseService().catch(() => {});
+        }, 2500);
+    }
 }

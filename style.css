@@ -2379,9 +2379,8 @@ kbd {
     background: linear-gradient(90deg, var(--primary-color), var(--accent-blue), var(--accent-green), var(--primary-color));
 }
 
-/* 2. मुख्य अनुभागों का क्रमबद्ध प्रवेश (Staggered Entrance) */
+/* 2. मुख्य अनुभाग (तत्काल प्रथम-फ्रेम रेंडर — Zero LCP Delay) */
 #info-banner {
-    animation: staggerFadeUp 0.5s var(--ease-spring) 0.05s both;
     position: relative;
     overflow: hidden;
     transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring);
@@ -2396,7 +2395,6 @@ kbd {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
-    animation: staggerFadeUp 0.55s var(--ease-spring) 0.1s both;
 }
 
 .flow-steps-row {
@@ -2430,7 +2428,6 @@ kbd {
 
 .flow-arrow {
     display: inline-block;
-    animation: arrowNudge 2.4s ease-in-out infinite;
 }
 
 .flow-progress-track {
@@ -2451,35 +2448,26 @@ kbd {
     overflow: hidden;
 }
 
-.flow-progress-fill::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
-    animation: shimmerSweep 2.2s infinite;
-}
-
-/* 3. दोहरे कार्यपटल कार्ड्स (Box 1 & Box 2) मोशन */
+/* 3. दोहरे कार्यपटल कार्ड्स (Box 1 & Box 2) */
 #input-control-card {
-    animation: staggerFadeUp 0.6s var(--ease-spring) 0.16s both;
+    animation: none;
 }
 
 #contaminated-box-card {
-    animation: staggerFadeUp 0.6s var(--ease-spring) 0.22s both;
     position: relative;
     overflow: hidden;
 }
 
 .aux-tools-card {
-    animation: staggerFadeUp 0.6s var(--ease-spring) 0.28s both;
+    animation: none;
 }
 
 .shortcuts-quick-strip {
-    animation: staggerFadeUp 0.6s var(--ease-spring) 0.32s both;
+    animation: none;
 }
 
 .guide-card {
-    animation: staggerFadeUp 0.6s var(--ease-spring) 0.36s both;
+    animation: none;
 }
 
 .workbench-card {
@@ -2715,6 +2703,8 @@ kbd {
     font-size: 0.85rem;
     color: var(--text-secondary);
     margin-top: auto;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
 }
 
 .footer-inner {
@@ -2802,6 +2792,7 @@ kbd {
 
 /* 1. एनीमे कैनवास पृष्ठभूमि (Floating Sakura / Starlight Particles Canvas) */
 .anime-bg-canvas {
+    display: block;
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -5038,19 +5029,11 @@ body[data-card-style="glass"] .workbench-flow-strip {
     }
 
     /* 4. मोबाइल PageSpeed Insights (LCP / TBT / CPU Idle) अनुकूलन */
-    .bg-aurora-orb {
-        animation: none !important;
-        filter: blur(32px) !important;
-        opacity: 0.14 !important;
-    }
-
-    .bg-aurora-orb.orb-2,
-    .bg-aurora-orb.orb-3 {
-        display: none !important;
-    }
-
+    .logical-bg-backdrop,
+    .bg-aurora-orb,
     .anime-bg-canvas {
         display: none !important;
+        animation: none !important;
     }
 
     .app-header {

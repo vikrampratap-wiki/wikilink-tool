@@ -733,19 +733,40 @@
         DOM.toast = $('toast');
     }
 
-    // ================== इनिशियलाइज़ेशन ==================
+    // ================== इनिशियलाइज़ेशन (TBT-मुक्त चरणबद्ध आरंभ) ==================
+    function scheduleNonCriticalTask(fn, delayMs = 0) {
+        if (delayMs > 0) {
+            setTimeout(() => {
+                if ('requestIdleCallback' in window) {
+                    window.requestIdleCallback(fn, { timeout: 2500 });
+                } else {
+                    fn();
+                }
+            }, delayMs);
+        } else if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(fn, { timeout: 1200 });
+        } else {
+            setTimeout(fn, 1);
+        }
+    }
+
     function init() {
         try {
             initDOM();
             setupTheme();
-            setupInteractiveRipples();
-            loadSavedBlacklist();
             bindEvents();
-            initAnimeSkinAndStudio();
-            initCuteAuthAndUserLogs();
-            initServiceWorkerAndOfflineMode();
             updateCharCount();
             updateDiffModeButtons();
+
+            // हैमबर्गर मेन्यू एवं सत्र हेडर तुरंत सक्रिय करें, शेष कार्य अगले फ्रेम/आइडल में चलाएँ ताकि TBT 0ms रहे
+            initCuteAuthAndUserLogs();
+
+            scheduleNonCriticalTask(() => {
+                loadSavedBlacklist();
+                setupInteractiveRipples();
+                initAnimeSkinAndStudio();
+                initServiceWorkerAndOfflineMode();
+            }, 0);
         } catch (err) {
             console.error('Initialization error:', err);
         }
@@ -780,18 +801,24 @@
             showToast('ऑफ़लाइन मोड सक्रिय: मुख्य कार्यपटल बिना इंटरनेट के कार्यशील है');
         });
 
-        // Service Worker पंजीकरण (./sw.js?v=13 को अपडेट करें ताकि पुराना कैश तुरंत हटे)
+        // Service Worker पंजीकरण को मुख्य लोड के बाद शांत समय (Idle) में चलाएँ ताकि मोबाइल 4G बैंडविड्थ बाधित न हो
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            const registerSW = () => {
                 setTimeout(() => {
-                    navigator.serviceWorker.register('./sw.js?v=13', { scope: './' }).then((reg) => {
-                        reg.update().catch(() => {});
-                        if (reg.waiting) {
-                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                        }
-                    }).catch(() => {});
-                }, 1200);
-            }, { once: true });
+                    scheduleNonCriticalTask(() => {
+                        navigator.serviceWorker.register('./sw.js?v=19', { scope: './' }).then((reg) => {
+                            if (reg.waiting) {
+                                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        }).catch(() => {});
+                    }, 0);
+                }, 4500);
+            };
+            if (document.readyState === 'complete') {
+                registerSW();
+            } else {
+                window.addEventListener('load', registerSW, { once: true });
+            }
         }
     }
 
@@ -3078,11 +3105,32 @@
     }
 
     // ================== D3.js शब्द लंबाई बनाम जोड़ी गई कड़ियाँ चार्ट (Over-Linking Pattern Visualizer) ==================
+    let d3LoadPromise = null;
+    function ensureD3LibraryLoaded() {
+        if (typeof window === 'undefined' || typeof window.d3 !== 'undefined') return Promise.resolve();
+        if (!d3LoadPromise) {
+            d3LoadPromise = new Promise((resolve) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
+                s.async = true;
+                s.onload = () => resolve();
+                s.onerror = () => resolve();
+                document.head.appendChild(s);
+            });
+        }
+        return d3LoadPromise;
+    }
+
     function renderD3WordLengthChart() {
         const container = $('d3-word-length-chart');
         const insightBadge = $('d3-overlink-insight-badge');
         const resetBtn = $('btn-reset-d3-length-filter');
         if (!container) return;
+        if (typeof window !== 'undefined' && typeof window.d3 === 'undefined' && !d3LoadPromise) {
+            ensureD3LibraryLoaded().then(() => {
+                if (typeof window.d3 !== 'undefined') renderD3WordLengthChart();
+            });
+        }
 
         const buckets = [
             { key: '2-3', label: '2–3 अक्षर', shortDesc: 'अति-लघु शब्द', added: 0, skipped: 0, isWarningZone: true },
@@ -6957,7 +7005,13 @@
         loadAdminEnginePolicyAndWhitelistCache();
         loadAdminAuditLogsFromStorage();
         loadLocalApprovedBlacklistCache();
-        refreshAdminAndApprovedBlacklist();
+        if ($('anime-profile-authenticated-shell')) {
+            refreshAdminAndApprovedBlacklist();
+        } else {
+            scheduleNonCriticalTask(() => {
+                refreshAdminAndApprovedBlacklist();
+            }, 5500);
+        }
 
         const exportLogsBtn = $('btn-export-user-logs');
         const clearLogsBtn = $('btn-clear-user-logs');

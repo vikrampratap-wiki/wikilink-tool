@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const { URL } = require('url');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -151,6 +152,49 @@ const server = http.createServer((req, res) => {
   }
 
   fs.stat(filePath, (err, stats) => {
+    const sendCompressedResponse = (statusCode, contentType, buffer, isVersionedAsset = false) => {
+      const headers = {
+        'Content-Type': contentType,
+        'Vary': 'Accept-Encoding',
+        'Cache-Control': isVersionedAsset
+          ? 'public, max-age=31536000, immutable'
+          : 'public, max-age=0, must-revalidate'
+      };
+      const acceptEncoding = String(req.headers['accept-encoding'] || '');
+      const isCompressible = /^(text\/|application\/(javascript|json|manifest\+json)|image\/svg\+xml)/.test(contentType);
+
+      if (isCompressible && buffer.length > 512) {
+        if (acceptEncoding.includes('br') && typeof zlib.brotliCompress === 'function') {
+          zlib.brotliCompress(buffer, (brErr, compressed) => {
+            if (!brErr && compressed) {
+              headers['Content-Encoding'] = 'br';
+              res.writeHead(statusCode, headers);
+              res.end(compressed);
+            } else {
+              res.writeHead(statusCode, headers);
+              res.end(buffer);
+            }
+          });
+          return;
+        }
+        if (acceptEncoding.includes('gzip')) {
+          zlib.gzip(buffer, (gzErr, compressed) => {
+            if (!gzErr && compressed) {
+              headers['Content-Encoding'] = 'gzip';
+              res.writeHead(statusCode, headers);
+              res.end(compressed);
+            } else {
+              res.writeHead(statusCode, headers);
+              res.end(buffer);
+            }
+          });
+          return;
+        }
+      }
+      res.writeHead(statusCode, headers);
+      res.end(buffer);
+    };
+
     if (err || !stats.isFile()) {
       const indexFallback = path.join(ROOT_DIR, 'index.html');
       fs.readFile(indexFallback, (readErr, content) => {
@@ -159,22 +203,21 @@ const server = http.createServer((req, res) => {
           res.end('404 Not Found');
           return;
         }
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(content);
+        sendCompressedResponse(200, 'text/html; charset=utf-8', content, false);
       });
       return;
     }
 
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const hasVersionQuery = parsedUrl.searchParams.has('v') && ext !== '.html' && !filePath.endsWith('sw.js');
     fs.readFile(filePath, (readErr, content) => {
       if (readErr) {
         res.writeHead(500);
         res.end('Internal Server Error');
         return;
       }
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
+      sendCompressedResponse(200, contentType, content, hasVersionQuery);
     });
   });
 });
