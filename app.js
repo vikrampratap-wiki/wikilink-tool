@@ -5777,27 +5777,24 @@
         initProfileVerticalNav();
         initProfileCustomizationControls();
 
-        // जब यूज़र खाते में लॉगिन हो, तो शीर्ष पट्टी में यूज़रनेम (#auth-trigger-btn) या सक्रिय सत्र नाम (#auth-active-user-name) पर क्लिक करने से हमेशा विशेष प्रोफ़ाइल पेज (logs.html) ही खुले!
+        // जब यूज़र खाते में लॉगिन हो तो शीर्ष पट्टी में यूज़रनेम (#auth-trigger-btn) पर क्लिक करने से प्रोफ़ाइल पेज (logs.html) खुले, और जब लॉग-आउट हो ('लॉगिन / साइन अप') तो हमेशा लॉगिन पेज (login.html) खुले!
         const authTriggerBtn = $('auth-trigger-btn');
         if (authTriggerBtn) {
             authTriggerBtn.addEventListener('click', (e) => {
-                let activeUser = currentUser;
-                if (!activeUser) {
-                    try {
-                        activeUser = JSON.parse(localStorage.getItem('wikilink_current_user') || 'null');
-                    } catch (err) {}
-                }
-                const dotEl = $('auth-status-dot');
                 const lblEl = $('auth-btn-label');
-                const isLoggedInNow = Boolean(
-                    (activeUser && (activeUser.name || activeUser.email)) ||
-                    (dotEl && dotEl.classList.contains('logged-in')) ||
-                    (lblEl && lblEl.textContent && !lblEl.textContent.includes('लॉगिन'))
+                const labelText = lblEl && lblEl.textContent ? lblEl.textContent.trim() : '';
+                const isVerifiedSession = Boolean(
+                    currentUser &&
+                    currentUser.vaultVerified === true &&
+                    (currentUser.name || currentUser.email) &&
+                    !labelText.includes('लॉगिन')
                 );
-                if (isLoggedInNow) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                e.preventDefault();
+                e.stopPropagation();
+                if (isVerifiedSession) {
                     window.location.href = 'logs.html';
+                } else {
+                    window.location.href = 'login.html';
                 }
             });
         }
@@ -7678,6 +7675,7 @@
 
                 if (!hasValidVaultMatch) {
                     localStorage.removeItem('wikilink_current_user');
+                    localStorage.removeItem('wikilink_google_account');
                     currentUser = null;
                 } else {
                     const emailKey = getEmailArchiveKey(normEmail);
@@ -7696,6 +7694,7 @@
                     currentUser = parsed;
                 }
             } else {
+                localStorage.removeItem('wikilink_google_account');
                 currentUser = null;
             }
         } catch (e) {

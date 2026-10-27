@@ -274,6 +274,8 @@ export async function initFirebaseService() {
                 photoURL: user.photoURL || '',
                 role: effectiveRole,
                 isAdmin: isDesignatedAdminUser(user),
+                vaultVerified: true,
+                firebaseAuthVerified: true,
                 loginTime: new Date().toISOString()
             };
 

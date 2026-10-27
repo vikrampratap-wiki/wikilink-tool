@@ -26,7 +26,7 @@
         .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
         .workbench-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px}
     </style>
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=18">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -105,7 +105,7 @@
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
                     <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
-                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन करें अथवा अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें" onclick="if(localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account')||(this.textContent&&!this.textContent.includes('लॉगिन'))){event.preventDefault();window.location.href='logs.html';return false;}">
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें" onclick="var lbl=document.getElementById('auth-btn-label');if(lbl&&lbl.textContent&&lbl.textContent.includes('लॉगिन')){window.location.href='login.html';return true;}try{var u=JSON.parse(localStorage.getItem('wikilink_current_user')||'null');if(u&&u.vaultVerified===true&&(u.name||u.email)){event.preventDefault();window.location.href='logs.html';return false;}}catch(e){}window.location.href='login.html';return true;">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
@@ -113,7 +113,7 @@
                     लॉगआउट ⏻
                 </button>
                 <script>
-                (function(){try{var raw=localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account');if(raw){var u=JSON.parse(raw);if(u&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user');if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
                 </script>
             </nav>
         </div>
@@ -170,9 +170,9 @@
             </div>
         </div>
 
-        <!-- मुख्य कार्यपटल (Unified Workbench Layout) -->
-        <div class="dual-workbench-container single-workbench-layout" id="dual-workbench-container">
-            <!-- 1. मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी (Input Article & Filters Box) -->
+        <!-- मुख्य कार्यपटल एवं त्वरित सहायक उपकरण (Desktop Dual-Box Workbench Layout) -->
+        <div class="dual-workbench-container desktop-dual-boxes" id="dual-workbench-container">
+            <!-- बॉक्स 1: मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी (Input Article & Filters Box) -->
             <section id="input-control-card" class="workbench-card workbench-logical-card">
                 <div class="workbench-card-header">
                     <div class="workbench-header-main">
@@ -485,67 +485,67 @@
                     </div>
                 </div>
             </section>
-        </div>
 
-        <!-- सहायक उपकरण पटल एवं उपयोग विधि -->
-        <div class="aux-tools-card">
-            <div class="aux-tools-header">
-                <div>
-                    <h3 class="aux-tools-title">त्वरित सहायक उपकरण एवं उपयोग विधि</h3>
-                    <p class="aux-tools-subtitle">लेख को शुद्ध, संतुलित एवं विकिपीडिया नीति अनुरूप बनाने हेतु निम्नलिखित टूल्स का उपयोग करें:</p>
-                </div>
-                <button type="button" id="btn-toggle-aux-guide" class="btn btn-outline btn-sm">
-                    उपयोग विधि निर्देश देखें
-                </button>
-            </div>
-
-            <div class="aux-tools-grid">
-                <!-- टूल 1: डुप्लिकेट कड़ी शोधक -->
-                <div class="aux-tool-item">
-                    <div class="aux-tool-meta">
-                        <h4>1. डुप्लिकेट कड़ी शोधक (Overlink Cleaner)</h4>
-                        <p class="tool-desc-text"><strong>कार्य:</strong> लेख में पहले से मौजूद बार-बार दोहराई गई कड़ियों (WP:OVERLINKING) को खोजता है।</p>
-                        <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> लेख लोड होने के बाद नीचे बटन दबाएँ। यह डुप्लिकेट कड़ियों की सूची दिखाएगा और 1-क्लिक में अतिरिक्त कड़ियों को साफ कर केवल पहले उल्लेख को रखेगा।</p>
+            <!-- बॉक्स 2: त्वरित सहायक उपकरण एवं उपयोग विधि (Auxiliary Tools & Usage Guide Box) -->
+            <aside id="aux-tools-card" class="workbench-card aux-tools-card workbench-aux-box" aria-label="त्वरित सहायक उपकरण एवं उपयोग विधि">
+                <div class="workbench-card-header aux-tools-header">
+                    <div class="workbench-header-main">
+                        <h2 class="workbench-card-title aux-tools-title">त्वरित सहायक उपकरण एवं उपयोग विधि</h2>
+                        <small class="form-hint aux-tools-subtitle">लेख को शुद्ध, संतुलित एवं विकिपीडिया नीति अनुरूप बनाने हेतु निम्नलिखित टूल्स का उपयोग करें</small>
                     </div>
-                    <button type="button" id="btn-open-duplicate-cleaner" class="btn btn-secondary btn-sm">
-                        डुप्लिकेट कड़ियाँ जाँचें व साफ़ करें
+                    <button type="button" id="btn-toggle-aux-guide" class="btn btn-outline btn-sm">
+                        उपयोग विधि निर्देश देखें
                     </button>
                 </div>
 
-                <!-- टूल 2: तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार प्रबंधक -->
-                <div class="aux-tool-item">
-                    <div class="aux-tool-meta">
-                        <h4>2. तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार (Link Verifier & Blacklist)</h4>
-                        <p class="tool-desc-text"><strong>कार्य:</strong> उन शब्दों को नियंत्रित करता है जिन्हें आप कभी भी कड़ी नहीं बनाना चाहते, तथा किसी भी शब्द की तार्किक आंतरिक कड़ी योग्यता की तत्काल 7-नियम नीति जाँच करता है।</p>
-                        <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> नीचे बटन दबाएँ। यहाँ आप किसी भी शब्द की विकिपीडिया नीति (WP:NOTLINKED, WP:CIRCULAR, WP:DATELINK आदि) अनुसार जाँच कर सकते हैं और कस्टम बहिष्कार सूची प्रबंधित कर सकते हैं।</p>
+                <div class="aux-tools-grid">
+                    <!-- टूल 1: डुप्लिकेट कड़ी शोधक -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>1. डुप्लिकेट कड़ी शोधक (Overlink Cleaner)</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> लेख में पहले से मौजूद बार-बार दोहराई गई कड़ियों (WP:OVERLINKING) को खोजता है।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> लेख लोड होने के बाद नीचे बटन दबाएँ। यह डुप्लिकेट कड़ियों की सूची दिखाएगा और 1-क्लिक में अतिरिक्त कड़ियों को साफ कर केवल पहले उल्लेख को रखेगा।</p>
+                        </div>
+                        <button type="button" id="btn-open-duplicate-cleaner" class="btn btn-secondary btn-sm">
+                            डुप्लिकेट कड़ियाँ जाँचें व साफ़ करें
+                        </button>
                     </div>
-                    <button type="button" id="btn-open-blacklist-mgr" class="btn btn-secondary btn-sm">
-                        तार्किक कड़ी परीक्षक एवं बहिष्कार सूची
-                    </button>
+
+                    <!-- टूल 2: तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार प्रबंधक -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>2. तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार (Link Verifier &amp; Blacklist)</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> उन शब्दों को नियंत्रित करता है जिन्हें आप कभी भी कड़ी नहीं बनाना चाहते, तथा किसी भी शब्द की तार्किक आंतरिक कड़ी योग्यता की तत्काल 7-नियम नीति जाँच करता है।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> नीचे बटन दबाएँ। यहाँ आप किसी भी शब्द की विकिपीडिया नीति (WP:NOTLINKED, WP:CIRCULAR, WP:DATELINK आदि) अनुसार जाँच कर सकते हैं और कस्टम बहिष्कार सूची प्रबंधित कर सकते हैं।</p>
+                        </div>
+                        <button type="button" id="btn-open-blacklist-mgr" class="btn btn-secondary btn-sm">
+                            तार्किक कड़ी परीक्षक एवं बहिष्कार सूची
+                        </button>
+                    </div>
+
+                    <!-- टूल 3: ऑफ़लाइन ऑल-इन-वन HTML -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>3. ऑफ़लाइन ऑल-इन-वन HTML</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> बिना सर्वर या इंटरनेट के टूल को अपने कंप्यूटर पर स्थानीय रूप से सुरक्षित चलाना।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> बटन दबाकर एकल HTML फ़ाइल डाउनलोड करें और बिना इंटरनेट के किसी भी ब्राउज़र में सीधे खोलें।</p>
+                        </div>
+                        <button type="button" id="btn-download-standalone-html" class="btn btn-secondary btn-sm">
+                            एकल ऑफ़लाइन HTML डाउनलोड करें
+                        </button>
+                    </div>
                 </div>
 
-                <!-- टूल 3: ऑफ़लाइन ऑल-इन-वन HTML -->
-                <div class="aux-tool-item">
-                    <div class="aux-tool-meta">
-                        <h4>3. ऑफ़लाइन ऑल-इन-वन HTML</h4>
-                        <p class="tool-desc-text"><strong>कार्य:</strong> बिना सर्वर या इंटरनेट के टूल को अपने कंप्यूटर पर स्थानीय रूप से सुरक्षित चलाना।</p>
-                        <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> बटन दबाकर एकल HTML फ़ाइल डाउनलोड करें और बिना इंटरनेट के किसी भी ब्राउज़र में सीधे खोलें।</p>
-                    </div>
-                    <button type="button" id="btn-download-standalone-html" class="btn btn-secondary btn-sm">
-                        एकल ऑफ़लाइन HTML डाउनलोड करें
-                    </button>
+                <!-- विस्तारणीय उपयोग निर्देश -->
+                <div id="aux-guide-details" class="aux-guide-details" style="display: none;">
+                    <h4>सहायक उपकरणों का चरणबद्ध उपयोग:</h4>
+                    <ol>
+                        <li><strong>लेख लोड करें:</strong> सबसे पहले मुख्य कार्यपटल में विकिपीडिया लेख लोड करें या विकिटेक्स्ट दर्ज करें।</li>
+                        <li><strong>तार्किक विश्लेषण:</strong> 'तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें' दबाएँ।</li>
+                        <li><strong>समीक्षा व डिफ़:</strong> सुझाव तालिका एवं मीडियाविकी डिफ़ में परिवर्तनों की पुष्टि करें और संशोधित विकिटेक्स्ट विकिपीडिया पर पेस्ट करें।</li>
+                    </ol>
                 </div>
-            </div>
-
-            <!-- विस्तारणीय उपयोग निर्देश -->
-            <div id="aux-guide-details" class="aux-guide-details" style="display: none;">
-                <h4>सहायक उपकरणों का चरणबद्ध उपयोग:</h4>
-                <ol>
-                    <li><strong>लेख लोड करें:</strong> सबसे पहले मुख्य कार्यपटल में विकिपीडिया लेख लोड करें या विकिटेक्स्ट दर्ज करें।</li>
-                    <li><strong>तार्किक विश्लेषण:</strong> 'तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें' दबाएँ।</li>
-                    <li><strong>समीक्षा व डिफ़:</strong> सुझाव तालिका एवं मीडियाविकी डिफ़ में परिवर्तनों की पुष्टि करें और संशोधित विकिटेक्स्ट विकिपीडिया पर पेस्ट करें।</li>
-                </ol>
-            </div>
+            </aside>
         </div>
 
 
@@ -967,7 +967,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
-    <script type="module" src="firebase-client.js?v=17"></script>
-    <script src="app.js?v=17" defer></script>
+    <script type="module" src="firebase-client.js?v=18"></script>
+    <script src="app.js?v=18" defer></script>
 </body>
 </html>

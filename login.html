@@ -18,7 +18,7 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="icon" type="image/svg+xml" href="./icon.svg">
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=18">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -97,7 +97,7 @@
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
                     <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
-                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn active" title="लॉगिन करें अथवा अपने नाम पर क्लिक करके प्रोफ़ाइल खोलें" onclick="if(localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account')||(this.textContent&&!this.textContent.includes('लॉगिन'))){event.preventDefault();window.location.href='logs.html';return false;}">
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn active" title="लॉगिन या साइन अप पेज खोलें" onclick="var lbl=document.getElementById('auth-btn-label');if(lbl&&lbl.textContent&&lbl.textContent.includes('लॉगिन')){window.location.href='login.html';return true;}try{var u=JSON.parse(localStorage.getItem('wikilink_current_user')||'null');if(u&&u.vaultVerified===true&&(u.name||u.email)){event.preventDefault();window.location.href='logs.html';return false;}}catch(e){}window.location.href='login.html';return true;">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
@@ -105,7 +105,7 @@
                     लॉगआउट ⏻
                 </button>
                 <script>
-                (function(){try{var raw=localStorage.getItem('wikilink_current_user')||localStorage.getItem('wikilink_google_account');if(raw){var u=JSON.parse(raw);if(u&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user');if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
                 </script>
             </nav>
         </div>
@@ -364,7 +364,7 @@
         </div>
     </footer>
 
-    <script type="module" src="firebase-client.js?v=17"></script>
-    <script src="app.js?v=17" defer></script>
+    <script type="module" src="firebase-client.js?v=18"></script>
+    <script src="app.js?v=18" defer></script>
 </body>
 </html>
