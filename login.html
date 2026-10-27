@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="hi" dir="ltr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>लॉगिन एवं साइन अप (Login / Sign Up) - विकीलिंक सहायक</title>
+    <meta name="description" content="विकीलिंक सहायक का इंटरैक्टिव एनिमेटेड लॉगिन एवं साइन अप पृष्ठ (डेस्कटॉप एवं मोबाइल अनुकूलित)">
+    <meta property="og:title" content="लॉगिन एवं साइन अप - विकीलिंक सहायक (WikiLink Assistant)">
+    <meta property="og:description" content="विकीलिंक सहायक का इंटरैक्टिव एनिमेटेड लॉगिन एवं साइन अप पृष्ठ">
+    <meta property="og:url" content="https://vikrampratap-wiki.github.io/wikilink-tool/login.html">
+    <link rel="canonical" href="https://vikrampratap-wiki.github.io/wikilink-tool/login.html">
+    <meta name="theme-color" content="#0969da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WikiLink">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <style id="critical-above-fold-css">
+        :root{--primary-color:#2a4b8d;--primary-light:#eaf3ff;--bg-main:#f8f9fa;--bg-card:#ffffff;--border-color:#c8ccd1;--text-primary:#202122;--text-secondary:#475569;--font-sans:'Mukta','Noto Sans Devanagari',system-ui,-apple-system,sans-serif}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:var(--font-sans);background:var(--bg-main);color:var(--text-primary);line-height:1.55;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+        .logical-bg-backdrop,.anime-bg-canvas,.toast{display:none}
+        .container{width:100%;max-width:1240px;margin:0 auto;padding:0 16px}
+        .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
+        @media (max-width:768px){.container{padding:0 12px}.app-subtitle,.app-header .header-actions{display:none!important}}
+    </style>
+    <link rel="preload" href="style.css?v=19" as="style" fetchpriority="high">
+    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"
+      }
+    }
+    </script>
+</head>
+<body data-skin="wikimedia-classic" data-card-style="flat" class="login-page-body">
+    <!-- तार्किक विकिपीडिया कड़ी जाल एवं एनीमे परिवेशी पृष्ठभूमि -->
+    <div class="logical-bg-backdrop" aria-hidden="true">
+        <div class="bg-aurora-orb orb-1"></div>
+        <div class="bg-aurora-orb orb-2"></div>
+        <div class="bg-aurora-orb orb-3"></div>
+        <div class="bg-logical-grid"></div>
+    </div>
+    <canvas id="anime-bg-canvas" class="anime-bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- शीर्ष नेविगेशन पट्टी (App Header - Clean Links + Mobile Toggle Menu) -->
+    <header class="app-header">
+        <div class="header-inner container">
+            <div class="logo-area">
+                <a href="index.html" class="brand-home-link" title="मुख्य कार्यपटल पर जाएँ">
+                    <div class="anime-mascot-emblem-wrap" aria-hidden="true">
+                        <svg class="anime-header-mascot" viewBox="0 0 64 64" width="42" height="42">
+                            <defs>
+                                <linearGradient id="animeHairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--primary-color)" />
+                                    <stop offset="100%" stop-color="var(--accent-blue)" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="34" r="22" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M10 32 C10 14, 54 14, 54 32 C50 22, 42 18, 32 20 C22 18, 14 22, 10 32 Z" fill="url(#animeHairGrad)" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M12 26 L6 14 L20 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <path d="M52 26 L58 14 L44 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <g class="mascot-eyes">
+                                <ellipse cx="23" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="21.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="24.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                                <ellipse cx="41" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="39.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="42.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                            </g>
+                            <ellipse cx="17" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <ellipse cx="47" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <path d="M28 43 Q32 47 36 43" fill="none" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text-block">
+                        <div class="logo-title-wrap">
+                            <h1 class="app-title">विकीलिंक सहायक</h1>
+                            <span class="badge badge-tool">लॉगिन व साइन अप</span>
+                        </div>
+                        <p class="app-subtitle">इंटरैक्टिव एनिमेटेड खाता प्रवेश एवं क्लाउड लॉग सिंक</p>
+                    </div>
+                </a>
+                <!-- केवल मोबाइल के लिए हैमबर्गर टॉगल मेन्यू बटन -->
+                <button type="button" id="mobile-menu-toggle-btn" class="mobile-menu-toggle-btn" aria-expanded="false" aria-controls="header-nav-actions" title="मोबाइल नेविगेशन मेन्यू खोलें/बंद करें">
+                    <span class="hamburger-icon" id="mobile-menu-icon">☰</span>
+                    <span class="hamburger-label">मेन्यू</span>
+                </button>
+            </div>
+            <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
+                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल">
+                    🛠️ कार्यपटल
+                </a>
+                <a href="about.html" class="btn btn-outline btn-sm nav-page-btn" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
+                    ℹ️ परिचय व मानक
+                </a>
+                <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
+                    <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
+                </button>
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn active" title="लॉगिन या साइन अप पेज खोलें" onclick="var lbl=document.getElementById('auth-btn-label');if(lbl&&lbl.textContent&&lbl.textContent.includes('लॉगिन')){window.location.href='login.html';return true;}try{var u=JSON.parse(localStorage.getItem('wikilink_current_user')||'null');if(u&&u.vaultVerified===true&&(u.name||u.email)){event.preventDefault();window.location.href='logs.html';return false;}}catch(e){}window.location.href='login.html';return true;">
+                    <span class="auth-status-dot" id="auth-status-dot"></span>
+                    <span id="auth-btn-label">लॉगिन / साइन अप</span>
+                </a>
+                <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
+                    लॉगआउट ⏻
+                </button>
+                <script>
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user');if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                </script>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ऑफ़लाइन मोड सूचना पट्टी -->
+    <div id="offline-connectivity-banner" class="offline-connectivity-banner container" style="display: none;" role="status" aria-live="polite">
+        <span class="offline-pulse-dot"></span>
+        <span><strong>ऑफ़लाइन मोड सक्रिय:</strong> स्थानीय सत्र लॉगिन उपलब्ध है। मुख्य कार्यपटल बिना लॉगिन के भी ऑफ़लाइन कार्य करता है।</span>
+    </div>
+
+    <main class="main-content container login-main-container">
+        <!-- पृथक लॉगिन एवं साइन अप कार्ड (डेस्कटॉप स्प्लिट + मोबाइल स्मार्ट कॉम्पैक्ट पीकिंग मैस्कॉट कार्ड) -->
+        <section class="standalone-auth-section">
+            <div class="cute-auth-card standalone-cute-auth-card" id="login-page-card">
+                <div class="cute-auth-split">
+                    <!-- बायाँ / मोबाइल शीर्ष भाग: 4 क्यूट एनिमेटेड कैरेक्टर्स मंच -->
+                    <div class="cute-characters-stage" id="cute-characters-stage">
+                        <div class="stage-top-meta-row">
+                            <div class="stage-speech-bubble" id="stage-speech-bubble">
+                                नमस्ते! पासवर्ड छुपा है (•••) इसलिए हमारी आँखें खुली हैं 👀
+                            </div>
+                        </div>
+
+                        <div class="characters-stage-floor">
+                            <div class="characters-group" id="characters-group">
+                                <!-- 1. लंबा बैंगनी कैरेक्टर (Tall Purple Character) -->
+                                <div class="cute-char char-purple" id="char-purple" data-char-name="बैंगनी मित्र">
+                                    <div class="char-face" data-char-face>
+                                        <div class="char-eyes">
+                                            <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                            <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                        </div>
+                                        <div class="char-mouth"></div>
+                                    </div>
+                                    <div class="char-hands">
+                                        <span class="char-hand hand-left"></span>
+                                        <span class="char-hand hand-right"></span>
+                                    </div>
+                                </div>
+
+                                <!-- 2. मध्यम गहरा कैरेक्टर (Dark/Charcoal Character) -->
+                                <div class="cute-char char-pink" id="char-pink" data-char-name="छाया मित्र">
+                                    <div class="char-face" data-char-face>
+                                        <div class="char-eyes">
+                                            <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                            <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                        </div>
+                                        <div class="char-mouth"></div>
+                                    </div>
+                                    <div class="char-hands">
+                                        <span class="char-hand hand-left"></span>
+                                        <span class="char-hand hand-right"></span>
+                                    </div>
+                                </div>
+
+                                <!-- 3. गोल नारंगी डोम कैरेक्टर (Front-Left Orange Semicircle Dome) -->
+                                <div class="cute-char char-orange" id="char-orange" data-char-name="नारंगी डोम">
+                                    <div class="char-face" data-char-face>
+                                        <div class="char-eyes">
+                                            <div class="char-eye eye-left"><div class="char-pupil"></div></div>
+                                            <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                        </div>
+                                        <div class="char-cheeks">
+                                            <span class="cheek"></span>
+                                            <span class="cheek"></span>
+                                        </div>
+                                        <div class="char-mouth happy-open"></div>
+                                    </div>
+                                    <div class="char-hands">
+                                        <span class="char-hand hand-left"></span>
+                                        <span class="char-hand hand-right"></span>
+                                    </div>
+                                </div>
+
+                                <!-- 4. पीला कैरेक्टर चोंच सहित (Front-Right Yellow Character) -->
+                                <div class="cute-char char-yellow" id="char-yellow" data-char-name="पीला पंछी">
+                                    <div class="char-face" data-char-face>
+                                        <div class="char-eyes single-eye-row">
+                                            <div class="char-eye eye-right"><div class="char-pupil"></div></div>
+                                        </div>
+                                        <div class="char-beak"></div>
+                                    </div>
+                                    <div class="char-hands">
+                                        <span class="char-hand hand-left"></span>
+                                        <span class="char-hand hand-right"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- मोबाइल एवं डेस्कटॉप त्वरित टच रिएक्शन बार -->
+                        <div class="stage-bottom-controls">
+                            <div class="mobile-char-touch-bar" id="mobile-char-touch-bar">
+                                <button type="button" class="char-react-chip active" id="btn-char-open-eyes" title="आँखें खोलें (जब पासवर्ड छुपा हो)">
+                                    👀 आँखें खुलीं
+                                </button>
+                                <button type="button" class="char-react-chip" id="btn-char-cover-eyes" title="आँखें बंद करें (जब पासवर्ड दिखे)">
+                                    🙈 आँखें बंद
+                                </button>
+                                <button type="button" class="char-react-chip" id="btn-char-happy-jump" title="पात्रों को उछालें">
+                                    🎉 उछलें
+                                </button>
+                            </div>
+                            <div class="stage-caption-pill">
+                                <span>पासवर्ड छुपा (•••) = आँखें खुलीं 👀 • पासवर्ड दिखा = आँखें बंद 🙈</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- दायाँ / मोबाइल मुख्य भाग: लॉगिन एवं साइन अप फॉर्म -->
+                    <div class="cute-auth-form-panel">
+                        <div class="cute-auth-brand-mark" aria-hidden="true">
+                            <svg viewBox="0 0 36 36" width="28" height="28">
+                                <polygon points="18,3 33,12 27,31 9,31 3,12" fill="var(--primary-color)" />
+                                <circle cx="18" cy="18" r="5" fill="var(--bg-card)" />
+                            </svg>
+                        </div>
+
+                        <h2 class="cute-auth-heading" id="auth-heading-title">Welcome back!</h2>
+                        <p class="cute-auth-subheading" id="auth-heading-sub">अपने खाते में लॉगिन करें अथवा बिना लॉगिन सीधे कार्यपटल चलाएँ</p>
+
+                        <!-- वर्तमान लॉग-इन उपयोगकर्ता स्थिति पट्टी (यदि लॉगिन सक्रिय है) -->
+                        <div id="auth-active-session-box" class="auth-active-session-box" style="display: none;">
+                            <a href="logs.html" class="active-session-info" style="text-decoration: none; color: inherit; cursor: pointer;" title="अपना विशेष एनीमे प्रोफ़ाइल खोलें">
+                                <span class="active-session-dot"></span>
+                                <div>
+                                    <strong id="auth-active-user-name" style="text-decoration: underline; text-underline-offset: 3px;">सदस्य</strong>
+                                    <small id="auth-active-user-email" style="display: block; color: var(--text-muted);"></small>
+                                </div>
+                            </a>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <a href="index.html" class="btn btn-secondary btn-sm">🛠️ कार्यपटल खोलें</a>
+                                <a href="logs.html" class="btn btn-primary btn-sm">👤 प्रोफ़ाइल व लॉग देखें</a>
+                                <button type="button" id="auth-form-logout-btn" class="btn btn-danger-soft btn-sm">
+                                    लॉगआउट ⏻
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- लॉगिन / साइन अप टैब्स -->
+                        <div class="cute-auth-mode-tabs">
+                            <button type="button" class="cute-mode-tab active" id="tab-auth-login" data-auth-mode="login">लॉगिन (Log in)</button>
+                            <button type="button" class="cute-mode-tab" id="tab-auth-signup" data-auth-mode="signup">साइन अप (Sign up)</button>
+                        </div>
+
+                        <form id="cute-auth-form" class="cute-auth-form" onsubmit="return false;">
+                            <div id="auth-error-alert-box" class="auth-error-alert-box" role="alert" style="display: none; padding: 10px 12px; border-radius: 8px; background: #fef2f2; border: 1px solid #f87171; color: #991b1b; font-size: 0.82rem; font-weight: 600; line-height: 1.45;"></div>
+
+                            <div class="cute-field-group" id="auth-name-group" style="display: none;">
+                                <label for="auth-name-input" class="cute-label">आपका नाम / विकिपीडिया उपनाम (Name)</label>
+                                <input type="text" id="auth-name-input" class="cute-line-input" placeholder="अपना सदस्य नाम लिखें" autocomplete="name">
+                            </div>
+
+                            <div class="cute-field-group">
+                                <label for="auth-email-input" class="cute-label">पंजीकृत ईमेल पता (Registered Email)</label>
+                                <input type="email" id="auth-email-input" class="cute-line-input" placeholder="editor@wikipedia.org" autocomplete="username" required>
+                            </div>
+
+                            <div class="cute-field-group">
+                                <div class="cute-pass-label-row">
+                                    <label for="auth-password-input" class="cute-label">पासवर्ड (Password — न्यूनतम 6 अक्षर अनिवार्य)</label>
+                                    <span class="pass-eye-status-hint" id="pass-eye-status-hint">🔒 पासवर्ड छुपा है → आँखें खुली हैं 👀</span>
+                                </div>
+                                <div class="cute-password-wrap">
+                                    <input type="password" id="auth-password-input" class="cute-line-input" placeholder="कम से कम 6 अक्षरों का पासवर्ड" minlength="6" autocomplete="current-password" required>
+                                    <button type="button" id="auth-pass-toggle-btn" class="cute-pass-toggle" title="पासवर्ड दिखाएं (पात्र आँखें बंद करेंगे) / छिपाएं (पात्र आँखें खोलेंगे)">
+                                        <span id="auth-eye-icon">👁</span>
+                                        <span class="pass-toggle-text" id="auth-eye-text">दिखाएँ</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="cute-auth-options-row">
+                                <label class="cute-remember-check">
+                                    <input type="checkbox" id="auth-remember-cb" checked>
+                                    <span>सत्र याद रखें (Remember me)</span>
+                                </label>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">🔐 SHA-256 पासवर्ड लॉक सक्रिय</span>
+                            </div>
+
+                            <button type="submit" id="auth-submit-btn" class="cute-submit-btn">
+                                लॉगिन करें (Log in)
+                            </button>
+
+                            <button type="button" id="auth-google-firebase-btn" class="cute-demo-google-btn" style="border-color: #3366cc; background: #eef4ff; color: #1e3a8a;">
+                                <span style="font-weight: 800; color: #ea4335;">G</span>
+                                <span id="auth-google-btn-text">Google से साइन इन करें — विकीलिंक सहायक</span>
+                            </button>
+                        </form>
+
+                        <div class="cute-auth-footer" style="margin-top: 10px; text-align: center; font-size: 0.8rem;">
+                            <span id="auth-switch-prompt">खाता नहीं है?</span>
+                            <button type="button" id="auth-switch-mode-btn" class="cute-link-btn">साइन अप करें (Sign up)</button>
+                        </div>
+
+                        <div class="cute-guest-skip-box">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                                <a href="index.html" class="cute-guest-btn" style="text-decoration: none; flex: 1 1 auto; text-align: center;">
+                                    🛠️ बिना लॉगिन सीधे मुख्य कार्यपटल खोलें
+                                </a>
+                                <a href="logs.html" class="cute-guest-btn" data-auth-only="true" style="display: none; text-decoration: none; flex: 1 1 auto; text-align: center;">
+                                    👤 मेरा विशेष एनीमे प्रोफ़ाइल खोलें
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- सूचना टोस्ट -->
+    <div id="toast" class="toast">संदेश</div>
+
+    <!-- तार्किक पाद लेख (Logical Footer with Compact Zero-Login Info & All Site Pages) -->
+    <footer class="app-footer">
+        <div class="container">
+            <div class="footer-zero-login-strip">
+                <span class="zero-login-badge">🔓 शून्य-लॉगिन स्वतंत्रता</span>
+                <p>
+                    <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। वैकल्पिक लॉगिन करने पर आपके लॉग व प्रोफ़ाइल थीम क्लाउड में सिंक रहते हैं।
+                </p>
+            </div>
+
+            <div class="footer-sitemap-grid">
+                <a href="index.html" class="footer-page-card">
+                    <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
+                    <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
+                </a>
+                <a href="logs.html" class="footer-page-card" data-auth-only="true" style="display: none;">
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Profile & Logs)</strong>
+                    <span>यूज़रनेम व आइकन चयन, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
+                </a>
+                <a href="about.html" class="footer-page-card">
+                    <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
+                    <span>टूल उपयोग विधि एवं विकिपीडिया कड़ीकरण नीतियाँ (WP:LINK)</span>
+                </a>
+                <a href="login.html" class="footer-page-card active">
+                    <strong>🔑 4. लॉगिन एवं साइन अप (Login / Sign Up)</strong>
+                    <span>इंटरैक्टिव एनिमेटेड खाता प्रवेश एवं क्लाउड सिंक</span>
+                </a>
+            </div>
+
+            <div class="footer-inner">
+                <p>
+                    <strong>विकीलिंक सहायक (WikiLink Assistant v2.5)</strong> — विकिपीडिया संपादकों हेतु स्वतंत्र उपकरण।
+                </p>
+                <p class="footer-links">
+                    आधिकारिक डोमेन: <a href="https://vikrampratap-wiki.github.io/wikilink-tool/" target="_blank">vikrampratap-wiki.github.io/wikilink-tool</a> |
+                    लाइसेंस: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.hi" target="_blank">CC BY-SA 4.0</a> / <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> |
+                    निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a> |
+                    <span>🔒 निजी रिपॉज़िटरी (Private GitHub)</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="firebase-client.js?v=19"></script>
+    <script src="app.js?v=19" defer></script>
+</body>
+</html>

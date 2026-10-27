@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="hi" dir="ltr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>विकीलिंक सहायक (WikiLink Assistant)</title>
+    <meta name="description" content="विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, अति-कड़ीकरण शोधन एवं मीडियाविकी डिफ़ समीक्षा का स्वतंत्र उपकरण">
+    <meta property="og:title" content="विकीलिंक सहायक (WikiLink Assistant)">
+    <meta property="og:description" content="विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने, अति-कड़ीकरण शोधन एवं मीडियाविकी डिफ़ समीक्षा का स्वतंत्र उपकरण">
+    <meta property="og:url" content="https://vikrampratap-wiki.github.io/wikilink-tool/">
+    <link rel="canonical" href="https://vikrampratap-wiki.github.io/wikilink-tool/">
+    <meta name="theme-color" content="#0969da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WikiLink">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <style id="critical-above-fold-css">
+        :root{--primary-color:#2a4b8d;--primary-hover:#1e3a70;--primary-light:#eaf3ff;--accent-blue:#3366cc;--accent-green:#14866d;--accent-green-bg:#e6f4f1;--accent-orange:#d97706;--accent-orange-bg:#fef3c7;--accent-red:#d33;--accent-red-bg:#fee2e2;--bg-main:#f8f9fa;--bg-card:#ffffff;--bg-alt:#f1f3f5;--bg-input:#ffffff;--border-color:#c8ccd1;--border-light:#e2e8f0;--text-primary:#202122;--text-secondary:#475569;--text-muted:#64748b;--radius-sm:6px;--radius-md:8px;--radius-lg:10px;--shadow-sm:0 1px 3px rgba(0,0,0,.06);--font-sans:'Mukta','Noto Sans Devanagari',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+        [data-theme="dark"]{--primary-color:#60a5fa;--primary-hover:#93c5fd;--primary-light:#1e293b;--accent-blue:#60a5fa;--accent-green:#34d399;--bg-main:#0f172a;--bg-card:#1e293b;--bg-alt:#334155;--bg-input:#0f172a;--border-color:#334155;--border-light:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--text-muted:#94a3b8}
+        *{box-sizing:border-box;margin:0;padding:0}
+        html{overflow-x:hidden;-webkit-text-size-adjust:100%}
+        body{font-family:var(--font-sans);background-color:var(--bg-main);color:var(--text-primary);line-height:1.55;font-size:15px;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+        .logical-bg-backdrop,.anime-bg-canvas,.modal-backdrop,.toast,.wiki-summary-card,#progress-card,#results-card{display:none}
+        .container{width:100%;max-width:1240px;margin:0 auto;padding:0 16px}
+        .app-header{background-color:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+        .header-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+        .logo-area{display:flex;align-items:center;gap:12px}
+        .brand-home-link{display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+        .anime-mascot-emblem-wrap{width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+        .logo-title-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .app-title{font-size:1.35rem;font-weight:700;color:var(--text-primary);line-height:1.2}
+        .app-subtitle{font-size:.82rem;color:var(--text-secondary);margin-top:2px}
+        .badge{display:inline-flex;align-items:center;font-size:.74rem;padding:2px 8px;border-radius:4px;font-weight:600}
+        .badge-tool{background-color:var(--primary-light);color:var(--primary-color);border:1px solid var(--primary-color)}
+        .mobile-menu-toggle-btn{display:none;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--primary-color);background:var(--primary-light);color:var(--primary-color);font-weight:700;font-size:.82rem;cursor:pointer}
+        .header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .main-content{flex:1;padding-top:16px;padding-bottom:32px}
+        .workbench-flow-strip{display:flex;flex-direction:column;gap:10px;background-color:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px 16px;margin-bottom:16px}
+        .flow-steps-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;width:100%}
+        .flow-step{display:flex;align-items:center;gap:8px;font-size:.84rem;color:var(--text-muted);font-weight:500;padding:4px 8px;border-radius:var(--radius-sm)}
+        .flow-step.active{color:var(--primary-color);font-weight:700;background-color:var(--primary-light)}
+        .flow-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background-color:var(--bg-alt);border:1px solid var(--border-color);font-size:.75rem;font-weight:700}
+        .flow-step.active .flow-num{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+        .flow-progress-track{width:100%;height:4px;background-color:var(--bg-alt);border-radius:999px;overflow:hidden}
+        .flow-progress-fill{height:100%;background:var(--primary-color);border-radius:999px}
+        .dual-workbench-container{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:18px;align-items:start}
+        .dual-workbench-container.desktop-dual-boxes{display:grid;grid-template-columns:minmax(0,1.58fr) minmax(320px,1fr);gap:20px;align-items:stretch}
+        .workbench-card{background-color:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-width:0}
+        #input-control-card{border-top:4px solid var(--primary-color)}
+        #aux-tools-card.workbench-aux-box{border-top:4px solid var(--accent-green);justify-content:flex-start}
+        .workbench-card-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border-light);padding-bottom:10px;flex-wrap:wrap;gap:8px}
+        .workbench-card-title{font-size:1.1rem;font-weight:700;color:var(--text-primary);line-height:1.3}
+        .form-hint{display:block;font-size:.78rem;color:var(--text-muted);margin-top:3px}
+        .workbench-header-meta{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-secondary);flex-wrap:wrap}
+        .workbench-meta-highlight{color:var(--primary-color);font-weight:700}
+        .workbench-logical-sections{display:flex;flex-direction:column;gap:16px;min-width:0}
+        .workbench-logical-block{background-color:var(--bg-main);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+        .logical-block-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--border-light)}
+        .logical-block-title-wrap{display:flex;align-items:flex-start;gap:10px;flex:1 1 220px;min-width:0}
+        .logical-step-index{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;border-radius:6px;background-color:var(--primary-light);color:var(--primary-color);border:1px solid var(--primary-color);font-family:var(--font-mono);font-size:.78rem;font-weight:700;flex-shrink:0}
+        .logical-block-title{font-size:.98rem;font-weight:700;color:var(--text-primary);line-height:1.3}
+        .logical-block-subtitle{font-size:.8rem;color:var(--text-secondary);margin-top:2px;line-height:1.4}
+        .logical-lang-control{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .logical-inline-label,.logical-param-label{font-size:.8rem;font-weight:600;color:var(--text-primary)}
+        .form-control{width:100%;padding:8px 12px;font-size:.9rem;font-family:inherit;color:var(--text-primary);background-color:var(--bg-input);border:1px solid var(--border-color);border-radius:var(--radius-sm)}
+        .form-control-sm{padding:5px 10px;font-size:.82rem}
+        .logical-source-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+        .tabs-nav{display:flex;gap:4px;background-color:var(--bg-card);padding:4px;border-radius:var(--radius-sm);border:1px solid var(--border-color);flex-wrap:wrap}
+        .tab-btn{background:transparent;border:none;padding:6px 12px;font-size:.84rem;font-family:inherit;font-weight:600;color:var(--text-secondary);border-radius:4px;cursor:pointer}
+        .tab-btn.active{background-color:var(--primary-color);color:#fff}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        .input-with-button{display:flex;gap:8px;align-items:stretch}
+        .input-with-button .form-control{flex:1;min-width:0}
+        .logical-params-strip{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-top:10px;border-top:1px solid var(--border-color)}
+        .logical-param-item{display:flex;align-items:center;gap:8px}
+        .logical-param-checks{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+        .logical-inline-check{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600}
+        .logical-execution-footer{background-color:var(--bg-main);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:12px 16px}
+        .execution-footer-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%}
+        .execution-step-hint{display:flex;align-items:flex-start;gap:10px;font-size:.88rem;color:var(--text-secondary);flex:1 1 240px}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;font-size:.88rem;font-weight:600;font-family:inherit;border-radius:var(--radius-sm);border:1px solid transparent;cursor:pointer;text-decoration:none;line-height:1.25}
+        .btn-sm{padding:5px 10px;font-size:.8rem}
+        .btn-lg{padding:10px 18px;font-size:.95rem}
+        .btn-primary{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+        .btn-secondary{background-color:var(--bg-alt);color:var(--text-primary);border-color:var(--border-color)}
+        .btn-outline{background-color:transparent;color:var(--text-primary);border-color:var(--border-color)}
+        .btn-text{background:none;border:none;color:var(--primary-color);padding:2px 6px;font-weight:600;cursor:pointer}
+        .aux-tools-grid{display:grid;grid-template-columns:1fr;gap:10px}
+        .aux-tool-item{background-color:var(--bg-main);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:11px 13px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+        @media (max-width:960px){.dual-workbench-container,.dual-workbench-container.desktop-dual-boxes{grid-template-columns:1fr}}
+        @media (max-width:768px){
+            .container{padding:0 12px}
+            .mobile-menu-toggle-btn{display:inline-flex!important}
+            .logo-area{width:100%;justify-content:space-between}
+            .app-subtitle,.app-header .header-actions{display:none!important}
+            .workbench-flow-strip{padding:8px 10px}
+            .flow-steps-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+            .flow-arrow{display:none}
+            .workbench-logical-card{padding:12px 10px!important;gap:12px}
+            .workbench-logical-block{padding:10px!important;gap:10px}
+            .logical-block-header,.logical-source-bar,.logical-params-strip,.execution-footer-row,.input-with-button{flex-direction:column;align-items:stretch;gap:10px}
+            .logical-segmented-tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+            #analyze-btn,.logical-analyze-cta{width:100%!important;padding:11px 12px!important}
+            .aux-tools-card{padding:7px 9px!important;margin-bottom:8px!important;border-radius:8px!important}
+            .aux-tools-subtitle,.aux-tools-card:not(.mobile-guide-expanded) .aux-tool-meta{display:none!important}
+            .aux-tools-card:not(.mobile-guide-expanded) .aux-tools-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+            .aux-tools-card:not(.mobile-guide-expanded) .aux-tool-item{padding:0!important;border:none!important;background:transparent!important}
+            .aux-tools-card:not(.mobile-guide-expanded) .aux-tool-item .btn{width:100%!important;min-height:28px!important;padding:4px 5px!important;font-size:.68rem!important}
+        }
+    </style>
+    <link rel="preload" href="style.css?v=19" as="style" fetchpriority="high">
+    <link rel="stylesheet" href="style.css?v=19" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="style.css?v=19"></noscript>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"
+      }
+    }
+    </script>
+</head>
+<body data-skin="wikimedia-classic" data-card-style="minimal">
+    <!-- तार्किक विकिपीडिया कड़ी जाल एवं एनीमे परिवेशी पृष्ठभूमि (Logical Wikilink Constellation & Anime Ambient Background) -->
+    <div class="logical-bg-backdrop" aria-hidden="true">
+        <div class="bg-aurora-orb orb-1"></div>
+        <div class="bg-aurora-orb orb-2"></div>
+        <div class="bg-aurora-orb orb-3"></div>
+        <div class="bg-logical-grid"></div>
+    </div>
+    <canvas id="anime-bg-canvas" class="anime-bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- शीर्ष पट्टी (App Header - Clean Page Links + Mobile Toggle Menu) -->
+    <header class="app-header">
+        <div class="header-inner container">
+            <div class="logo-area">
+                <a href="index.html" class="brand-home-link" title="मुख्य कार्यपटल">
+                    <div class="anime-mascot-emblem-wrap" aria-hidden="true">
+                        <svg class="anime-header-mascot" viewBox="0 0 64 64" width="42" height="42">
+                            <defs>
+                                <linearGradient id="animeHairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--primary-color)" />
+                                    <stop offset="100%" stop-color="var(--accent-blue)" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="34" r="22" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M10 32 C10 14, 54 14, 54 32 C50 22, 42 18, 32 20 C22 18, 14 22, 10 32 Z" fill="url(#animeHairGrad)" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M12 26 L6 14 L20 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <path d="M52 26 L58 14 L44 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <g class="mascot-eyes">
+                                <ellipse cx="23" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="21.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="24.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                                <ellipse cx="41" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="39.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="42.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                            </g>
+                            <ellipse cx="17" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <ellipse cx="47" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <path d="M28 43 Q32 47 36 43" fill="none" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text-block">
+                        <div class="logo-title-wrap">
+                            <h1 class="app-title">विकीलिंक सहायक</h1>
+                            <span class="badge badge-tool">WikiLink v2.5</span>
+                        </div>
+                        <p class="app-subtitle">विकिपीडिया लेखों में तार्किक आंतरिक कड़ियाँ (Wikilinks) जोड़ने एवं समीक्षा का स्वतंत्र उपकरण</p>
+                    </div>
+                </a>
+                <!-- केवल मोबाइल के लिए हैमबर्गर टॉगल मेन्यू बटन (Hidden on Desktop) -->
+                <button type="button" id="mobile-menu-toggle-btn" class="mobile-menu-toggle-btn" aria-expanded="false" aria-controls="header-nav-actions" title="मोबाइल नेविगेशन मेन्यू खोलें/बंद करें">
+                    <span class="hamburger-icon" id="mobile-menu-icon">☰</span>
+                    <span class="hamburger-label">मेन्यू</span>
+                </button>
+            </div>
+            <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
+                <a href="index.html" class="btn btn-primary btn-sm nav-page-btn active" title="मुख्य कार्यपटल">
+                    🛠️ कार्यपटल
+                </a>
+                <a href="about.html" class="btn btn-outline btn-sm nav-page-btn" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
+                    ℹ️ परिचय व मानक
+                </a>
+                <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
+                    <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
+                </button>
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें" onclick="var lbl=document.getElementById('auth-btn-label');if(lbl&&lbl.textContent&&lbl.textContent.includes('लॉगिन')){window.location.href='login.html';return true;}try{var u=JSON.parse(localStorage.getItem('wikilink_current_user')||'null');if(u&&u.vaultVerified===true&&(u.name||u.email)){event.preventDefault();window.location.href='logs.html';return false;}}catch(e){}window.location.href='login.html';return true;">
+                    <span class="auth-status-dot" id="auth-status-dot"></span>
+                    <span id="auth-btn-label">लॉगिन / साइन अप</span>
+                </a>
+                <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से तुरंत लॉगआउट करें">
+                    लॉगआउट ⏻
+                </button>
+                <script>
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user');if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                </script>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ऑफ़लाइन मोड सूचना पट्टी (Offline Workbench Banner) -->
+    <div id="offline-connectivity-banner" class="offline-connectivity-banner container" style="display: none;" role="status" aria-live="polite">
+        <span class="offline-pulse-dot"></span>
+        <span><strong>ऑफ़लाइन मोड सक्रिय:</strong> इंटरनेट कनेक्शन उपलब्ध नहीं है — सर्विस वर्कर कैश और स्थानीय तार्किक इंजन से मुख्य कार्यपटल (लेख विश्लेषण, कड़ियों की पहचान एवं लाइव डिफ़) पूर्णतः कार्यशील है।</span>
+    </div>
+
+    <!-- मुख्य कंटेनर (Main Container - Dedicated Workbench View) -->
+    <main class="main-content container">
+        <div id="main-workbench-page-view">
+
+        <!-- एडमिन वैश्विक संपादकीय घोषणा पट्टी (केवल तब दिखती है जब एडमिन द्वारा कोई सूचना सक्रिय की गई हो) -->
+        <div id="global-admin-broadcast-banner" class="workbench-card" style="display: none; margin-bottom: 12px; padding: 10px 16px; background: var(--primary-light); border-left: 4px solid var(--primary-color); align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-primary);">
+                <span class="badge badge-blue">📢 प्रशासकीय निर्देश</span>
+                <span id="global-admin-broadcast-text" style="font-weight: 600;"></span>
+            </div>
+            <small id="global-admin-policy-summary-pill" style="font-size: 0.76rem; color: var(--text-secondary); font-weight: 600;"></small>
+        </div>
+
+        <!-- कॉम्पैक्ट सारांश पट्टी (विश्लेषण के बाद प्रदर्शित होती है जब इनपुट फॉर्म छुप जाता है) -->
+        <div id="compact-active-article-bar" class="compact-article-bar" style="display: none;">
+            <div class="compact-info">
+                <span class="compact-label">वर्तमान लेख:</span>
+                <strong id="compact-title-text">-</strong>
+                <span class="compact-lang-badge" id="compact-lang-text">hi</span>
+            </div>
+            <div class="compact-actions">
+                <button type="button" id="btn-toggle-input-card" class="btn btn-secondary btn-sm">
+                    मुख्य कार्यपटल दिखाएं / छिपाएं
+                </button>
+            </div>
+        </div>
+
+        <!-- तार्किक कार्यप्रवाह पट्टी (Workbench Workflow Stepper) -->
+        <div class="workbench-flow-strip" id="workbench-flow-strip">
+            <div class="flow-steps-row">
+                <div class="flow-step step-1 active" id="flow-step-1">
+                    <span class="flow-num">1</span>
+                    <span class="flow-label">मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</span>
+                </div>
+                <div class="flow-arrow" aria-hidden="true">→</div>
+                <div class="flow-step step-2" id="flow-step-2">
+                    <span class="flow-num">2</span>
+                    <span class="flow-label">कड़ियों की समीक्षा एवं विकिपीडिया डिफ़</span>
+                </div>
+            </div>
+            <div class="flow-progress-track" aria-hidden="true">
+                <div class="flow-progress-fill" id="flow-progress-fill" style="width: 50%;"></div>
+            </div>
+        </div>
+
+        <!-- मुख्य कार्यपटल एवं त्वरित सहायक उपकरण (Desktop Dual-Box Workbench Layout) -->
+        <div class="dual-workbench-container desktop-dual-boxes" id="dual-workbench-container">
+            <!-- बॉक्स 1: मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी (Input Article & Filters Box) -->
+            <section id="input-control-card" class="workbench-card workbench-logical-card">
+                <div class="workbench-card-header">
+                    <div class="workbench-header-main">
+                        <h2 class="workbench-card-title">मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</h2>
+                        <small class="form-hint">चरणबद्ध कार्यप्रवाह: 01. मूल विकिपीडिया लेख चुनें · 02. नीतिगत तार्किक छन्नी निर्धारित करें · 03. स्वचालित विश्लेषण चलाएँ</small>
+                    </div>
+                    <div class="workbench-header-meta">
+                        <span id="workbench-active-lang-indicator" class="workbench-meta-text">hi.wikipedia.org</span>
+                        <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                        <span id="active-filter-count-badge" class="workbench-meta-text workbench-meta-highlight">8/8 मुख्य नियम सक्रिय</span>
+                    </div>
+                </div>
+
+                <!-- तार्किक कार्यपटल द्वि-स्तरीय संरचना (Step 01: Source Article + Step 02: Logical Filters) -->
+                <div class="workbench-logical-sections">
+
+                    <!-- खण्ड 01: मूल लेख स्रोत एवं चयन (Source Article Selection) -->
+                    <div class="workbench-logical-block block-source-article">
+                        <div class="logical-block-header">
+                            <div class="logical-block-title-wrap">
+                                <span class="logical-step-index">01</span>
+                                <div>
+                                    <h3 class="logical-block-title">मूल लेख चयन एवं स्रोत (Source Article)</h3>
+                                    <p class="logical-block-subtitle">विकिपीडिया भाषा चुनें और शीर्षक, यादृच्छिक लेख, श्रेणी या फ़ाइल से लेख लोड करें</p>
+                                </div>
+                            </div>
+
+                            <!-- भाषा चयनकर्ता (Compact inline with header) -->
+                            <div class="logical-lang-control">
+                                <label for="lang-select" class="logical-inline-label">विकिपीडिया भाषा:</label>
+                                <div class="lang-selector-group">
+                                    <select id="lang-select" class="form-control form-control-sm">
+                                        <optgroup label="प्रमुख भारतीय भाषाएँ">
+                                            <option value="hi" selected>हिन्दी (hi.wikipedia.org)</option>
+                                            <option value="sa">संस्कृतम् (sa.wikipedia.org)</option>
+                                            <option value="bho">भोजपुरी (bho.wikipedia.org)</option>
+                                            <option value="mai">मैथिली (mai.wikipedia.org)</option>
+                                            <option value="mr">मराठी (mr.wikipedia.org)</option>
+                                            <option value="bn">বাংলা (bn.wikipedia.org)</option>
+                                            <option value="gu">ગુજરાતી (gu.wikipedia.org)</option>
+                                            <option value="pa">ਪੰਜਾਬੀ (pa.wikipedia.org)</option>
+                                            <option value="ta">தமிழ் (ta.wikipedia.org)</option>
+                                            <option value="te">తెలుగు (te.wikipedia.org)</option>
+                                            <option value="ur">اردو (ur.wikipedia.org)</option>
+                                            <option value="ne">नेपाली (ne.wikipedia.org)</option>
+                                            <option value="or">ଓଡ଼ିଆ (or.wikipedia.org)</option>
+                                            <option value="kn">ಕನ್ನಡ (kn.wikipedia.org)</option>
+                                            <option value="ml">മലയാളം (ml.wikipedia.org)</option>
+                                        </optgroup>
+                                        <optgroup label="अन्य प्रमुख भाषाएँ">
+                                            <option value="en">English (en.wikipedia.org)</option>
+                                            <option value="fr">Français (fr.wikipedia.org)</option>
+                                            <option value="de">Deutsch (de.wikipedia.org)</option>
+                                            <option value="es">Español (es.wikipedia.org)</option>
+                                            <option value="ru">Русский (ru.wikipedia.org)</option>
+                                            <option value="custom">अन्य भाषा कोड दर्ज करें...</option>
+                                        </optgroup>
+                                    </select>
+                                    <div id="custom-lang-wrap" class="custom-lang-input" style="display: none;">
+                                        <input type="text" id="custom-lang-input" class="form-control form-control-sm" placeholder="उदा: bho, as" maxlength="10">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- स्रोत माध्यम टैब्स (Source Input Mode Tabs) -->
+                        <div class="logical-source-bar">
+                            <div class="tabs-nav input-tabs logical-segmented-tabs" role="tablist">
+                                <button type="button" class="tab-btn active" data-tab="tab-input-wiki">शीर्षक / URL</button>
+                                <button type="button" class="tab-btn" data-tab="tab-input-random">यादृच्छिक लेख</button>
+                                <button type="button" class="tab-btn" data-tab="tab-input-category">श्रेणी से</button>
+                                <button type="button" class="tab-btn" data-tab="tab-input-file">फ़ाइल अपलोड</button>
+                            </div>
+
+                            <div class="preset-buttons logical-presets-inline">
+                                <span class="preset-label-text">त्वरित उदाहरण:</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="तुलसीदास">तुलसीदास</button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="प्रेमचंद">प्रेमचंद</button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="भारत">भारत</button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" class="btn-text preset-btn" data-lang="hi" data-title="हिमालय">हिमालय</button>
+                            </div>
+                        </div>
+
+                        <!-- इनपुट टैब सामग्री -->
+                        <div class="logical-tab-panels">
+                            <div id="tab-input-wiki" class="tab-content active">
+                                <div class="input-with-button">
+                                    <input type="text" id="page-input" class="form-control" placeholder="विकिपीडिया लेख का शीर्षक अथवा पूरा URL दर्ज करें (उदा: तुलसीदास, भारत)...">
+                                    <button type="button" id="load-page-btn" class="btn btn-secondary">लेख लोड करें</button>
+                                </div>
+                            </div>
+
+                            <div id="tab-input-random" class="tab-content">
+                                <div class="input-with-button">
+                                    <button type="button" id="load-random-btn" class="btn btn-secondary">यादृच्छिक लेख प्राप्त करें</button>
+                                    <span id="random-loading-status" class="status-inline-text"></span>
+                                </div>
+                            </div>
+
+                            <div id="tab-input-category" class="tab-content">
+                                <div class="input-with-button">
+                                    <input type="text" id="category-input" class="form-control" placeholder="उदा: श्रेणी:हिन्दी साहित्य" value="श्रेणी:हिन्दी साहित्य">
+                                    <button type="button" id="load-category-btn" class="btn btn-secondary">श्रेणी खोजें</button>
+                                </div>
+                                <div id="category-pages-wrap" style="display: none; margin-top: 8px;">
+                                    <div class="input-with-button">
+                                        <select id="category-pages-select" class="form-control"></select>
+                                        <button type="button" id="load-selected-cat-page-btn" class="btn btn-primary">यह लेख लोड करें</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="tab-input-file" class="tab-content">
+                                <div class="file-upload-row">
+                                    <input type="file" id="file-upload-input" class="form-control" accept=".txt,.wiki,.text">
+                                    <small class="form-hint">स्थानीय कंप्यूटर से <code>.wiki</code> या <code>.txt</code> फ़ाइल सीधे लोड करें</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- आंतरिक लेख बफ़र एवं सक्रिय लोड स्थिति पट्टी -->
+                        <textarea id="raw-wikitext-input" style="display: none;" aria-hidden="true"></textarea>
+                        <div id="loaded-article-status-bar" class="loaded-article-status-bar" style="display: none;">
+                            <div class="loaded-status-left">
+                                <span id="raw-char-count" class="counter-text">0 अक्षर | 0 शब्द</span>
+                            </div>
+                            <div class="loaded-status-actions">
+                                <button type="button" id="clear-raw-btn" class="btn btn-text btn-sm text-danger">लेख साफ़ करें</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- खण्ड 02: तार्किक छन्नी नियंत्रण पटल (Logical Filter & Policy Engine) -->
+                    <div class="workbench-logical-block block-logical-filters">
+                        <div class="logical-block-header">
+                            <div class="logical-block-title-wrap">
+                                <span class="logical-step-index">02</span>
+                                <div>
+                                    <h3 class="logical-block-title">तार्किक छन्नी एवं विकिपीडिया नीति नियम (Logical Filters)</h3>
+                                    <p class="logical-block-subtitle">अनावश्यक, चक्रीय व बहुविकल्पी कड़ियों को रोकने के लिए सक्रिय विकिपीडिया शैली-निर्देश (MOS) नियम</p>
+                                </div>
+                            </div>
+                            <div class="filter-toolbar-actions">
+                                <button type="button" id="btn-enable-all-filters" class="btn btn-text btn-sm" title="सभी मुख्य तार्किक नियमों को पुनः सक्रिय करें">
+                                    सभी नियम सक्रिय करें
+                                </button>
+                                <span class="workbench-meta-sep" aria-hidden="true">·</span>
+                                <button type="button" id="toggle-settings-btn" class="btn btn-text btn-sm btn-settings-toggle" aria-expanded="false" aria-controls="logical-filter-groups settings-body">
+                                    विस्तृत नियम व विवरण <span class="accordion-arrow">▼</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- वर्गीकृत तार्किक नियम चिप्स (Categorized Policy Toggles — केवल 'विस्तृत नियम व विवरण' पर क्लिक करने पर प्रदर्शित) -->
+                        <div class="active-filters-toolbar">
+                            <div class="logical-filter-groups" id="logical-filter-groups" style="display: none;">
+                                <!-- समूह क: शब्द पात्रता एवं आवृत्ति नियम -->
+                                <div class="logical-filter-group">
+                                    <span class="filter-group-label">क. शब्द पात्रता व आवृत्ति (Word &amp; Scope):</span>
+                                    <div class="filter-chips-grid">
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-first-only" title="एक लेख में एक ही संकल्पना की बार-बार कड़ी न बनाएं (WP:OVERLINKING)">✓ प्रथम उल्लेख (WP:OVERLINK)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-filter-common-words" title="7,479 सामान्य दैनिक शब्दों की नई कड़ी न बनाएं (WP:NOTLINKED)">✓ सामान्य शब्द छोड़ें (WP:NOTLINKED)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-prevent-self-link" title="वर्तमान लेख शीर्षक की चक्रीय कड़ी रोकें (WP:CIRCULAR)">✓ स्व-कड़ीकरण रोकें (WP:CIRCULAR)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-dates" title="अकेले वर्ष या सामान्य तिथियों को लिंक न करें (WP:DATELINK)">✓ वर्ष व दिनांक छन्नी (WP:DATELINK)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-units" title="किमी, किग्रा, मीटर, सेकंड आदि मात्रक छोड़ें (WP:UNITS)">✓ मात्रक व इकाइयाँ छन्नी</button>
+                                    </div>
+                                </div>
+
+                                <!-- समूह ख: लक्ष्य सत्यापन एवं सिंटेक्स शुद्धता -->
+                                <div class="logical-filter-group">
+                                    <span class="filter-group-label">ख. लक्ष्य सत्यापन व सिंटेक्स (Target &amp; Syntax):</span>
+                                    <div class="filter-chips-grid">
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-blue-only" title="केवल विकिपीडिया पर मौजूद सत्यापित नीले पृष्ठों की कड़ियाँ जोड़ें">✓ केवल पुष्ट नीली कड़ियाँ</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-skip-disambig" title="बहुविकल्पी पृष्ठों की सीधी कड़ी न जोड़ें (WP:DISAMBIG)">✓ बहुविकल्पी निवारण (WP:DISAMBIG)</button>
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-clean-pipes" title="[[भारत|भारत]] के स्थान पर स्वच्छ [[भारत]] सिंटेक्स रखें">✓ स्वच्छ पाइप [[X]]</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- प्रत्यक्ष मापदंड पट्टी (Always-Visible Scope, Min-Length & Structural Parameters) -->
+                            <div class="logical-params-strip">
+                                <div class="logical-param-item">
+                                    <label for="opt-link-scope" class="logical-param-label">कड़ीकरण दायरा (Scope):</label>
+                                    <select id="opt-link-scope" class="form-control form-control-sm logical-param-select">
+                                        <option value="article" selected>संपूर्ण लेख में एक बार</option>
+                                        <option value="section">प्रति अनुभाग एक बार</option>
+                                        <option value="lead">केवल मुख्य भूमिका (Lead)</option>
+                                    </select>
+                                </div>
+
+                                <div class="logical-param-item">
+                                    <label for="opt-min-length" class="logical-param-label">न्यूनतम शब्द लंबाई:</label>
+                                    <div class="logical-minlen-wrap">
+                                        <input type="number" id="opt-min-length" class="form-control form-control-sm logical-param-number" value="3" min="2" max="10">
+                                        <span class="logical-unit-text">अक्षर</span>
+                                    </div>
+                                </div>
+
+                                <div class="logical-param-item logical-param-checks">
+                                    <label class="logical-inline-check" title="पुनर्निर्देशन (Redirect) को मूल प्रमाणित लक्ष्य लेख से जोड़ें">
+                                        <input type="checkbox" id="opt-resolve-redirects" checked>
+                                        <span>पुनर्निर्देशन स्वतः ठीक करें</span>
+                                    </label>
+                                    <label class="logical-inline-check" title="शीर्षक, संदर्भ, साँचे (Templates), श्रेणियाँ व चित्र सुरक्षित रखें">
+                                        <input type="checkbox" id="opt-protect-structures" checked>
+                                        <span>विकि-संरचनाएँ सुरक्षित रखें</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- विस्तारणीय विस्तृत नियम व्याख्या (Collapsible Detailed Policy Reference) -->
+                        <div class="settings-accordion">
+                            <div class="settings-body" id="settings-body" style="display: none;">
+                                <div class="settings-grid">
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-first-only" checked>
+                                        <div class="setting-desc">
+                                            <strong>1. प्रथम उल्लेख नियम (WP:OVERLINKING)</strong>
+                                            <p>एक लेख में एक ही संकल्पना की बार-बार कड़ियाँ नहीं दोहराई जाएँगी।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-blue-only" checked>
+                                        <div class="setting-desc">
+                                            <strong>2. केवल सत्यापित पृष्ठ (नीली कड़ियाँ)</strong>
+                                            <p>केवल वही कड़ियाँ जोड़ें जो विकिपीडिया पर वास्तव में मौजूद हैं (लाल कड़ियाँ नहीं)।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-skip-disambig" checked>
+                                        <div class="setting-desc">
+                                            <strong>3. बहुविकल्पी पृष्ठ छोड़ें (WP:DISAMBIG)</strong>
+                                            <p>बहुविकल्पी पृष्ठों की सीधी कड़ी न जोड़ें; ऐसे पदों पर चेतावनी चिह्न दर्शाएं।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-skip-dates" checked>
+                                        <div class="setting-desc">
+                                            <strong>4. सामान्य तिथियाँ व वर्ष छोड़ें (WP:DATELINK)</strong>
+                                            <p>अकेले वर्ष (उदा: 1947, 2024) या साधारण तिथियों को लिंक न करें।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-skip-units" checked>
+                                        <div class="setting-desc">
+                                            <strong>5. माप व इकाइयाँ छोड़ें (WP:UNITS)</strong>
+                                            <p>किमी, किग्रा, मीटर, लीटर, सेकंड, मिनट आदि मात्रकों को लिंक न करें।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-clean-pipes" checked>
+                                        <div class="setting-desc">
+                                            <strong>6. व्यर्थ पाइप सिंटेक्स हटाएं (WP:PIPELINK)</strong>
+                                            <p><code>[[भारत|भारत]]</code> के स्थान पर स्वच्छ <code>[[भारत]]</code> सिंटेक्स उपयोग करें।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-filter-stopwords" checked>
+                                        <div class="setting-desc">
+                                            <strong>7. सामान्य व्याकरणिक पद छोड़ें</strong>
+                                            <p>आम सर्वनाम, सहायक क्रियाएँ (है, था, और, का, के, में आदि) बाहर रहेंगे।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-filter-common-words" checked>
+                                        <div class="setting-desc">
+                                            <strong>8. सामान्य दैनिक शब्द छोड़ें (WP:NOTLINKED)</strong>
+                                            <p>7,479 आम दैनिक शब्दों (पानी, दिन, घर, लोग आदि) की नई कड़ियाँ न बनाएं।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-prevent-self-link" checked>
+                                        <div class="setting-desc">
+                                            <strong>9. स्व-कड़ीकरण रोकें (WP:CIRCULAR)</strong>
+                                            <p>वर्तमान लेख के स्वयं के शीर्षक की चक्रीय आंतरिक कड़ी न बनाएं।</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- खण्ड 03: मुख्य विश्लेषण निष्पादन पटल (Execution Bar) -->
+                <div class="action-footer logical-execution-footer">
+                    <div class="execution-footer-row">
+                        <div class="execution-step-hint">
+                            <span class="logical-step-index">03</span>
+                            <span><strong>तार्किक विश्लेषण निष्पादन:</strong> चयनित लेख एवं सक्रिय नीतियों के आधार पर आंतरिक कड़ियाँ खोजें</span>
+                        </div>
+                        <button type="button" id="analyze-btn" class="btn btn-primary btn-lg logical-analyze-cta">
+                            तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें
+                        </button>
+                    </div>
+                    <div id="analyze-status-banner" class="analyze-status-banner" style="display: none;">
+                        <span class="analyze-spinner"></span>
+                        <span id="analyze-status-text">परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की वैधता जाँची जा रही है...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- बॉक्स 2: त्वरित सहायक उपकरण एवं उपयोग विधि (Auxiliary Tools & Usage Guide Box) -->
+            <aside id="aux-tools-card" class="workbench-card aux-tools-card workbench-aux-box" aria-label="त्वरित सहायक उपकरण एवं उपयोग विधि">
+                <div class="workbench-card-header aux-tools-header">
+                    <div class="workbench-header-main">
+                        <h2 class="workbench-card-title aux-tools-title">त्वरित सहायक उपकरण एवं उपयोग विधि</h2>
+                        <small class="form-hint aux-tools-subtitle">लेख को शुद्ध, संतुलित एवं विकिपीडिया नीति अनुरूप बनाने हेतु निम्नलिखित टूल्स का उपयोग करें</small>
+                    </div>
+                    <button type="button" id="btn-toggle-aux-guide" class="btn btn-outline btn-sm">
+                        उपयोग विधि निर्देश देखें
+                    </button>
+                </div>
+
+                <div class="aux-tools-grid">
+                    <!-- टूल 1: डुप्लिकेट कड़ी शोधक -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>1. डुप्लिकेट कड़ी शोधक (Overlink Cleaner)</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> लेख में पहले से मौजूद बार-बार दोहराई गई कड़ियों (WP:OVERLINKING) को खोजता है।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> लेख लोड होने के बाद नीचे बटन दबाएँ। यह डुप्लिकेट कड़ियों की सूची दिखाएगा और 1-क्लिक में अतिरिक्त कड़ियों को साफ कर केवल पहले उल्लेख को रखेगा।</p>
+                        </div>
+                        <button type="button" id="btn-open-duplicate-cleaner" class="btn btn-secondary btn-sm">
+                            डुप्लिकेट कड़ियाँ जाँचें व साफ़ करें
+                        </button>
+                    </div>
+
+                    <!-- टूल 2: तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार प्रबंधक -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>2. तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार (Link Verifier &amp; Blacklist)</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> उन शब्दों को नियंत्रित करता है जिन्हें आप कभी भी कड़ी नहीं बनाना चाहते, तथा किसी भी शब्द की तार्किक आंतरिक कड़ी योग्यता की तत्काल 7-नियम नीति जाँच करता है।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> नीचे बटन दबाएँ। यहाँ आप किसी भी शब्द की विकिपीडिया नीति (WP:NOTLINKED, WP:CIRCULAR, WP:DATELINK आदि) अनुसार जाँच कर सकते हैं और कस्टम बहिष्कार सूची प्रबंधित कर सकते हैं।</p>
+                        </div>
+                        <button type="button" id="btn-open-blacklist-mgr" class="btn btn-secondary btn-sm">
+                            तार्किक कड़ी परीक्षक एवं बहिष्कार सूची
+                        </button>
+                    </div>
+
+                    <!-- टूल 3: ऑफ़लाइन ऑल-इन-वन HTML -->
+                    <div class="aux-tool-item">
+                        <div class="aux-tool-meta">
+                            <h4>3. ऑफ़लाइन ऑल-इन-वन HTML</h4>
+                            <p class="tool-desc-text"><strong>कार्य:</strong> बिना सर्वर या इंटरनेट के टूल को अपने कंप्यूटर पर स्थानीय रूप से सुरक्षित चलाना।</p>
+                            <p class="tool-guide-text"><strong>उपयोग कैसे करें:</strong> बटन दबाकर एकल HTML फ़ाइल डाउनलोड करें और बिना इंटरनेट के किसी भी ब्राउज़र में सीधे खोलें।</p>
+                        </div>
+                        <button type="button" id="btn-download-standalone-html" class="btn btn-secondary btn-sm">
+                            एकल ऑफ़लाइन HTML डाउनलोड करें
+                        </button>
+                    </div>
+                </div>
+
+                <!-- विस्तारणीय उपयोग निर्देश -->
+                <div id="aux-guide-details" class="aux-guide-details" style="display: none;">
+                    <h4>सहायक उपकरणों का चरणबद्ध उपयोग:</h4>
+                    <ol>
+                        <li><strong>लेख लोड करें:</strong> सबसे पहले मुख्य कार्यपटल में विकिपीडिया लेख लोड करें या विकिटेक्स्ट दर्ज करें।</li>
+                        <li><strong>तार्किक विश्लेषण:</strong> 'तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें' दबाएँ।</li>
+                        <li><strong>समीक्षा व डिफ़:</strong> सुझाव तालिका एवं मीडियाविकी डिफ़ में परिवर्तनों की पुष्टि करें और संशोधित विकिटेक्स्ट विकिपीडिया पर पेस्ट करें।</li>
+                    </ol>
+                </div>
+            </aside>
+        </div>
+
+
+        <!-- 2. प्रगति एवं स्थिति पटल (Progress & Status Section) -->
+        <section id="progress-card" class="card progress-card" style="display: none;">
+            <div class="progress-header">
+                <div class="spinner"></div>
+                <div class="progress-info">
+                    <h3 id="progress-title">विश्लेषण प्रगति पर है...</h3>
+                    <p id="progress-detail">विकिपीडिया से लेख प्राप्त किया जा रहा है...</p>
+                </div>
+            </div>
+            <div class="progress-bar-wrap">
+                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 15%;"></div>
+            </div>
+            <div id="progress-log" class="progress-log"></div>
+        </section>
+
+        <!-- 3. परिणाम एवं समीक्षा पटल (Results & Review Section) -->
+        <section id="results-card" class="card results-card" style="display: none;">
+            <div class="card-header results-header">
+                <div>
+                    <h2>2. कड़ियों की समीक्षा एवं विकिपीडिया डिफ़ (Review & Diff)</h2>
+                    <p class="section-subtext" id="results-summary-text">विश्लेषण पूर्ण हुआ। कृपया जोड़ी गई कड़ियों की समीक्षा करें।</p>
+                </div>
+                <div class="results-meta-badges" id="results-counters">
+                    <span class="counter-badge badge-total" id="badge-total">0 उम्मीदवार</span>
+                    <span class="counter-badge badge-blue" id="badge-blue">0 नीली कड़ियाँ</span>
+                    <span class="counter-badge badge-redirect" id="badge-redirect">0 पुनर्निर्देशन</span>
+                    <span class="counter-badge badge-disambig" id="badge-disambig">0 बहुविकल्पी</span>
+                </div>
+            </div>
+
+            <!-- कड़ी घनत्व विश्लेषक पट्टी -->
+            <div class="density-gauge-card" id="density-gauge-card">
+                <div class="density-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">कुल शब्द:</span>
+                        <strong id="stat-total-words">0</strong>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">पूर्व-मौजूदा कड़ियाँ:</span>
+                        <strong id="stat-existing-links">0</strong>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">जोड़ी जा रही नई कड़ियाँ:</span>
+                        <strong id="stat-new-links" class="text-success">+0</strong>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">कड़ी घनत्व:</span>
+                        <strong id="stat-link-density">0.0%</strong>
+                        <span class="density-rating badge-blue" id="density-rating">संतुलित</span>
+                    </div>
+                </div>
+                <div class="density-meter-track" aria-hidden="true">
+                    <div class="density-meter-fill" id="density-meter-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- D3.js शब्द लंबाई बनाम जोड़ी गई कड़ियाँ चार्ट (Word Length vs. Added Links Over-Linking Pattern Chart) -->
+            <div class="d3-overlink-chart-card" id="d3-overlink-chart-card">
+                <div class="d3-chart-header">
+                    <div>
+                        <h3 class="d3-chart-title">📊 शब्द लंबाई बनाम जोड़ी गई कड़ियाँ — अति-कड़ीकरण पैटर्न विश्लेषण (D3.js)</h3>
+                        <p class="d3-chart-subtitle">छोटे सामान्य शब्दों (2–3 अक्षर) में अत्यधिक कड़ियाँ होना अति-कड़ीकरण (WP:OVERLINKING) का संकेत हो सकता है। बार पर क्लिक करके उस लंबाई के शब्दों को नीचे तालिका में छाँटें:</p>
+                    </div>
+                    <div class="d3-chart-meta">
+                        <span class="badge badge-blue" id="d3-overlink-insight-badge">संतुलित वितरण</span>
+                        <button type="button" id="btn-reset-d3-length-filter" class="btn btn-outline btn-sm" style="display: none;">
+                            ✕ लंबाई छन्नी हटाएँ
+                        </button>
+                    </div>
+                </div>
+                <div class="d3-chart-legend">
+                    <span class="d3-legend-item"><span class="d3-legend-swatch swatch-added"></span> चयनित / जोड़ी गई कड़ियाँ (Added Links)</span>
+                    <span class="d3-legend-item"><span class="d3-legend-swatch swatch-skipped"></span> अचयनित उम्मीदवार (Unchecked Candidates)</span>
+                    <span class="d3-legend-item"><span class="d3-legend-swatch swatch-warning"></span> छोटे शब्द अति-कड़ीकरण चेतावनी क्षेत्र (≤3 अक्षर)</span>
+                </div>
+                <div id="d3-word-length-chart" class="d3-word-length-chart-container" role="img" aria-label="शब्द लंबाई बनाम जोड़ी गई कड़ियाँ वितरण चार्ट"></div>
+            </div>
+
+            <!-- उन्नत छन्नी पट्टी -->
+            <div class="review-toolbar">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <span class="filter-label">स्थिति छन्नी:</span>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip active-chip" data-status="all">सभी</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="blue">केवल नीली</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="redirect">केवल पुनर्निर्देशन</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-status-chip" data-status="disambig">बहुविकल्पी</button>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-label">प्रकार छन्नी:</span>
+                        <button type="button" class="btn btn-chip btn-sm filter-type-chip active-chip" data-type="all">सभी पद</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-type-chip" data-type="multi">बहु-शब्द (Phrases)</button>
+                        <button type="button" class="btn btn-chip btn-sm filter-type-chip" data-type="single">एकल शब्द</button>
+                    </div>
+                </div>
+
+                <div class="filter-row filter-row-actions">
+                    <div class="filter-group">
+                        <span class="filter-label">त्वरित चयन:</span>
+                        <button type="button" id="btn-select-all" class="btn btn-chip btn-sm">सभी चुनें</button>
+                        <button type="button" id="btn-deselect-all" class="btn btn-chip btn-sm">सभी हटाएं</button>
+                        <button type="button" id="btn-select-blue-only" class="btn btn-chip btn-sm">केवल नीली (पुष्ट)</button>
+                        <button type="button" id="btn-deselect-disambig" class="btn btn-chip btn-sm" title="बहुविकल्पी पृष्ठों को अचयनित करें">बहुविकल्पी हटाएं</button>
+                    </div>
+
+                    <div class="search-suggestions-wrap">
+                        <input type="text" id="suggestions-filter-input" class="form-control form-control-sm" placeholder="सुझाई गई कड़ियों में खोजें...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- सुझाई गई कड़ियों की संवादात्मक तालिका / सूची -->
+            <div class="suggestions-table-container">
+                <table class="table suggestions-table">
+                    <thead>
+                        <tr>
+                            <th width="45"><input type="checkbox" id="master-suggestion-checkbox" checked title="सभी टॉगल करें"></th>
+                            <th width="200">मूल शब्द (Original Text)</th>
+                            <th width="260">लक्ष्य विकिपीडिया पृष्ठ (Target Page)</th>
+                            <th width="150">स्थिति (Status)</th>
+                            <th>संदर्भ / वाक्य (Context)</th>
+                            <th width="210">क्रियाएँ (Actions)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suggestions-tbody">
+                        <!-- पंक्तियाँ यहाँ आएँगी -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- दृश्य मोड टैब (Diff, Preview, Raw Wikitext) -->
+            <div class="tabs-nav result-tabs">
+                <button type="button" class="tab-btn active" data-tab="tab-view-diff">
+                    डिफ़ दृश्य (विकिपीडिया मीडियाविकी डिफ़)
+                </button>
+                <button type="button" class="tab-btn" data-tab="tab-view-preview">
+                    पूर्वावलोकन (Rendered Article Preview)
+                </button>
+                <button type="button" class="tab-btn" data-tab="tab-view-wikitext">
+                    संशोधित विकिटेक्स्ट (Modified Wikitext)
+                </button>
+            </div>
+
+            <!-- दृश्य 1: विकिपीडिया मीडियाविकी डिफ़ दृश्य -->
+            <div id="tab-view-diff" class="tab-content active">
+                <div class="diff-view-controls">
+                    <div class="diff-mode-toggle">
+                        <span class="diff-mode-label">डिफ़ प्रारूप:</span>
+                        <button type="button" id="btn-diff-side-by-side" class="btn btn-chip btn-sm active-chip">पार्श्व-दर-पार्श्व (Side-by-side)</button>
+                        <button type="button" id="btn-diff-unified" class="btn btn-chip btn-sm">एकीकृत (Unified)</button>
+                    </div>
+                    <div class="diff-legend">
+                        <span class="legend-item"><span class="legend-swatch swatch-del">−</span> हटाया गया पाठ</span>
+                        <span class="legend-item"><span class="legend-swatch swatch-add">+</span> जोड़ी गई कड़ी</span>
+                    </div>
+                </div>
+                <div class="diff-container" id="diff-container">
+                    <!-- प्रामाणिक मीडियाविकी डिफ़ यहाँ जनरेट होगा -->
+                </div>
+            </div>
+
+            <!-- दृश्य 2: विकिपीडिया पूर्वावलोकन (Authentic Wikipedia Vector-2022 Preview) -->
+            <div id="tab-view-preview" class="tab-content">
+                <div class="wiki-preview-toolbar">
+                    <div class="wiki-preview-toolbar-left">
+                        <span class="wiki-preview-skin-badge">🌐 विकिपीडिया Vector-2022 पूर्वावलोकन</span>
+                        <span class="wiki-preview-legend">
+                            <span class="wiki-legend-dot existing-link-dot"></span> पूर्व-मौजूदा कड़ी
+                            <span class="wiki-legend-dot new-link-dot"></span> नई जोड़ी गई कड़ी (हाइलाइट)
+                        </span>
+                    </div>
+                    <div class="wiki-preview-toolbar-right">
+                        <label class="logical-inline-check" title="नई जोड़ी गई आंतरिक कड़ियों को हल्के नीले बैज के साथ हाइलाइट करें">
+                            <input type="checkbox" id="opt-highlight-new-preview-links" checked>
+                            <span>नई कड़ियाँ हाइलाइट करें</span>
+                        </label>
+                        <button type="button" id="btn-fetch-live-wiki-parse" class="btn btn-outline btn-sm" title="विकिपीडिया के आधिकारिक MediaWiki API (action=parse) से सटीक सर्वर पूर्वावलोकन प्राप्त करें">
+                            🔄 लाइव विकिपीडिया सर्वर रेंडर
+                        </button>
+                    </div>
+                </div>
+                <div class="rendered-article-preview wiki-vector-frame" id="article-preview-container">
+                    <!-- विकिपीडिया Vector-2022 शैली में रेंडर किया हुआ HTML पूर्वावलोकन -->
+                </div>
+            </div>
+
+            <!-- दृश्य 3: संशोधित विकिटेक्स्ट -->
+            <div id="tab-view-wikitext" class="tab-content">
+                <div class="wikitext-editor-wrap">
+                    <textarea id="final-wikitext-output" class="form-control monospace-input" rows="18" readonly></textarea>
+                </div>
+            </div>
+
+            <!-- अंतिम क्रिया पट्टी (Sticky Action Bar) -->
+            <div class="final-action-bar">
+                <div class="action-info">
+                    <span id="final-stats-text">कुल 0 कड़ियाँ शामिल की गईं</span>
+                </div>
+                <div class="action-buttons-group">
+                    <button id="copy-wikitext-btn" class="btn btn-success btn-lg">
+                        संशोधित विकिटेक्स्ट कॉपी करें
+                    </button>
+                    <button id="open-wiki-edit-btn" class="btn btn-primary btn-lg">
+                        विकिपीडिया पर संपादन पृष्ठ खोलें
+                    </button>
+                    <button id="download-wiki-btn" class="btn btn-secondary btn-lg" title="विकिटेक्स्ट फ़ाइल डाउनलोड करें">
+                        .wiki फ़ाइल डाउनलोड
+                    </button>
+                    <button id="reset-tool-btn" class="btn btn-outline btn-lg" title="नया लेख विश्लेषण करें">
+                        रीसेट
+                    </button>
+                </div>
+            </div>
+        </section>
+        </div><!-- /#main-workbench-page-view -->
+    </main>
+
+    <!-- 1. लक्ष्य संपादन मोडल (Edit Target Modal) -->
+    <div id="edit-target-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>आंतरिक कड़ी लक्ष्य संशोधित करें</h3>
+                <button type="button" class="modal-close-btn" data-modal="edit-target-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>मूल शब्द: <strong id="modal-term-text">-</strong></p>
+                <div class="form-group">
+                    <label for="modal-target-input" class="form-label">विकिपीडिया पृष्ठ का नया लक्ष्य (Page Title):</label>
+                    <input type="text" id="modal-target-input" class="form-control" placeholder="उदा: भारत या चन्द्रयान-३">
+                    <small class="form-hint">यह <code>[[लक्ष्य|मूल शब्द]]</code> के रूप में जुड़ेगा।</small>
+                </div>
+                <div id="modal-verify-status" class="verify-status-box"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modal-cancel-btn">रद्द करें</button>
+                <button type="button" class="btn btn-primary" id="modal-save-btn">परिवर्तन सुरक्षित करें</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. डुप्लिकेट कड़ी शोधक मोडल (Duplicate Overlink Cleaner Modal) -->
+    <div id="duplicate-cleaner-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3>डुप्लिकेट कड़ी शोधक (Overlink & Duplicate Cleaner)</h3>
+                <button type="button" class="modal-close-btn" data-modal="duplicate-cleaner-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-intro">
+                    विकिपीडिया नियमावली (WP:OVERLINKING) अनुसार एक ही लेख में एक ही कड़ी बार-बार नहीं होनी चाहिए। नीचे वर्तमान लेख में पहले से मौजूद डुप्लिकेट कड़ियों की सूची है:
+                </p>
+                <div id="duplicate-links-container" class="duplicate-list-wrap">
+                    <!-- कड़ियाँ यहाँ सूचीवद्ध होंगी -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn" data-modal="duplicate-cleaner-modal">बंद करें</button>
+                <button type="button" class="btn btn-success" id="btn-fix-duplicates">
+                    सभी डुप्लिकेट कड़ियाँ साफ करें
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार प्रबंधक मोडल (Link Verifier & Blacklist Modal) -->
+    <div id="blacklist-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3>तार्किक कड़ी परीक्षक एवं शब्द बहिष्कार (Link Verifier & Blacklist)</h3>
+                <button type="button" class="modal-close-btn" data-modal="blacklist-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- टैब्स नेविगेशन -->
+                <div class="tabs-nav" style="margin-bottom: 14px;">
+                    <button type="button" class="tab-btn active" id="btn-tab-bl-tester" data-bl-tab="bl-tab-tester">तार्किक शब्द परीक्षक (Verifier)</button>
+                    <button type="button" class="tab-btn" id="btn-tab-bl-custom" data-bl-tab="bl-tab-custom">कस्टम बहिष्कार सूची (Blacklist)</button>
+                    <button type="button" class="tab-btn" id="btn-tab-bl-policy" data-bl-tab="bl-tab-policy">नीतिगत सामान्य शब्द (WP:NOTLINKED)</button>
+                </div>
+
+                <!-- टैब 1: तार्किक शब्द योग्यता परीक्षक -->
+                <div id="bl-tab-tester" class="bl-tab-content">
+                    <p class="form-hint" style="margin-bottom: 10px;">
+                        यहाँ किसी भी शब्द या पद की विकिपीडिया तार्किक कड़ीकरण नीतियों (WP:NOTLINKED, WP:CIRCULAR, WP:DATELINK) अनुसार तत्काल 7-नियम जाँच करें:
+                    </p>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <div class="input-with-button">
+                            <input type="text" id="word-tester-input" class="form-control" placeholder="जाँच हेतु कोई शब्द लिखें (उदा: पानी, दिन, चन्द्रयान-३, 1947, किमी, या अपना कोई शब्द)...">
+                            <button type="button" id="word-tester-btn" class="btn btn-primary">तार्किक नियम जाँचें</button>
+                        </div>
+                    </div>
+
+                    <!-- जाँच परिणाम क्षेत्र -->
+                    <div id="word-tester-result-wrap" style="display: none;">
+                        <div id="word-tester-verdict-card" class="verdict-card">
+                            <!-- परिणाम सारांश -->
+                        </div>
+                        <h4 style="margin-top: 14px; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-primary);">
+                            7-नियम तार्किक नीति ऑडिट (Policy Rules Audit):
+                        </h4>
+                        <div id="word-tester-rules-grid" class="rules-audit-list">
+                            <!-- 7 नियमों का विवरण -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- टैब 2: मेरी कस्टम बहिष्कार सूची -->
+                <div id="bl-tab-custom" class="bl-tab-content" style="display: none;">
+                    <p class="form-hint" style="margin-bottom: 10px;">
+                        वे विशिष्ट शब्द जिन्हें आप इस उपकरण द्वारा कभी भी आंतरिक कड़ी नहीं बनने देना चाहते:
+                    </p>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <div class="input-with-button">
+                            <input type="text" id="blacklist-new-input" class="form-control" placeholder="बहिष्कार हेतु नया शब्द दर्ज करें...">
+                            <button type="button" id="blacklist-add-btn" class="btn btn-primary btn-sm">जोड़ें</button>
+                        </div>
+                    </div>
+                    <div class="blacklist-tags-wrap" id="blacklist-tags-container">
+                        <!-- चिप्स यहाँ आएँगे -->
+                    </div>
+                    <div style="margin-top: 14px; text-align: right;">
+                        <button type="button" class="btn btn-outline text-danger btn-sm" id="blacklist-clear-btn">पूरी कस्टम सूची साफ़ करें</button>
+                    </div>
+                </div>
+
+                <!-- टैब 3: नीतिगत सामान्य शब्द (WP:NOTLINKED Directory) -->
+                <div id="bl-tab-policy" class="bl-tab-content" style="display: none;">
+                    <div class="policy-notice-box" style="margin-bottom: 10px;">
+                        <p style="margin: 0; font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                            <strong>विकिपीडिया नियमावली (WP:NOTLINKED / WP:LINK):</strong> आम दैनिक बोलचाल की संज्ञाएँ, सामान्य विशेषण एवं सर्वविदित अवधारणाएँ पाठक के लिए स्पष्ट होती हैं, अतः इनकी आंतरिक कड़ी नहीं बनाई जाती। उपकरण इन्हें स्वतः कड़ियों से बाहर रखता है।
+                        </p>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <input type="text" id="policy-words-search" class="form-control form-control-sm" placeholder="सामान्य दैनिक शब्दों में खोजें (उदा: पानी, दिन, घर, लोग)...">
+                    </div>
+                    <div class="policy-words-stats" style="margin-bottom: 8px; font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                        <span id="policy-words-count">कुल सामान्य शब्द सुरक्षित</span>
+                        <span style="font-size: 0.78rem;">स्वतः सुरक्षित (Auto-suppressed)</span>
+                    </div>
+                    <div class="policy-chips-container" id="policy-chips-container">
+                        <!-- नीतिगत शब्दों के चिप्स -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn" data-modal="blacklist-modal">बंद करें</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 5. विकिपीडिया फ्लोटिंग सारांश पूर्वावलोकन कार्ड -->
+    <div id="wiki-summary-card" class="wiki-summary-card" style="display: none;">
+        <div class="summary-card-header">
+            <span class="summary-card-badge">विकिपीडिया लेख सारांश</span>
+            <button type="button" class="summary-close-btn" id="summary-card-close">&times;</button>
+        </div>
+        <div class="summary-card-body">
+            <div class="summary-image-wrap" id="summary-img-wrap" style="display: none;">
+                <img id="summary-img" src="" alt="Thumbnail" width="120" height="90" loading="lazy">
+            </div>
+            <h4 id="summary-title">-</h4>
+            <p id="summary-extract" class="summary-extract">विवरण लोड हो रहा है...</p>
+        </div>
+        <div class="summary-card-footer">
+            <a id="summary-link" href="#" target="_blank" class="btn btn-chip btn-sm">पूरा लेख विकिपीडिया पर पढ़ें</a>
+        </div>
+    </div>
+
+    <!-- सूचना टोस्ट -->
+    <div id="toast" class="toast">कॉपीड!</div>
+
+    <!-- तार्किक पाद लेख (Logical Footer with Compact Zero-Login Info & All Site Pages) -->
+    <footer class="app-footer">
+        <div class="container">
+            <!-- संक्षिप्त स्वतंत्र एवं शून्य-लॉगिन उपकरण सूचना (Compact Zero-Login Strip in Footer) -->
+            <div class="footer-zero-login-strip">
+                <span class="zero-login-badge">🔓 शून्य-लॉगिन स्वतंत्रता</span>
+                <p>
+                    <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। वैकल्पिक लॉगिन करने पर आपके लॉग व प्रोफ़ाइल थीम क्लाउड में सिंक रहते हैं।
+                </p>
+            </div>
+
+            <!-- वेबसाइट के सभी पृष्ठों का तार्किक नेविगेशन (Logical Sitemap of All Pages) -->
+            <div class="footer-sitemap-grid">
+                <a href="index.html" class="footer-page-card active">
+                    <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
+                    <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
+                </a>
+                <a href="logs.html" class="footer-page-card" data-auth-only="true" style="display: none;">
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Profile & Logs)</strong>
+                    <span>यूज़रनेम व आइकन चयन, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
+                </a>
+                <a href="about.html" class="footer-page-card">
+                    <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
+                    <span>टूल उपयोग विधि एवं विकिपीडिया कड़ीकरण नीतियाँ (WP:LINK)</span>
+                </a>
+                <a href="login.html" class="footer-page-card">
+                    <strong>🔑 4. लॉगिन एवं साइन अप (Login / Sign Up)</strong>
+                    <span>इंटरैक्टिव एनिमेटेड खाता प्रवेश एवं क्लाउड सिंक</span>
+                </a>
+            </div>
+
+            <div class="footer-inner">
+                <p>
+                    <strong>विकीलिंक सहायक (WikiLink Assistant v2.5)</strong> — विकिपीडिया संपादकों हेतु स्वतंत्र उपकरण।
+                </p>
+                <p class="footer-links">
+                    आधिकारिक डोमेन: <a href="https://vikrampratap-wiki.github.io/wikilink-tool/" target="_blank">vikrampratap-wiki.github.io/wikilink-tool</a> | 
+                    लाइसेंस: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.hi" target="_blank">CC BY-SA 4.0</a> / <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> | 
+                    निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a> | 
+                    <span>🔒 निजी रिपॉज़िटरी (Private GitHub)</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js?v=19" defer></script>
+    <script>
+    (function(){
+        var fbLoaded = false;
+        function loadFirebaseDeferred() {
+            if (fbLoaded) return;
+            fbLoaded = true;
+            import('./firebase-client.js?v=19').catch(function(){});
+        }
+        function loadFontsDeferred() {
+            var l = document.createElement('link');
+            l.rel = 'stylesheet';
+            l.href = 'https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap';
+            document.head.appendChild(l);
+        }
+        ['pointerdown', 'keydown', 'touchstart'].forEach(function(ev) {
+            window.addEventListener(ev, loadFirebaseDeferred, { once: true, passive: true });
+        });
+        window.addEventListener('load', function() {
+            setTimeout(loadFontsDeferred, 250);
+            var hasSession = false;
+            try { hasSession = Boolean(localStorage.getItem('wikilink_current_user')); } catch(e){}
+            var delay = hasSession ? 1200 : 5000;
+            setTimeout(function() {
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(loadFirebaseDeferred, { timeout: 3000 });
+                } else {
+                    loadFirebaseDeferred();
+                }
+            }, delay);
+        }, { once: true });
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="hi" dir="ltr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>विशेष सदस्य प्रोफ़ाइल एवं गतिविधि पोर्टल (Member Profile & Logs) - विकीलिंक सहायक</title>
+    <meta name="description" content="विकीलिंक सहायक में उपयोगकर्ता का विशेष सदस्य प्रोफ़ाइल पेज, आइकन व यूज़रनेम सेटिंग, रंग व थीम स्टूडियो, गतिविधि लॉग एवं एडमिन नियंत्रण पैनल">
+    <meta property="og:title" content="विशेष सदस्य प्रोफ़ाइल पोर्टल - विकीलिंक सहायक">
+    <meta property="og:description" content="विकीलिंक सहायक में उपयोगकर्ता का विशेष प्रोफ़ाइल पेज एवं क्लाउड गतिविधि लॉग">
+    <meta property="og:url" content="https://vikrampratap-wiki.github.io/wikilink-tool/logs.html">
+    <link rel="canonical" href="https://vikrampratap-wiki.github.io/wikilink-tool/logs.html">
+    <meta name="theme-color" content="#0969da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WikiLink">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <style id="critical-above-fold-css">
+        :root{--primary-color:#2a4b8d;--primary-light:#eaf3ff;--bg-main:#f8f9fa;--bg-card:#ffffff;--border-color:#c8ccd1;--text-primary:#202122;--text-secondary:#475569;--font-sans:'Mukta','Noto Sans Devanagari',system-ui,-apple-system,sans-serif}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:var(--font-sans);background:var(--bg-main);color:var(--text-primary);line-height:1.55;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+        .logical-bg-backdrop,.anime-bg-canvas,.toast{display:none}
+        .container{width:100%;max-width:1240px;margin:0 auto;padding:0 16px}
+        .app-header{background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:12px 0;position:sticky;top:0;z-index:100}
+        @media (max-width:768px){.container{padding:0 12px}.app-subtitle,.app-header .header-actions{display:none!important}}
+    </style>
+    <link rel="preload" href="style.css?v=19" as="style" fetchpriority="high">
+    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"
+      }
+    }
+    </script>
+</head>
+<body data-skin="wikimedia-classic" data-card-style="flat" class="anime-profile-body">
+    <!-- तार्किक विकिपीडिया कड़ी जाल एवं एनीमे परिवेशी पृष्ठभूमि -->
+    <div class="logical-bg-backdrop" aria-hidden="true">
+        <div class="bg-aurora-orb orb-1"></div>
+        <div class="bg-aurora-orb orb-2"></div>
+        <div class="bg-aurora-orb orb-3"></div>
+        <div class="bg-logical-grid"></div>
+    </div>
+    <canvas id="anime-bg-canvas" class="anime-bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- शीर्ष पट्टी (App Header — नाम पर क्लिक करने से सीधा प्रोफ़ाइल खुलता है) -->
+    <header class="app-header">
+        <div class="header-inner container">
+            <div class="logo-area">
+                <a href="index.html" class="brand-home-link" title="मुख्य कार्यपटल पर जाएँ">
+                    <div class="anime-mascot-emblem-wrap" aria-hidden="true">
+                        <svg class="anime-header-mascot" viewBox="0 0 64 64" width="42" height="42">
+                            <defs>
+                                <linearGradient id="animeHairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--primary-color)" />
+                                    <stop offset="100%" stop-color="var(--accent-blue)" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="34" r="22" fill="#ffe4d6" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M10 32 C10 14, 54 14, 54 32 C50 22, 42 18, 32 20 C22 18, 14 22, 10 32 Z" fill="url(#animeHairGrad)" stroke="#1e1b4b" stroke-width="2.5"/>
+                            <path d="M12 26 L6 14 L20 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <path d="M52 26 L58 14 L44 20 Z" fill="var(--accent-orange)" stroke="#1e1b4b" stroke-width="2"/>
+                            <g class="mascot-eyes">
+                                <ellipse cx="23" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="21.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="24.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                                <ellipse cx="41" cy="36" rx="4.2" ry="5" fill="#1e1b4b"/>
+                                <circle cx="39.8" cy="34.2" r="1.6" fill="#ffffff"/>
+                                <circle cx="42.5" cy="37.8" r="0.9" fill="#ffffff"/>
+                            </g>
+                            <ellipse cx="17" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <ellipse cx="47" cy="41" rx="3" ry="1.5" fill="#fb7185" opacity="0.65"/>
+                            <path d="M28 43 Q32 47 36 43" fill="none" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text-block">
+                        <div class="logo-title-wrap">
+                            <h1 class="app-title">विकीलिंक सहायक</h1>
+                            <span class="badge badge-tool">सदस्य प्रोफ़ाइल पोर्टल</span>
+                        </div>
+                        <p class="app-subtitle">विशेष सदस्य प्रोफ़ाइल, आइकन व यूज़रनेम सेटिंग, रंग/थीम स्टूडियो, गतिविधि लॉग एवं एडमिन नियंत्रण</p>
+                    </div>
+                </a>
+                <!-- केवल मोबाइल के लिए हैमबर्गर टॉगल मेन्यू बटन -->
+                <button type="button" id="mobile-menu-toggle-btn" class="mobile-menu-toggle-btn" aria-expanded="false" aria-controls="header-nav-actions" title="मोबाइल नेविगेशन मेन्यू खोलें/बंद करें">
+                    <span class="hamburger-icon" id="mobile-menu-icon">☰</span>
+                    <span class="hamburger-label">मेन्यू</span>
+                </button>
+            </div>
+            <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
+                <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल">
+                    🛠️ कार्यपटल
+                </a>
+                <a href="about.html" class="btn btn-outline btn-sm nav-page-btn" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
+                    ℹ️ परिचय व मानक
+                </a>
+                <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
+                    <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
+                </button>
+                <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn active" title="लॉगिन या साइन अप पेज खोलें" onclick="var lbl=document.getElementById('auth-btn-label');if(lbl&&lbl.textContent&&lbl.textContent.includes('लॉगिन')){window.location.href='login.html';return true;}try{var u=JSON.parse(localStorage.getItem('wikilink_current_user')||'null');if(u&&u.vaultVerified===true&&(u.name||u.email)){event.preventDefault();window.location.href='logs.html';return false;}}catch(e){}window.location.href='login.html';return true;">
+                    <span class="auth-status-dot" id="auth-status-dot"></span>
+                    <span id="auth-btn-label">लॉगिन / साइन अप</span>
+                </a>
+                <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
+                    लॉगआउट ⏻
+                </button>
+                <script>
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user');var ic=localStorage.getItem('wikilink_profile_icon')||'📚';if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];var uic=u.avatarIcon||ic;if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — विशेष प्रोफ़ाइल पेज';}if(lbl)lbl.textContent=uic+' '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                </script>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ऑफ़लाइन मोड सूचना पट्टी -->
+    <div id="offline-connectivity-banner" class="offline-connectivity-banner container" style="display: none;" role="status" aria-live="polite">
+        <span class="offline-pulse-dot"></span>
+        <span><strong>ऑफ़लाइन मोड सक्रिय:</strong> आपके स्थानीय गतिविधि लॉग्स और प्रोफ़ाइल थीम सेटिंग्स ऑफ़लाइन उपलब्ध हैं।</span>
+    </div>
+
+    <main class="main-content container anime-profile-main">
+        <!-- 1. यदि यूज़र लॉग-इन नहीं है (Guest Lock Screen): बिना लॉगिन प्रोफ़ाइल व लॉग उपलब्ध नहीं है -->
+        <section id="anime-guest-lock-screen" class="anime-guest-lock-card" style="display: none;">
+            <div class="anime-guest-lock-aura" aria-hidden="true"></div>
+            <div class="anime-guest-lock-inner">
+                <div class="profile-animated-lock-emblem" aria-hidden="true">
+                    <span>🔒</span>
+                </div>
+                <span class="anime-hud-tag">केवल लॉग-इन सदस्यों हेतु आरक्षित</span>
+                <h2 class="anime-guest-lock-title">सदस्य प्रोफ़ाइल एवं लॉग पोर्टल लॉक है</h2>
+                <p class="anime-guest-lock-desc">
+                    यह प्रोफ़ाइल पेज, व्यक्तिगत गतिविधि लॉग और थीम स्टूडियो केवल <strong>लॉग-इन सदस्यों</strong> के लिए उपलब्ध है। खाते में लॉगिन करते ही आपको सीधे आपके प्रोफ़ाइल पेज पर ले जाया जाएगा!
+                </p>
+                <div class="anime-guest-lock-actions">
+                    <a href="login.html" class="btn btn-primary btn-lg">
+                        🔑 अभी लॉगिन / साइन अप करें
+                    </a>
+                    <a href="index.html" class="btn btn-outline btn-lg">
+                        🛠️ बिना लॉगिन सीधे मुख्य कार्यपटल खोलें
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. लॉग-इन उपयोगकर्ता का आधुनिक एनिमेटेड प्रोफ़ाइल पोर्टल (Left Vertical Sidebar + Right Stage) -->
+        <div id="anime-profile-authenticated-shell" class="anime-profile-shell">
+            <!-- बायाँ स्तंभ: ऊर्ध्वाधर विकल्प पट्टी (Vertical Sidebar Navigation) -->
+            <aside class="anime-profile-sidebar" aria-label="प्रोफ़ाइल ऊर्ध्वाधर नेविगेशन विकल्प">
+                <!-- एनिमेटेड सदस्य अवतार एवं पहचान कार्ड (बिना किसी लेवल बैज के) -->
+                <div class="anime-sidebar-hero-card">
+                    <div class="profile-hero-ambient-glow" aria-hidden="true"></div>
+                    <div class="anime-avatar-halo-wrap">
+                        <div class="anime-avatar-ring" id="profile-avatar-ring">
+                            <span class="profile-main-avatar-icon" id="profile-main-avatar-icon" aria-hidden="true">📚</span>
+                            <span class="anime-avatar-initial-badge" id="user-dash-avatar" title="सदस्य आद्याक्षर">वि</span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-username-row">
+                        <h2 class="anime-sidebar-username" id="user-dash-name">विकिपीडिया संपादक</h2>
+                        <button type="button" id="btn-focus-username-edit" class="sidebar-edit-name-btn" title="अपना यूज़रनेम बदलें">✏️</button>
+                    </div>
+                    <p class="anime-sidebar-email" id="user-dash-email">सदस्य खाता सक्रिय</p>
+                    <div class="anime-sidebar-status-wrap">
+                        <span class="badge badge-success" id="user-dash-status-badge">✓ लॉगिन सक्रिय</span>
+                    </div>
+                </div>
+
+                <!-- ऊर्ध्वाधर नेविगेशन विकल्प सूची (Vertical Options Menu on One Side) -->
+                <div class="anime-vnav-section-label">प्रोफ़ाइल विकल्प (मेन्यू)</div>
+                <nav class="anime-vertical-nav" id="anime-vertical-nav" role="tablist" aria-orientation="vertical">
+                    <button type="button" class="anime-vnav-btn active" data-profile-section="sec-profile-overview" role="tab" aria-selected="true">
+                        <span class="vnav-icon">👤</span>
+                        <span class="vnav-text">
+                            <strong>प्रोफ़ाइल व खाता सेटिंग</strong>
+                            <small>यूज़रनेम एवं 5 प्रोफ़ाइल आइकन</small>
+                        </span>
+                        <span class="vnav-arrow">▸</span>
+                    </button>
+
+                    <button type="button" class="anime-vnav-btn" data-profile-section="sec-profile-theme" role="tab" aria-selected="false">
+                        <span class="vnav-icon">🎨</span>
+                        <span class="vnav-text">
+                            <strong>रंग एवं थीम स्टूडियो</strong>
+                            <small>4 थीम प्रीसेट व 8 एक्सेंट रंग पैलेट</small>
+                        </span>
+                        <span class="vnav-arrow">▸</span>
+                    </button>
+
+                    <button type="button" class="anime-vnav-btn" data-profile-section="sec-profile-logs" role="tab" aria-selected="false">
+                        <span class="vnav-icon">📜</span>
+                        <span class="vnav-text">
+                            <strong>मेरा गतिविधि लॉग</strong>
+                            <small>विश्लेषित लेख इतिहास (<span id="header-log-count">0</span>)</small>
+                        </span>
+                        <span class="vnav-arrow">▸</span>
+                    </button>
+
+                    <!-- एडमिन नियंत्रण पैनल विकल्प: केवल विक्रम प्रताप (amankumar.wikimedian@gmail.com) के लिए ही प्रदर्शित -->
+                    <button type="button" id="vnav-btn-admin" class="anime-vnav-btn anime-vnav-admin-btn" data-profile-section="sec-profile-admin" role="tab" aria-selected="false" style="display: none;">
+                        <span class="vnav-icon">🛡️</span>
+                        <span class="vnav-text">
+                            <strong>एडमिन नियंत्रण पैनल</strong>
+                            <small>विक्रम प्रताप • अनुरोध (<span id="admin-pending-badge">0</span>)</small>
+                        </span>
+                        <span class="vnav-arrow">▸</span>
+                    </button>
+                </nav>
+
+                <!-- ऊर्ध्वाधर त्वरित क्रिया बटन (Bottom Vertical Actions) -->
+                <div class="anime-sidebar-footer-actions">
+                    <a href="index.html" class="btn btn-primary btn-sm anime-vnav-action-link">
+                        🛠️ मुख्य कार्यपटल (Workbench) खोलें
+                    </a>
+                    <a href="login.html" id="user-dash-login-btn" class="btn btn-outline btn-sm anime-vnav-action-link">
+                        🔑 खाता बदलें
+                    </a>
+                    <button type="button" id="user-dash-logout-btn" class="btn btn-danger-soft btn-sm anime-vnav-action-link">
+                        ⏻ लॉगआउट करें (Logout)
+                    </button>
+                </div>
+            </aside>
+
+            <!-- दायाँ मुख्य मंच (Profile Stage — Dynamic Animated Sections) -->
+            <div class="anime-profile-stage">
+                <!-- ==================== अनुभाग 1: प्रोफ़ाइल, यूज़रनेम एवं आइकन सेटिंग (Overview) ==================== -->
+                <section id="sec-profile-overview" class="anime-profile-pane active" role="tabpanel">
+                    <div class="anime-stage-banner">
+                        <div class="anime-stage-banner-text">
+                            <span class="anime-hud-tag">सदस्य प्रोफ़ाइल डैशबोर्ड</span>
+                            <h2 class="anime-stage-title">नमस्ते, <span id="anime-banner-user-name">सदस्य</span>!</h2>
+                            <p class="anime-stage-subtitle">
+                                यहाँ से आप अपना <strong>यूज़रनेम (सदस्य नाम)</strong> बदल सकते हैं, अपना पसंदीदा <strong>प्रोफ़ाइल आइकन</strong> चुन सकते हैं, और बाईं ओर के ऊर्ध्वाधर विकल्पों से थीम, गतिविधि लॉग व एडमिन पैनल संचालित कर सकते हैं।
+                            </p>
+                        </div>
+                        <div class="anime-stage-banner-emblem" aria-hidden="true">
+                            <div class="anime-stat-crest" id="banner-selected-icon-crest">📚 WIKILINK</div>
+                        </div>
+                    </div>
+
+                    <!-- प्रोफ़ाइल वैयक्तिकीकरण कार्ड: यूज़रनेम बदलें + 5 आइकन विकल्प चुनें -->
+                    <div class="card workbench-card profile-customizer-card anime-cel-card">
+                        <div class="workbench-card-header">
+                            <div>
+                                <h3 class="workbench-card-title">✨ प्रोफ़ाइल वैयक्तिकीकरण: यूज़रनेम एवं आइकन चयन</h3>
+                                <small class="form-hint">अपना प्रदर्शित सदस्य नाम अपडेट करें और नीचे दिए गए 5 विकल्पों में से अपना पसंदीदा प्रोफ़ाइल आइकन चुनें</small>
+                            </div>
+                        </div>
+                        <div class="workbench-card-body profile-customizer-body">
+                            <!-- 1. यूज़रनेम बदलने का बॉक्स -->
+                            <div class="profile-username-edit-box">
+                                <label for="profile-username-input" class="form-label"><strong>👤 आपका यूज़रनेम / सदस्य नाम बदलें:</strong></label>
+                                <div class="profile-username-input-row">
+                                    <input type="text" id="profile-username-input" class="form-control" maxlength="60" placeholder="अपना नया यूज़रनेम दर्ज करें...">
+                                    <button type="button" id="btn-save-profile-username" class="btn btn-primary">
+                                        ✓ यूज़रनेम सुरक्षित करें
+                                    </button>
+                                </div>
+                                <small class="form-hint">यह नाम शीर्ष पट्टी, आपके गतिविधि लॉग और बहिष्कार अनुरोधों में प्रदर्शित होगा।</small>
+                            </div>
+
+                            <!-- 2. प्रोफ़ाइल आइकन चुनने के 5 विकल्प -->
+                            <div class="profile-icon-picker-box">
+                                <div class="profile-icon-picker-header">
+                                    <label class="form-label" style="margin-bottom: 0;"><strong>🎭 अपना प्रोफ़ाइल आइकन चुनें (5 विकल्प):</strong></label>
+                                    <span class="badge badge-tool" id="selected-icon-label-badge">चयनित: ज्ञानकोश विद्वान</span>
+                                </div>
+                                <div class="profile-icon-options-grid" id="profile-icon-options-grid" role="radiogroup" aria-label="प्रोफ़ाइल आइकन चुनें">
+                                    <button type="button" class="profile-icon-option-btn active" data-profile-icon="📚" data-icon-title="ज्ञानकोश विद्वान">
+                                        <span class="pio-emoji">📚</span>
+                                        <span class="pio-name">ज्ञानकोश विद्वान</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🪶" data-icon-title="संपादक कलम">
+                                        <span class="pio-emoji">🪶</span>
+                                        <span class="pio-name">संपादक कलम</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🌐" data-icon-title="विकि ग्लोब">
+                                        <span class="pio-emoji">🌐</span>
+                                        <span class="pio-name">विकि ग्लोब</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🏛️" data-icon-title="साहित्य स्तंभ">
+                                        <span class="pio-emoji">🏛️</span>
+                                        <span class="pio-name">साहित्य स्तंभ</span>
+                                    </button>
+                                    <button type="button" class="profile-icon-option-btn" data-profile-icon="🚀" data-icon-title="नवप्रवर्तक">
+                                        <span class="pio-emoji">🚀</span>
+                                        <span class="pio-name">नवप्रवर्तक</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- एडमिन त्वरित प्रवेश कार्ड (केवल विक्रम प्रताप / amankumar.wikimedian@gmail.com के लिए ही प्रदर्शित) -->
+                    <div id="overview-admin-quick-card" class="anime-admin-spotlight-card" style="display: none;">
+                        <div class="anime-admin-spotlight-info">
+                            <span class="anime-hud-tag">🛡️ मुख्य प्रशासक अधिकार सक्रिय</span>
+                            <h3>एडमिन नियंत्रण पैनल आपके प्रोफ़ाइल में सक्रिय है (विक्रम प्रताप)</h3>
+                            <p>आप अधिकृत मुख्य प्रशासक (<code>amankumar.wikimedian@gmail.com</code>) हैं। सदस्यों द्वारा भेजे गए बहिष्कार अनुरोधों की समीक्षा व स्वीकृति करें।</p>
+                        </div>
+                        <button type="button" class="btn btn-warning btn-sm" data-jump-profile-section="sec-profile-admin">
+                            🛡️ एडमिन पैनल खोलें →
+                        </button>
+                    </div>
+
+                    <!-- प्रोफ़ाइल त्वरित नेविगेशन कार्ड्स -->
+                    <div class="anime-overview-cards-grid">
+                        <div class="anime-feature-tile">
+                            <div class="anime-tile-icon">🎨</div>
+                            <div class="anime-tile-body">
+                                <h3>रंग एवं थीम स्टूडियो</h3>
+                                <p>1-टच में विकिमीडिया क्लासिक, साकुरा पेस्टल, इंडिगो डार्क या मिडनाइट थीम और 8 एक्सेंट रंग पैलेट बदलें।</p>
+                                <button type="button" class="btn btn-outline btn-sm" data-jump-profile-section="sec-profile-theme">
+                                    🎨 थीम स्टूडियो खोलें →
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="anime-feature-tile">
+                            <div class="anime-tile-icon">📜</div>
+                            <div class="anime-tile-body">
+                                <h3>मेरा गतिविधि लॉग व इतिहास</h3>
+                                <p>आपके पुराने एवं नए सभी विश्लेषित विकिपीडिया लेखों का रिकॉर्ड सुरक्षित रहता है — लॉगआउट के बाद दोबारा लॉगिन करने पर भी सभी पुराने लॉग उपलब्ध रहते हैं।</p>
+                                <button type="button" class="btn btn-outline btn-sm" data-jump-profile-section="sec-profile-logs">
+                                    📜 गतिविधि लॉग देखें →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== अनुभाग 2: रंग एवं थीम स्टूडियो (Optimized Theme & Color Studio) ==================== -->
+                <section id="sec-profile-theme" class="anime-profile-pane" role="tabpanel" style="display: none;">
+                    <div id="profile-theme-studio" class="card workbench-card profile-theme-studio-card anime-cel-card">
+                        <div class="workbench-card-header profile-theme-studio-header">
+                            <div>
+                                <span class="anime-hud-tag">🎨 वैयक्तिकृत रंग एवं थीम नियंत्रण</span>
+                                <h2 class="workbench-card-title">प्रोफ़ाइल रंग एवं थीम स्टूडियो (Theme & Color Studio)</h2>
+                                <small class="form-hint">यहाँ से चुनी गई थीम, एक्सेंट रंग और कार्ड शैली आपके पूरे उपकरण पर तुरंत लागू होती है और लॉगआउट के बाद भी सुरक्षित रहती है</small>
+                            </div>
+                            <div class="theme-studio-header-actions">
+                                <span class="badge badge-success" id="active-skin-badge">विकिमीडिया क्लासिक</span>
+                                <button type="button" id="btn-reset-color-palette" class="btn btn-outline btn-sm" title="डिफ़ॉल्ट रंग व थीम पर वापस जाएँ">
+                                    ↺ डिफ़ॉल्ट रीसेट करें
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="workbench-card-body">
+                            <div class="profile-theme-logical-grid">
+                                <!-- भाग A: 4 मुख्य थीम प्रीसेट (Light & Dark Skins) -->
+                                <div class="theme-studio-block">
+                                    <div class="theme-block-title-row">
+                                        <span class="theme-step-badge">01</span>
+                                        <div>
+                                            <h3 class="theme-studio-subtitle">मुख्य थीम प्रीसेट चुनें (Theme Presets — Light & Dark)</h3>
+                                            <p class="theme-studio-desc">दिन या रात्रि संपादन के अनुसार अपनी पसंदीदा पृष्ठभूमि व कंट्रास्ट थीम चुनें:</p>
+                                        </div>
+                                    </div>
+                                    <div class="skin-preset-grid">
+                                        <button type="button" class="skin-preset-card active" data-skin-preset="wikimedia-classic">
+                                            <span class="skin-swatch swatch-wiki"></span>
+                                            <span class="skin-meta">
+                                                <strong>विकिमीडिया क्लासिक (Light)</strong>
+                                                <small>स्वच्छ ज्ञानकोशीय श्वेत-नीला रूप</small>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="skin-preset-card" data-skin-preset="sakura-day">
+                                            <span class="skin-swatch swatch-sakura"></span>
+                                            <span class="skin-meta">
+                                                <strong>साकुरा पेस्टल (Soft Light)</strong>
+                                                <small>कोमल गुलाबी-बैंगनी पेस्टल थीम</small>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="skin-preset-card" data-skin-preset="anime-spirit">
+                                            <span class="skin-swatch swatch-anime"></span>
+                                            <span class="skin-meta">
+                                                <strong>इंडिगो नाइट (Indigo Dark)</strong>
+                                                <small>गहरा इंडिगो एवं निऑन सियान</small>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="skin-preset-card" data-skin-preset="cyber-shonen">
+                                            <span class="skin-swatch swatch-cyber"></span>
+                                            <span class="skin-meta">
+                                                <strong>मिडनाइट डार्क (Midnight)</strong>
+                                                <small>रात्रि संपादन हेतु उच्च कंट्रास्ट</small>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- भाग B: 1-टच रंग पैलेट एवं कार्ड बॉर्डर शैली (Color Palette & Card Style) -->
+                                <div class="theme-studio-block">
+                                    <div class="theme-block-title-row">
+                                        <span class="theme-step-badge">02</span>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div class="theme-block-title-flex">
+                                                <h3 class="theme-studio-subtitle">1-टच एक्सेंट रंग पैलेट (Accent Color Palette)</h3>
+                                                <span class="palette-active-badge" id="active-palette-name-badge">डिफ़ॉल्ट थीम रंग</span>
+                                            </div>
+                                            <p class="theme-studio-desc">बटन, हाइलाइट और बैज के लिए अपना पसंदीदा प्राथमिक रंग चुनें (1-क्लिक में लागू):</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="touch-palette-grid" id="touch-palette-grid">
+                                        <button type="button" class="palette-swatch-btn active" data-palette-id="default" title="चयनित थीम का मूल रंग">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #2a4b8d, #6366f1);"></span>
+                                            <span class="swatch-label">डिफ़ॉल्ट</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="wiki-blue" title="विकिमीडिया रॉयल ब्लू">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #2a4b8d, #3b82f6);"></span>
+                                            <span class="swatch-label">रॉयल ब्लू</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="sakura-pink" title="साकुरा रोज़ पिंक">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #db2777, #f472b6);"></span>
+                                            <span class="swatch-label">साकुरा पिंक</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="emerald-mint" title="एमराल्ड मिंट ग्रीन">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #059669, #34d399);"></span>
+                                            <span class="swatch-label">एमराल्ड</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="amethyst-violet" title="एमेथिस्ट वायलेट">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);"></span>
+                                            <span class="swatch-label">वायलेट</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="sunset-amber" title="सनसेट अंबर गोल्ड">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #d97706, #fbbf24);"></span>
+                                            <span class="swatch-label">अंबर गोल्ड</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="ocean-cyan" title="ओशन सियान टील">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #0284c7, #22d3ee);"></span>
+                                            <span class="swatch-label">ओशन सियान</span>
+                                        </button>
+                                        <button type="button" class="palette-swatch-btn" data-palette-id="crimson-coral" title="क्रिमसन कोरल रेड">
+                                            <span class="swatch-circle" style="background: linear-gradient(135deg, #e11d48, #fb7185);"></span>
+                                            <span class="swatch-label">क्रिमसन</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- भाग C: कार्ड बॉर्डर शैली नियंत्रण -->
+                                    <div class="profile-card-style-bar">
+                                        <div class="card-style-selector">
+                                            <span class="card-style-label"><strong>03. कार्ड बॉर्डर शैली:</strong></span>
+                                            <div class="card-style-chips-wrap">
+                                                <button type="button" class="card-style-chip active" data-card-style-opt="flat">समतल (Flat)</button>
+                                                <button type="button" class="card-style-chip" data-card-style-opt="glass">ग्लास (Glass)</button>
+                                                <button type="button" class="card-style-chip" data-card-style-opt="cel">उभरा (Elevated)</button>
+                                                <button type="button" class="card-style-chip" data-card-style-opt="minimal">सूक्ष्म (Minimal)</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== अनुभाग 3: मेरा गतिविधि लॉग (Activity Logs — Strict Per-User Isolation) ==================== -->
+                <section id="sec-profile-logs" class="anime-profile-pane" role="tabpanel" style="display: none;">
+                    <div class="card workbench-card user-dashboard-card anime-cel-card">
+                        <div class="user-logs-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+                            <div class="user-logs-toolbar">
+                                <div>
+                                    <span class="anime-hud-tag" id="user-logs-owner-tag">📜 व्यक्तिगत खाता लॉग (केवल आपके अपने लॉग)</span>
+                                    <h3 class="user-logs-heading">मेरी हालिया गतिविधि एवं विश्लेषित लेख लॉग</h3>
+                                    <small class="form-hint" id="user-logs-owner-subtext">प्रत्येक सदस्य को केवल उसी के खाते द्वारा किए गए संपादन व विश्लेषण लॉग दिखाई देते हैं।</small>
+                                </div>
+                                <div class="user-logs-actions">
+                                    <input type="text" id="user-logs-search" class="form-control form-control-sm" placeholder="लॉग में लेख या क्रिया खोजें..." style="max-width: 220px;">
+                                    <button type="button" id="btn-export-user-logs" class="btn btn-secondary btn-sm" title="अपना संपूर्ण गतिविधि लॉग JSON फ़ाइल के रूप में डाउनलोड करें">
+                                        📥 लॉग JSON डाउनलोड
+                                    </button>
+                                    <button type="button" id="btn-clear-user-logs" class="btn btn-outline text-danger btn-sm">
+                                        🗑️ लॉग साफ़ करें
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="suggestions-table-container" style="max-height: 480px;">
+                                <table class="table suggestions-table user-logs-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="155">समय (Timestamp)</th>
+                                            <th width="150">क्रिया (Action)</th>
+                                            <th>लेख शीर्षक एवं भाषा (Article)</th>
+                                            <th width="190">परिणाम सारांश (Stats)</th>
+                                            <th width="190">पुनः लोड / क्रियाएँ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="user-logs-tbody">
+                                        <!-- लॉग पंक्तियाँ app.js द्वारा भरी जाएँगी -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== अनुभाग 4: तार्किक एडमिन नियंत्रण पैनल (केवल विक्रम प्रताप / amankumar.wikimedian@gmail.com हेतु) ==================== -->
+                <section id="sec-profile-admin" class="anime-profile-pane" role="tabpanel" style="display: none;">
+                    <div id="admin-panel-card" class="card workbench-card admin-panel-card anime-cel-card" style="display: none; margin-top: 0;">
+                        <div class="workbench-card-header admin-panel-header">
+                            <div>
+                                <span class="anime-hud-tag">🛡️ तार्किक मुख्य प्रशासक नियंत्रण कक्ष • केवल विक्रम प्रताप</span>
+                                <h2 class="workbench-card-title">🛡️ तार्किक एडमिन नियंत्रण पैनल (Logical Admin Control Panel — विक्रम प्रताप)</h2>
+                                <small class="form-hint">केवल अधिकृत एडमिन (<strong>सदस्य नाम: विक्रम प्रताप</strong> | <code>amankumar.wikimedian@gmail.com</code>) हेतु • विकिपीडिया कड़ीकरण नीतियों (WP:NOTLINKED, WP:DATELINK, WP:OVERLINK) के स्वचालित तार्किक निदान सहित शब्द बहिष्कार प्रबंधन</small>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span class="badge badge-success">✓ अधिकृत एडमिन: विक्रम प्रताप</span>
+                                <button type="button" id="btn-refresh-admin-panel" class="btn btn-secondary btn-sm">🔄 डेटा ताज़ा करें</button>
+                            </div>
+                        </div>
+
+                        <div class="workbench-card-body">
+                            <!-- तार्किक सारांश पट्टी (Logical Admin KPI Strip) -->
+                            <div class="admin-logical-kpi-grid">
+                                <div class="admin-kpi-box kpi-pending">
+                                    <span class="admin-kpi-label">⏳ लंबित अनुरोध (Pending)</span>
+                                    <strong class="admin-kpi-value" id="admin-stat-pending">0</strong>
+                                    <small class="admin-kpi-sub">निर्णय की प्रतीक्षा में</small>
+                                </div>
+                                <div class="admin-kpi-box kpi-approved">
+                                    <span class="admin-kpi-label">✓ स्वीकृत अनुरोध (Approved)</span>
+                                    <strong class="admin-kpi-value" id="admin-stat-approved">0</strong>
+                                    <small class="admin-kpi-sub">बहिष्कार में शामिल</small>
+                                </div>
+                                <div class="admin-kpi-box kpi-rejected">
+                                    <span class="admin-kpi-label">✕ अस्वीकृत अनुरोध (Rejected)</span>
+                                    <strong class="admin-kpi-value" id="admin-stat-rejected">0</strong>
+                                    <small class="admin-kpi-sub">कड़ी योग्य माने गए</small>
+                                </div>
+                                <div class="admin-kpi-box kpi-global">
+                                    <span class="admin-kpi-label">🚫 कुल सामुदायिक बहिष्कार शब्द</span>
+                                    <strong class="admin-kpi-value" id="admin-stat-global-total">0</strong>
+                                    <small class="admin-kpi-sub">+ 8,100 अंतर्निर्मित शब्द</small>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 1: नीति-आधारित सीधा शब्द बहिष्कार एवं 7-नियम परीक्षण -->
+                            <div class="admin-logical-step-box">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">01</span>
+                                    <div>
+                                        <h3 class="admin-sub-heading" style="margin-bottom: 2px;">तार्किक नीति परीक्षण एवं सीधा वैश्विक शब्द बहिष्कार (Direct Policy-Verified Blacklist)</h3>
+                                        <p class="theme-studio-desc">किसी भी शब्द को सीधे वैश्विक बहिष्कार सूची में जोड़ने से पूर्व उसकी 7-नियम विकिपीडिया नीति जाँच करें अथवा कारण सहित सीधे जोड़ें:</p>
+                                    </div>
+                                </div>
+                                <div class="admin-direct-add-bar">
+                                    <input type="text" id="admin-direct-word-input" class="form-control form-control-sm" placeholder="शब्द दर्ज करें (उदा: जनता, दल, समिति, 2024)...">
+                                    <select id="admin-direct-lang-select" class="form-control form-control-sm" style="max-width: 125px;">
+                                        <option value="hi" selected>हिन्दी (hi)</option>
+                                        <option value="en">English (en)</option>
+                                        <option value="sa">संस्कृतम् (sa)</option>
+                                    </select>
+                                    <select id="admin-direct-reason-select" class="form-control form-control-sm" style="max-width: 220px;">
+                                        <option value="WP:NOTLINKED (सामान्य दैनिक शब्द)" selected>WP:NOTLINKED (सामान्य शब्द)</option>
+                                        <option value="WP:STOPWORDS (व्याकरणिक/सहायक पद)">WP:STOPWORDS (व्याकरणिक पद)</option>
+                                        <option value="WP:DATELINK (सामान्य वर्ष/तिथि/मात्रक)">WP:DATELINK (वर्ष/मात्रक)</option>
+                                        <option value="WP:OVERLINKING (अति-कड़ीकरण रोकथाम)">WP:OVERLINKING (अति-कड़ीकरण)</option>
+                                        <option value="प्रशासकीय मानक निर्णय">प्रशासकीय मानक निर्णय</option>
+                                    </select>
+                                    <button type="button" id="btn-admin-test-word" class="btn btn-outline btn-sm" title="इस शब्द की 7-नियम तार्किक नीति योग्यता जाँचें">
+                                        🔍 तार्किक जाँच करें
+                                    </button>
+                                    <button type="button" id="btn-admin-direct-add" class="btn btn-primary btn-sm">
+                                        + सीधे स्वीकृत सूची में जोड़ें
+                                    </button>
+                                </div>
+                                <div id="admin-word-diagnostic-box" class="admin-word-diagnostic-box" style="display: none;"></div>
+                            </div>
+
+                            <!-- तार्किक चरण 2: सदस्य अनुरोध समीक्षा एवं स्वचालित नीति निदान पटल -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">02</span>
+                                    <div style="flex: 1;">
+                                        <div class="admin-step-title-flex">
+                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">सदस्यों के बहिष्कार अनुरोध एवं स्वचालित तार्किक निदान (<span id="admin-pending-req-count">0</span> लंबित)</h3>
+                                            <div class="admin-bulk-actions">
+                                                <button type="button" id="btn-admin-approve-all-pending" class="btn btn-success btn-sm" title="सभी लंबित अनुरोधों को एक साथ स्वीकृत करें">
+                                                    ✓ सभी लंबित स्वीकार करें
+                                                </button>
+                                                <button type="button" id="btn-admin-reject-all-pending" class="btn btn-outline text-danger btn-sm" title="सभी लंबित अनुरोधों को एक साथ अस्वीकार करें">
+                                                    ✕ सभी लंबित अस्वीकार करें
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="theme-studio-desc">प्रत्येक अनुरोध के साथ प्रणाली स्वतः विकिपीडिया नीति अनुसार <strong>तार्किक अनुशंसा (Logical Recommendation)</strong> प्रदर्शित करती है:</p>
+                                    </div>
+                                </div>
+
+                                <!-- अनुरोध छन्नी एवं खोज बार -->
+                                <div class="admin-req-filter-bar">
+                                    <div class="admin-status-chips">
+                                        <button type="button" class="btn btn-chip btn-sm admin-req-filter-chip active-chip" data-admin-req-status="all">सभी अनुरोध</button>
+                                        <button type="button" class="btn btn-chip btn-sm admin-req-filter-chip" data-admin-req-status="pending">⏳ केवल लंबित</button>
+                                        <button type="button" class="btn btn-chip btn-sm admin-req-filter-chip" data-admin-req-status="approved">✓ स्वीकृत</button>
+                                        <button type="button" class="btn btn-chip btn-sm admin-req-filter-chip" data-admin-req-status="rejected">✕ अस्वीकृत</button>
+                                    </div>
+                                    <input type="text" id="admin-req-search-input" class="form-control form-control-sm" placeholder="शब्द, लेख या अनुरोधकर्ता खोजें..." style="max-width: 240px;">
+                                </div>
+
+                                <div class="suggestions-table-container">
+                                    <table class="table suggestions-table">
+                                        <thead>
+                                            <tr>
+                                                <th>शब्द व भाषा (Word)</th>
+                                                <th>तार्किक नीति निदान (Auto Policy Check)</th>
+                                                <th>लेख संदर्भ एवं कारण (Context)</th>
+                                                <th>अनुरोधकर्ता (Requester)</th>
+                                                <th>स्थिति (Status)</th>
+                                                <th width="195">एडमिन निर्णय (Action)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-requests-tbody">
+                                            <tr>
+                                                <td colspan="6" style="text-align: center; padding: 18px; color: var(--text-muted);">अनुरोध लोड हो रहे हैं...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 3: वैश्विक कड़ीकरण इंजन नीति एवं संपादकीय घोषणा नियंत्रक (Global Engine Policy & Broadcast) -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">03</span>
+                                    <div style="flex: 1;">
+                                        <h3 class="admin-sub-heading" style="margin-bottom: 2px;">⚙️ वैश्विक कड़ीकरण इंजन नीति एवं संपादकीय घोषणा नियंत्रक (Global Engine Policy & Broadcast)</h3>
+                                        <p class="theme-studio-desc">संपूर्ण उपकरण के लिए डिफ़ॉल्ट कड़ी घनत्व सीमा, अनिवार्य विकिपीडिया नीति लॉक और मुख्य कार्यपटल की संपादकीय घोषणा पट्टी नियंत्रित करें:</p>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 10px;">
+                                    <div>
+                                        <label for="admin-policy-max-density" class="form-hint" style="display: block; font-weight: 600; margin-bottom: 4px;">अधिकतम कड़ी घनत्व सीमा (Max Link Density Cap)</label>
+                                        <select id="admin-policy-max-density" class="form-control form-control-sm">
+                                            <option value="0">कोई सीमा नहीं (डिफ़ॉल्ट)</option>
+                                            <option value="6">6% (सख्त WP:OVERLINK सीमा)</option>
+                                            <option value="8">8% (संतुलित विश्वकोशीय मानक)</option>
+                                            <option value="10" selected>10% (अनुशंसित अधिकतम सीमा)</option>
+                                            <option value="12">12% (विस्तृत लेख सीमा)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="admin-policy-min-len" class="form-hint" style="display: block; font-weight: 600; margin-bottom: 4px;">न्यूनतम शब्द लंबाई मानक (Min Word Length)</label>
+                                        <select id="admin-policy-min-len" class="form-control form-control-sm">
+                                            <option value="2">2 अक्षर</option>
+                                            <option value="3" selected>3 अक्षर (मानक)</option>
+                                            <option value="4">4 अक्षर (सख्त)</option>
+                                            <option value="5">5 अक्षर</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="admin-policy-default-scope" class="form-hint" style="display: block; font-weight: 600; margin-bottom: 4px;">डिफ़ॉल्ट कड़ीकरण दायरा (Default Link Scope)</label>
+                                        <select id="admin-policy-default-scope" class="form-control form-control-sm">
+                                            <option value="all" selected>संपूर्ण लेख (Full Article)</option>
+                                            <option value="lead">केवल प्रारंभिक अनुच्छेद (Lead Only)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; padding: 10px 12px; background: var(--bg-alt); border-radius: 6px;">
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-first" checked>
+                                        <span>केवल प्रथम उपस्थिति अनिवार्य करें (WP:LINKONCE)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-skip-disambig" checked>
+                                        <span>बहुविकल्पी पृष्ठ स्वतः अचयनित रखें (WP:INTDAB)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-skip-dates" checked>
+                                        <span>सामान्य वर्ष व तिथियाँ वर्जित रखें (WP:DATELINK)</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="admin-policy-force-blue-only">
+                                        <span>केवल नीली (अस्तित्वमान) कड़ियाँ अनिवार्य करें</span>
+                                    </label>
+                                </div>
+
+                                <div class="admin-direct-add-bar" style="margin-top: 12px;">
+                                    <input type="text" id="admin-broadcast-msg-input" class="form-control form-control-sm" placeholder="मुख्य कार्यपटल हेतु संपादकीय सूचना लिखें (उदा: कृपया सामान्य वर्षों एवं देशों की पुनरावृत्ति कड़ियाँ न जोड़ें)..." style="flex: 2 1 280px;">
+                                    <button type="button" id="btn-admin-save-engine-policy" class="btn btn-primary btn-sm">
+                                        💾 वैश्विक नीति व सूचना लागू करें
+                                    </button>
+                                    <button type="button" id="btn-admin-clear-broadcast" class="btn btn-outline btn-sm">
+                                        🗑️ सूचना पट्टी हटाएँ
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 4: सामूहिक शब्दकोश प्रबंधन, सुरक्षित श्वेतसूची (Whitelist) एवं शब्द निष्कासन -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">04</span>
+                                    <div style="flex: 1;">
+                                        <div class="admin-step-title-flex">
+                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">📚 सामूहिक बहिष्कार प्रविष्टि, सुरक्षित श्वेतसूची (Whitelist) एवं शब्द निष्कासन</h3>
+                                            <div class="admin-bulk-actions">
+                                                <button type="button" id="btn-admin-export-blacklist" class="btn btn-secondary btn-sm">
+                                                    📥 संपूर्ण एडमिन शब्दकोश JSON निर्यात
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="theme-studio-desc">एक साथ अनेक शब्द बहिष्कृत करें, विश्वकोशीय शब्दों को श्वेतसूची (Always Linkable Whitelist) में सुरक्षित करें, या किसी स्वीकृत बहिष्कृत शब्द को खोजकर हटाएँ:</p>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 10px;">
+                                    <!-- सामूहिक बहिष्कार (Bulk Blacklist Add) -->
+                                    <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-alt);">
+                                        <strong style="font-size: 0.86rem; display: block; margin-bottom: 6px;">🚫 सामूहिक बहिष्कार शब्द जोड़ें (कौमा या नई पंक्ति से अलग करें)</strong>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                            <input type="text" id="admin-bulk-blacklist-input" class="form-control form-control-sm" placeholder="उदा: समिति, आयोग, विभाग, कार्यालय..." style="flex: 1 1 180px;">
+                                            <button type="button" id="btn-admin-bulk-blacklist-add" class="btn btn-primary btn-sm">+ सामूहिक जोड़ें</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- एडमिन सुरक्षित श्वेतसूची (Protected Whitelist) -->
+                                    <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-alt);">
+                                        <strong style="font-size: 0.86rem; display: block; margin-bottom: 6px;">🛡️ एडमिन सुरक्षित श्वेतसूची (Whitelist — सदैव कड़ी योग्य पद: <span id="admin-whitelist-count">0</span>)</strong>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                            <input type="text" id="admin-whitelist-word-input" class="form-control form-control-sm" placeholder="विशेष विश्वकोशीय पद (जो कभी ब्लॉक न हो)..." style="flex: 1 1 180px;">
+                                            <button type="button" id="btn-admin-add-whitelist" class="btn btn-success btn-sm">+ श्वेतसूची में रखें</button>
+                                        </div>
+                                        <div id="admin-whitelist-chips" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- स्वीकृत बहिष्कार शब्द खोजकर हटाने का कॉम्पैक्ट उपकरण -->
+                                <div style="margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                                        <strong style="font-size: 0.84rem;">🔍 स्वीकृत सामुदायिक बहिष्कार शब्दों (<span id="admin-approved-words-count">0</span>) में खोजें व हटाएँ:</strong>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap; flex: 1; max-width: 420px;">
+                                            <input type="text" id="admin-approved-search-input" class="form-control form-control-sm" placeholder="हटाने या जाँचने के लिए बहिष्कृत शब्द खोजें..." style="flex: 1;">
+                                            <select id="admin-approved-lang-filter" class="form-control form-control-sm" style="max-width: 110px;">
+                                                <option value="all">सभी भाषाएँ</option>
+                                                <option value="hi">हिन्दी (hi)</option>
+                                                <option value="en">English (en)</option>
+                                                <option value="sa">संस्कृतम् (sa)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="admin-approved-search-results" style="display: none; gap: 6px; flex-wrap: wrap; margin-top: 10px;"></div>
+                                    <div id="admin-approved-words-list" class="approved-blacklist-chips" style="display: none;"></div>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 5: पंजीकृत सदस्य, भूमिका (Role) एवं खाता नियंत्रण कक्ष -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">05</span>
+                                    <div style="flex: 1;">
+                                        <div class="admin-step-title-flex">
+                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">👥 पंजीकृत सदस्य, भूमिका आवंटन एवं खाता नियंत्रण (<span id="admin-users-total-count">0</span> सदस्य)</h3>
+                                            <input type="text" id="admin-user-search-input" class="form-control form-control-sm" placeholder="सदस्य नाम या ईमेल खोजें..." style="max-width: 240px;">
+                                        </div>
+                                        <p class="theme-studio-desc">पंजीकृत खातों की समीक्षा करें, सदस्यों को 'वरिष्ठ परीक्षक' (Reviewer) पदोन्नत करें, अवांछित खातों को प्रतिबंधित (Block) करें या भूले हुए पासवर्ड का लॉक रीसेट करें:</p>
+                                    </div>
+                                </div>
+
+                                <div class="suggestions-table-container" style="max-height: 320px; margin-top: 8px;">
+                                    <table class="table suggestions-table">
+                                        <thead>
+                                            <tr>
+                                                <th>सदस्य नाम (Member)</th>
+                                                <th>पंजीकृत ईमेल पता (Email)</th>
+                                                <th>भूमिका (Role)</th>
+                                                <th>सुरक्षा स्थिति (Status)</th>
+                                                <th width="260">प्रशासकीय अधिकार (Admin Actions)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-users-tbody">
+                                            <tr>
+                                                <td colspan="5" style="text-align: center; padding: 16px; color: var(--text-muted);">सदस्य सूची लोड हो रही है...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- तार्किक चरण 6: एडमिन सुरक्षा वॉल्ट, पासवर्ड परिवर्तन एवं प्रशासकीय ऑडिट लॉग -->
+                            <div class="admin-logical-step-box" style="margin-top: 16px;">
+                                <div class="admin-step-header">
+                                    <span class="theme-step-badge">06</span>
+                                    <div style="flex: 1;">
+                                        <h3 class="admin-sub-heading" style="margin-bottom: 2px;">🔐 एडमिन पासवर्ड सुरक्षा वॉल्ट एवं प्रशासकीय ऑडिट लॉग (Security Vault & Audit Trail)</h3>
+                                        <p class="theme-studio-desc">मुख्य प्रशासक खाते का SHA-256 पासवर्ड बदलें तथा एडमिन पैनल में किए गए सभी निर्णयों का कालानुक्रमिक ऑडिट रिकॉर्ड देखें:</p>
+                                    </div>
+                                </div>
+
+                                <div class="admin-direct-add-bar" style="margin-top: 10px;">
+                                    <input type="password" id="admin-new-password-input" class="form-control form-control-sm" placeholder="नया एडमिन पासवर्ड (न्यूनतम 6 अक्षर)..." minlength="6">
+                                    <input type="password" id="admin-confirm-password-input" class="form-control form-control-sm" placeholder="नए पासवर्ड की पुष्टि करें..." minlength="6">
+                                    <button type="button" id="btn-admin-update-password" class="btn btn-primary btn-sm">
+                                        🔒 एडमिन पासवर्ड अपडेट व लॉक करें
+                                    </button>
+                                    <button type="button" id="btn-admin-clear-audit-log" class="btn btn-outline text-danger btn-sm">
+                                        🗑️ ऑडिट लॉग साफ़ करें
+                                    </button>
+                                </div>
+
+                                <div id="admin-audit-log-container" style="margin-top: 10px; max-height: 180px; overflow-y: auto; padding: 8px 12px; background: var(--bg-alt); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem;">
+                                    <div style="color: var(--text-muted);">कोई प्रशासकीय ऑडिट प्रविष्टि नहीं है।</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- सूचना टोस्ट -->
+    <div id="toast" class="toast">संदेश</div>
+
+    <!-- तार्किक पाद लेख (Logical Footer) -->
+    <footer class="app-footer">
+        <div class="container">
+            <div class="footer-zero-login-strip">
+                <span class="zero-login-badge">🔓 शून्य-लॉगिन स्वतंत्रता</span>
+                <p>
+                    <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। लॉगिन करने पर आप अपने नाम पर क्लिक करके इस विशेष प्रोफ़ाइल पेज को खोल सकते हैं।
+                </p>
+            </div>
+
+            <div class="footer-sitemap-grid">
+                <a href="index.html" class="footer-page-card">
+                    <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
+                    <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
+                </a>
+                <a href="logs.html" class="footer-page-card active" data-auth-only="true" style="display: none;">
+                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Member Profile & Logs)</strong>
+                    <span>यूज़रनेम, 5 आइकन, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
+                </a>
+                <a href="about.html" class="footer-page-card">
+                    <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
+                    <span>टूल उपयोग विधि एवं विकिपीडिया कड़ीकरण नीतियाँ (WP:LINK)</span>
+                </a>
+                <a href="login.html" class="footer-page-card">
+                    <strong>🔑 4. लॉगिन एवं साइन अप (Login / Sign Up)</strong>
+                    <span>इंटरैक्टिव एनिमेटेड खाता प्रवेश एवं क्लाउड सिंक</span>
+                </a>
+            </div>
+
+            <div class="footer-inner">
+                <p>
+                    <strong>विकीलिंक सहायक (WikiLink Assistant v2.5)</strong> — विकिपीडिया संपादकों हेतु स्वतंत्र उपकरण।
+                </p>
+                <p class="footer-links">
+                    आधिकारिक डोमेन: <a href="https://vikrampratap-wiki.github.io/wikilink-tool/" target="_blank">vikrampratap-wiki.github.io/wikilink-tool</a> |
+                    लाइसेंस: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.hi" target="_blank">CC BY-SA 4.0</a> / <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> |
+                    निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a> |
+                    <span>🔒 निजी रिपॉज़िटरी (Private GitHub)</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="firebase-client.js?v=19"></script>
+    <script src="app.js?v=19" defer></script>
+</body>
+</html>
