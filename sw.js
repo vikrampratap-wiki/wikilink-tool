@@ -13,6 +13,7 @@ const RELATIVE_WORKBENCH_ASSETS = [
   './style.css?v=19',
   './app.js?v=19',
   './compound_dictionary.js',
+  './ai_compound_classifier.js',
   './manifest.json',
   './icon.svg'
 ];

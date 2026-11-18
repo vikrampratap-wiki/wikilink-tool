@@ -430,6 +430,14 @@
                                         <button type="button" class="filter-chip-toggle active" data-target="opt-clean-pipes" title="[[भारत|भारत]] के स्थान पर स्वच्छ [[भारत]] सिंटेक्स रखें"><svg class="chip-check-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>स्वच्छ पाइप [[X]]</button>
                                     </div>
                                 </div>
+
+                                <!-- समूह ग: स्थानीय एआई विश्लेषक (100% Free / Zero Token) -->
+                                <div class="logical-filter-group">
+                                    <span class="filter-group-label">ग. स्थानीय एआई सम्बद्धता (Zero-Token Local AI):</span>
+                                    <div class="filter-chips-grid">
+                                        <button type="button" class="filter-chip-toggle active" data-target="opt-ai-compound-classifier" id="chip-ai-compound-classifier" title="100% स्थानीय ऑफ़लाइन एआई द्वारा बहु-शब्द बनाम एकल शब्द कड़ीकरण का निर्णय (शून्य लागत, 0 टोकन)"><svg class="chip-check-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>एआई संयुक्त पद विश्लेषक (Local AI)</button>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- प्रत्यक्ष मापदंड पट्टी (Always-Visible Scope, Min-Length & Structural Parameters) -->
@@ -537,6 +545,14 @@
                                         <div class="setting-desc">
                                             <strong>9. स्व-कड़ीकरण रोकें (WP:CIRCULAR)</strong>
                                             <p>वर्तमान लेख के स्वयं के शीर्षक की चक्रीय आंतरिक कड़ी न बनाएं।</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="setting-item">
+                                        <input type="checkbox" id="opt-ai-compound-classifier" checked>
+                                        <div class="setting-desc">
+                                            <strong>10. स्थानीय एआई संयुक्त पद विश्लेषक (Zero-Token Local AI)</strong>
+                                            <p>100% स्थानीय ऑफ़लाइन निर्णय: संस्थागत बहु-शब्द पदों को एक कड़ी में रखें और आकस्मिक स्वतंत्र शब्दों को अलग करें।</p>
                                         </div>
                                     </label>
                                 </div>
@@ -1043,6 +1059,7 @@
         </div>
     </footer>
 
+    <script src="ai_compound_classifier.js" defer></script>
     <script src="app.js?v=19" defer></script>
     <script>
     (function(){

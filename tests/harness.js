@@ -59,12 +59,27 @@ function loadCompoundDictionary() {
 }
 
 /**
+ * Loads the ai_compound_classifier.js engine.
+ * Supports both CommonJS exports and global variable fallback.
+ */
+function loadAiCompoundClassifier() {
+    const aiPath = path.join(PROJECT_ROOT, 'ai_compound_classifier.js');
+    delete require.cache[require.resolve(aiPath)];
+    const exported = require(aiPath);
+    if (exported && typeof exported.classify === 'function') {
+        return exported;
+    }
+    throw new Error('Unable to resolve AiCompoundClassifier from ai_compound_classifier.js');
+}
+
+/**
  * Creates a mock DOM and Window environment and evaluates app.js.
  * Exposes core functions and internal state objects for direct, opaque-box testing.
  */
 function loadAppEngine(customOptions = {}) {
     const words = customOptions.blacklist || loadBlacklist();
     const compounds = customOptions.compounds || loadCompoundDictionary();
+    const aiClassifier = customOptions.aiClassifier || loadAiCompoundClassifier();
 
     const storageMap = new Map();
     const mockLocalStorage = {
@@ -143,6 +158,7 @@ function loadAppEngine(customOptions = {}) {
         removeEventListener: () => {},
         COMMON_5000_WORDS: words,
         COMPOUND_20K_TERMS: compounds,
+        AiCompoundClassifier: aiClassifier,
         console: console,
         setTimeout: global.setTimeout,
         clearTimeout: global.clearTimeout,
@@ -174,6 +190,9 @@ global.__TEST_EXPORTS__ = {
   parseWikitextForHealth: typeof parseWikitextForHealth !== 'undefined' ? parseWikitextForHealth : null,
   ensureExtendedBlacklistLoaded: typeof ensureExtendedBlacklistLoaded !== 'undefined' ? ensureExtendedBlacklistLoaded : null,
   ensureCompoundDictionaryLoaded: typeof ensureCompoundDictionaryLoaded !== 'undefined' ? ensureCompoundDictionaryLoaded : null,
+  ensureAiClassifierLoaded: typeof ensureAiClassifierLoaded !== 'undefined' ? ensureAiClassifierLoaded : null,
+  isAiCompoundClassifierActive: typeof isAiCompoundClassifierActive !== 'undefined' ? isAiCompoundClassifierActive : null,
+  AiCompoundClassifier: typeof AiCompoundClassifier !== 'undefined' ? AiCompoundClassifier : null,
   COMPOUND_TERMS_SET: typeof COMPOUND_TERMS_SET !== 'undefined' ? COMPOUND_TERMS_SET : null,
   OFFLINE_VERIFIED_WIKI_TITLES: typeof OFFLINE_VERIFIED_WIKI_TITLES !== 'undefined' ? OFFLINE_VERIFIED_WIKI_TITLES : null,
   NEVER_LINK_WORDS: typeof NEVER_LINK_WORDS !== 'undefined' ? NEVER_LINK_WORDS : null,
@@ -405,6 +424,7 @@ module.exports = {
     PICTORIAL_EMOJI_REGEX,
     loadBlacklist,
     loadCompoundDictionary,
+    loadAiCompoundClassifier,
     loadAppEngine,
     protect,
     unprotect,

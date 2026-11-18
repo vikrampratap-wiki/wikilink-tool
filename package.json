@@ -8,7 +8,7 @@
     "dev": "node server.js",
     "build": "node -e \"console.log('Static assets verified successfully.')\"",
     "start": "node server.js",
-    "lint": "node --check app.js && node --check server.js",
+    "lint": "node --check app.js && node --check server.js && node --check ai_compound_classifier.js",
     "test": "node --test tests/*.test.js"
   },
   "devDependencies": {

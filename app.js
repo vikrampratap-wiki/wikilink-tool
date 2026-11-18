@@ -348,16 +348,19 @@
                     window.requestIdleCallback(() => {
                         fetchExtendedBlacklistScriptIfNeeded();
                         fetchCompoundDictionaryScriptIfNeeded();
+                        fetchAiClassifierScriptIfNeeded();
                     }, { timeout: 6000 });
                 } else {
                     fetchExtendedBlacklistScriptIfNeeded();
                     fetchCompoundDictionaryScriptIfNeeded();
+                    fetchAiClassifierScriptIfNeeded();
                 }
             }, 4000);
         }, { once: true });
     } else {
         ensureExtendedBlacklistLoaded();
         ensureCompoundDictionaryLoaded();
+        ensureAiClassifierLoaded();
     }
 
     // सम्मानसूचक उपसर्ग (Honorific Prefixes) — इन्हें अकेले 1-शब्द की कड़ी कभी न बनाएं (ताकि '[[महर्षि]] वाल्मीकि' जैसी अधूरी कड़ी न बने)
@@ -556,6 +559,69 @@
         return compoundScriptPromise;
     }
 
+    let aiClassifierLoaded = false;
+    let aiClassifierScriptPromise = null;
+
+    function ensureAiClassifierLoaded() {
+        if (typeof AiCompoundClassifier !== 'undefined' && AiCompoundClassifier) {
+            aiClassifierLoaded = true;
+            return AiCompoundClassifier;
+        }
+        if (typeof window !== 'undefined' && window.AiCompoundClassifier) {
+            aiClassifierLoaded = true;
+            return window.AiCompoundClassifier;
+        }
+        if (typeof global !== 'undefined' && global.AiCompoundClassifier) {
+            aiClassifierLoaded = true;
+            return global.AiCompoundClassifier;
+        }
+        if (typeof require !== 'undefined') {
+            try {
+                const loaded = require('./ai_compound_classifier.js');
+                if (loaded) {
+                    if (typeof window !== 'undefined') window.AiCompoundClassifier = loaded;
+                    if (typeof global !== 'undefined') global.AiCompoundClassifier = loaded;
+                    aiClassifierLoaded = true;
+                    return loaded;
+                }
+            } catch (e) { }
+        }
+        return null;
+    }
+
+    function fetchAiClassifierScriptIfNeeded() {
+        if (aiClassifierLoaded || ensureAiClassifierLoaded()) return Promise.resolve();
+        if (typeof document === 'undefined') return Promise.resolve();
+        if (!aiClassifierScriptPromise) {
+            aiClassifierScriptPromise = new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = './ai_compound_classifier.js';
+                script.async = true;
+                script.onload = () => {
+                    ensureAiClassifierLoaded();
+                    resolve();
+                };
+                script.onerror = () => resolve();
+                document.head.appendChild(script);
+            });
+        }
+        return aiClassifierScriptPromise;
+    }
+
+    function isAiCompoundClassifierActive() {
+        if (DOM && DOM.optAiCompoundClassifier && typeof DOM.optAiCompoundClassifier.checked === 'boolean') {
+            return DOM.optAiCompoundClassifier.checked;
+        }
+        if (state && typeof state.optAiCompoundClassifier === 'boolean') {
+            return state.optAiCompoundClassifier;
+        }
+        if (typeof document !== 'undefined') {
+            const el = document.getElementById('opt-ai-compound-classifier');
+            if (el && typeof el.checked === 'boolean') return el.checked;
+        }
+        return true;
+    }
+
     function isInflectedHindiPluralOrOblique(word) {
         if (!word || word.length < 4) return false;
         // देवनागरी बहुवचन या तिर्यक रूप (जैसे: ग्रन्थों, नदियों, भाषाएँ, पिंडों, उपग्रहों, कवियों, रचनाएँ, श्रृंखला, राज्यों)
@@ -673,6 +739,7 @@
             forceBlueOnly: false,
             broadcastMessage: ''
         },
+        optAiCompoundClassifier: true,
 
         // दूषित लेख रिपोर्ट
         contaminations: {
@@ -753,6 +820,7 @@
         DOM.optPreventSelfLink = $('opt-prevent-self-link');
         DOM.optLinkScope = $('opt-link-scope');
         DOM.optMinLength = $('opt-min-length');
+        DOM.optAiCompoundClassifier = $('opt-ai-compound-classifier');
 
         // सहायक उपकरण
         DOM.btnOpenDuplicateCleaner = $('btn-open-duplicate-cleaner');
@@ -1088,7 +1156,8 @@
             'opt-skip-dates',
             'opt-skip-units',
             'opt-clean-pipes',
-            'opt-blue-only'
+            'opt-blue-only',
+            'opt-ai-compound-classifier'
         ];
 
         function updateActiveFilterCountBadge() {
@@ -1108,9 +1177,15 @@
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
                     chip.classList.toggle('active', checkbox.checked);
+                    if (targetId === 'opt-ai-compound-classifier') {
+                        state.optAiCompoundClassifier = checkbox.checked;
+                    }
                     updateActiveFilterCountBadge();
                     const name = chip.textContent.replace('', '').trim();
                     showToast(`${name}: ${checkbox.checked ? 'सक्रिय' : 'निष्क्रिय'}`);
+                    if (targetId === 'opt-ai-compound-classifier' && state.suggestions && state.suggestions.length > 0) {
+                        renderSuggestionsTable();
+                    }
                 }
             });
         });
@@ -1122,7 +1197,13 @@
                 cb.addEventListener('change', () => {
                     const chip = document.querySelector(`.filter-chip-toggle[data-target="${id}"]`);
                     if (chip) chip.classList.toggle('active', cb.checked);
+                    if (id === 'opt-ai-compound-classifier') {
+                        state.optAiCompoundClassifier = cb.checked;
+                    }
                     updateActiveFilterCountBadge();
+                    if (id === 'opt-ai-compound-classifier' && state.suggestions && state.suggestions.length > 0) {
+                        renderSuggestionsTable();
+                    }
                 });
             }
         });
@@ -1133,6 +1214,7 @@
                 const cb = $(id);
                 if (cb) cb.checked = true;
             });
+            state.optAiCompoundClassifier = true;
             document.querySelectorAll('.filter-chip-toggle').forEach(chip => chip.classList.add('active'));
             updateActiveFilterCountBadge();
             showToast('सभी तार्किक छन्नी नियम सक्रिय किए गए');
@@ -1888,10 +1970,12 @@
         try {
             await Promise.all([
                 fetchExtendedBlacklistScriptIfNeeded(),
-                fetchCompoundDictionaryScriptIfNeeded()
+                fetchCompoundDictionaryScriptIfNeeded(),
+                fetchAiClassifierScriptIfNeeded()
             ]);
             ensureExtendedBlacklistLoaded();
             ensureCompoundDictionaryLoaded();
+            ensureAiClassifierLoaded();
             const typedTitle = cleanWikiTitleFromInput(safeGetValue(DOM.pageInput));
             let wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
 
@@ -2639,7 +2723,7 @@
     // ज्ञानकोशीय संयुक्त संज्ञाओं (Compound Titles) के वैध शीर्ष/विशेषण घटक
     const COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST = new Set([
         'साहित्य', 'विज्ञान', 'आंदोलन', 'आन्दोलन', 'संविधान', 'महासागर', 'सागर', 'उपग्रह', 'कांग्रेस', 'संगठन',
-        'काल', 'युग', 'नदी', 'पर्वत', 'पठार', 'घाटी', 'द्वीप', 'प्रायद्वीप', 'खाड़ी', 'संधि', 'विश्वविद्यालय',
+        'काल', 'युग', 'नदी', 'पर्वत', 'पठार', 'घाटी', 'द्वीप', 'द्वीपसमूह', 'प्रायद्वीप', 'खाड़ी', 'संधि', 'विश्वविद्यालय',
         'महाविद्यालय', 'संस्थान', 'अकादमी', 'परिषद', 'आयोग', 'मंत्रालय', 'मन्त्रालय', 'विभाग', 'सरकार', 'पुरस्कार',
         'सम्मान', 'युद्ध', 'संग्राम', 'विद्रोह', 'क्रांति', 'क्रान्ति', 'साम्राज्य', 'राजवंश', 'वंश', 'गणराज्य',
         'संघ', 'पार्टी', 'दल', 'मंदिर', 'मन्दिर', 'मस्जिद', 'गिरजाघर', 'गुरुद्वारा', 'किला', 'दुर्ग', 'महल',
@@ -2657,6 +2741,7 @@
         'महान्यायवादी', 'महाधिवक्ता', 'महासचिव', 'अध्यक्ष', 'उपाध्यक्ष', 'आयुक्त', 'महानिदेशक', 'राजमार्ग', 'मार्ग', 'सेतु', 'पुल',
         'बंदरगाह', 'हवाई अड्डा', 'स्टेशन', 'परियोजना', 'केन्द्र', 'केंद्र', 'मंत्रिमंडल', 'मन्त्रिमण्डल', 'मंत्रिपरिषद', 'सचिवालय',
         'निदेशालय', 'मुख्यालय', 'कार्यालय', 'न्यायाधिकरण', 'ट्रिब्यूनल', 'अधिनियम', 'विधेयक', 'समीक्षा', 'रिपोर्ट', 'अभिलेख',
+        'पुस्तकालय', 'ग्रंथालय', 'संग्रहालय', 'महालेखापरीक्षक', 'नियंत्रक', 'लोकपाल',
         'सेना', 'सुरक्षा', 'रक्षा', 'पुलिस', 'बल', 'कमांड', 'कमान', 'प्रकोष्ठ', 'शाखा', 'कोष', 'निधि', 'बीमा', 'कंपनी', 'उद्योग',
         'व्यापार', 'लिमिटेड', 'ऊर्जा', 'पवन', 'जल', 'विद्युत', 'खनिज', 'खनन', 'पेट्रोलियम', 'रॉकेट', 'मिसाइल', 'वेधशाला', 'प्रयोगशाला',
         'पर्यावरण', 'वन', 'जलवायु', 'भूगोल', 'भूविज्ञान', 'पारिस्थितिकी'
@@ -2776,6 +2861,10 @@
                 'का', 'के', 'की', 'तथा', 'एवं', 'और', 'व', 'ऑफ', 'से', 'पर', 'में',
                 'द्वारा', 'हेतु', 'सहित', 'युक्त', 'स्थित', 'आधारित', 'संबंधी', 'द'
             ]);
+            if (isAiCompoundClassifierActive()) {
+                ALLOWED_INTERNAL_CONNECTORS.add('या');
+                ALLOWED_INTERNAL_CONNECTORS.add('अथवा');
+            }
             const internalParts = parts.slice(1, -1);
             if (internalParts.some(p =>
                 (HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p) && !ALLOWED_INTERNAL_CONNECTORS.has(p)) ||
@@ -2787,6 +2876,30 @@
                 (stopwordSet.has(p) && !ALLOWED_INTERNAL_CONNECTORS.has(p))
             )) {
                 return false;
+            }
+
+            // 2.5 स्थानीय एआई संयुक्त पद विश्लेषक (Zero-Token Local AI Compound Classifier)
+            // जब सक्रिय हो, तो आकस्मिक योजक युक्त स्वतंत्र संज्ञा युग्मों (जैसे 'राम और श्याम', 'नदी और पहाड़')
+            // को बहु-शब्द पद बनने से रोकें ताकि घटक शब्दों को पृथक-पृथक लिंक किया जा सके।
+            if (isAiCompoundClassifierActive()) {
+                const coordinatorWords = new Set(['और', 'तथा', 'एवं', 'व', 'या', 'अथवा']);
+                const hasCoordinator = internalParts.some(p => coordinatorWords.has(p));
+                if (hasCoordinator) {
+                    try {
+                        const classifier = ensureAiClassifierLoaded();
+                        if (classifier && typeof classifier.classify === 'function') {
+                            const aiDecision = classifier.classify(phrase, '', {
+                                knownDictionarySet: COMPOUND_TERMS_SET,
+                                verifiedTitlesMap: OFFLINE_VERIFIED_WIKI_TITLES
+                            });
+                            if (aiDecision && aiDecision.decision === 'SEPARATE' && aiDecision.category !== 'FALLBACK') {
+                                return false; // आकस्मिक योजक: पृथक कड़ियों में विभाजित करने हेतु बहु-शब्द अस्वीकृत
+                            }
+                        }
+                    } catch (e) {
+                        // सुरक्षित फॉलबैक
+                    }
+                }
             }
 
             // बहु-शब्द पद का अंतिम शब्द कभी भी सम्मानसूचक उपसर्ग ('महर्षि', 'मुंशी', 'पंडित') नहीं हो सकता
@@ -2977,6 +3090,21 @@
                 const end = Math.min(cleanText.length, index + term.length + 35);
                 let context = cleanText.substring(start, end).replace(/[\x01\x02]?⟪\d+⟫[\x01\x02]?|[\x01\x02]?PROTECTED_\d+[\x01\x02]?/g, '...');
 
+                let aiClassification = null;
+                if (isAiCompoundClassifierActive()) {
+                    try {
+                        const classifier = ensureAiClassifierLoaded();
+                        if (classifier && typeof classifier.classify === 'function') {
+                            aiClassification = classifier.classify(term, cleanText, {
+                                knownDictionarySet: COMPOUND_TERMS_SET,
+                                verifiedTitlesMap: OFFLINE_VERIFIED_WIKI_TITLES
+                            });
+                        }
+                    } catch (e) {
+                        aiClassification = null;
+                    }
+                }
+
                 suggestions.push({
                     id: idCounter++,
                     term: term,
@@ -2986,7 +3114,8 @@
                     isDisambig: isDisambig,
                     isMultiWord: isMulti,
                     context: context,
-                    checked: (status === 'blue' || status === 'redirect')
+                    checked: (status === 'blue' || status === 'redirect'),
+                    aiClassification: aiClassification
                 });
             }
         }
@@ -3115,13 +3244,34 @@
                 ? 'एडमिन अधिकार: इस शब्द को सीधे वैश्विक बहिष्कार सूची में जोड़ें'
                 : 'इस शब्द को वैश्विक बहिष्कार सूची में जोड़ने हेतु एडमिन (विक्रम प्रताप) को अनुरोध भेजें';
 
+            const aiActive = isAiCompoundClassifierActive();
+            if (aiActive && !s.aiClassification) {
+                try {
+                    const classifier = ensureAiClassifierLoaded();
+                    if (classifier && typeof classifier.classify === 'function') {
+                        s.aiClassification = classifier.classify(s.term, s.context || '', {
+                            knownDictionarySet: COMPOUND_TERMS_SET,
+                            verifiedTitlesMap: OFFLINE_VERIFIED_WIKI_TITLES
+                        });
+                    }
+                } catch (e) { }
+            }
+
+            let aiBadgeHtml = '';
+            if (aiActive && s.aiClassification && s.aiClassification.badgeText) {
+                const isComp = s.aiClassification.decision === 'COMPOUND';
+                const badgeClass = isComp ? 'ai-badge ai-badge-compound' : 'ai-badge ai-badge-separate';
+                const reasonTitle = escapeHtml(s.aiClassification.reason || (isComp ? 'स्थानीय एआई: संयुक्त पद' : 'स्थानीय एआई: पृथक पद'));
+                aiBadgeHtml = ` <span class="${badgeClass}" title="${reasonTitle}">${escapeHtml(s.aiClassification.badgeText)}</span>`;
+            }
+
             tr.innerHTML = `
                 <td class="td-checkbox-cell" data-label="चयन">
                     <input type="checkbox" class="suggestion-checkbox" data-id="${s.id}" ${s.checked ? 'checked' : ''} aria-label="${escapeHtml(s.term)} चुनें">
                 </td>
                 <td data-label="मूल शब्द">
                     <span class="term-tag">${escapeHtml(s.term)}</span>
-                    ${s.isMultiWord ? '<span class="multiword-pill" title="संयुक्त बहु-शब्द पद">संयुक्त पद</span>' : ''}
+                    ${s.isMultiWord ? '<span class="multiword-pill" title="संयुक्त बहु-शब्द पद">संयुक्त पद</span>' : ''}${aiBadgeHtml}
                 </td>
                 <td data-label="लक्ष्य पृष्ठ">
                     <div class="target-link">

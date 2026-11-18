@@ -37,6 +37,12 @@ describe('Feature 21: Automated Test Suite & Code Quality (Syntax Verification)'
         assert.strictEqual(output.trim(), '', 'node --check compound_dictionary.js should produce no error output');
     });
 
+    test('T1.3c: node --check ai_compound_classifier.js succeeds with exit code 0', () => {
+        const aiPath = path.join(PROJECT_ROOT, 'ai_compound_classifier.js');
+        const output = execSync(`node --check "${aiPath}"`, { encoding: 'utf8' });
+        assert.strictEqual(output.trim(), '', 'node --check ai_compound_classifier.js should produce no error output');
+    });
+
     test('T1.4: node --check sw.js succeeds with exit code 0', () => {
         const swPath = path.join(PROJECT_ROOT, 'sw.js');
         const output = execSync(`node --check "${swPath}"`, { encoding: 'utf8' });
@@ -91,7 +97,7 @@ describe('Feature 21: Automated Test Suite & Code Quality (Syntax Verification)'
     });
 
     test('T2.2: JavaScript files use UTF-8 character encoding without BOM marks', () => {
-        const jsFiles = ['app.js', 'server.js', 'words_blacklist.js', 'compound_dictionary.js', 'sw.js', 'firebase-client.js'];
+        const jsFiles = ['app.js', 'server.js', 'words_blacklist.js', 'compound_dictionary.js', 'ai_compound_classifier.js', 'sw.js', 'firebase-client.js'];
         for (const file of jsFiles) {
             const buffer = fs.readFileSync(path.join(PROJECT_ROOT, file));
             // Check for UTF-8 BOM: EF BB BF

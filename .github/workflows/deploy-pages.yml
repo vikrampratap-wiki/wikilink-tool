@@ -34,7 +34,7 @@ jobs:
           rm -rf _site
           mkdir -p _site
           cp index.html logs.html about.html login.html _site/
-          cp app.js firebase-client.js words_blacklist.js compound_dictionary.js style.css sw.js manifest.json _site/
+          cp app.js firebase-client.js words_blacklist.js compound_dictionary.js ai_compound_classifier.js style.css sw.js manifest.json _site/
           cp icon.svg apple-touch-icon.png pwa-192x192.png pwa-512x512.png pwa-maskable-512x512.png _site/
           cp index.html _site/404.html
           touch _site/.nojekyll
