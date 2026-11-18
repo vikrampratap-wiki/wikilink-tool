@@ -1,0 +1,39 @@
+{
+  "id": "./",
+  "name": "विकीलिंक सहायक (WikiLink Assistant) — विकिपीडिया आंतरिक कड़ी एवं शुद्धिकरण कार्यपटल",
+  "short_name": "WikiLink",
+  "description": "विकिपीडिया लेखों में आंतरिक कड़ियाँ जोड़ने, दूषित कड़ियों को शुद्ध करने और लाइव MediaWiki डिफ़ देखने का ऑफ़लाइन-सक्षम उपकरण।",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#0969da",
+  "background_color": "#f6f8fa",
+  "lang": "hi",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "./pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
