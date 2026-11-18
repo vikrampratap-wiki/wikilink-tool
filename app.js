@@ -403,6 +403,23 @@
         ['ब्रह्मपुत्र', 'ब्रह्मपुत्र नदी'],
         ['नर्मदा', 'नर्मदा नदी'],
         ['गोदावरी', 'गोदावरी नदी'],
+        ['भारत का संविधान', 'भारत का संविधान'],
+        ['भारत के राष्ट्रपति', 'भारत के राष्ट्रपति'],
+        ['भारत के प्रधानमंत्री', 'भारत के प्रधानमंत्री'],
+        ['भारत का सर्वोच्च न्यायालय', 'भारत का सर्वोच्च न्यायालय'],
+        ['भारतीय रिजर्व बैंक', 'भारतीय रिज़र्व बैंक'],
+        ['राष्ट्रीय राजमार्ग', 'राष्ट्रीय राजमार्ग'],
+        ['परमाणु ऊर्जा आयोग', 'परमाणु ऊर्जा आयोग'],
+        ['उत्तर प्रदेश', 'उत्तर प्रदेश'],
+        ['उत्तर प्रदेश सरकार', 'उत्तर प्रदेश सरकार'],
+        ['विश्व स्वास्थ्य संगठन', 'विश्व स्वास्थ्य संगठन'],
+        ['संयुक्त राष्ट्र', 'संयुक्त राष्ट्र'],
+        ['संयुक्त राष्ट्र संघ', 'संयुक्त राष्ट्र'],
+        ['संयुक्त राष्ट्र सुरक्षा परिषद', 'संयुक्त राष्ट्र सुरक्षा परिषद'],
+        ['भारतीय स्टेट बैंक', 'भारतीय स्टेट बैंक'],
+        ['नीति आयोग', 'नीति आयोग'],
+        ['चुनाव आयोग', 'भारत निर्वाचन आयोग'],
+        ['वित्त आयोग', 'वित्त आयोग'],
         ['भारतीय संविधान', 'भारतीय संविधान'],
         ['भारतीय संविधान सभा', 'भारतीय संविधान सभा'],
         ['राज्य सभा', 'राज्य सभा'],
@@ -2553,7 +2570,15 @@
         'सौर', 'अंतरिक्ष', 'अन्तरिक्ष', 'मौसम', 'भौतिक', 'रसायन', 'जीव', 'सामाजिक', 'राजनीतिक', 'आर्थिक', 'मानव',
         'लोक', 'शास्त्रीय', 'बौद्ध', 'जैन', 'हिन्दू', 'इस्लाम', 'सिख', 'ईसाई', 'छोड़ो', 'अनुसंधान', 'असहयोग',
         // प्रशासनिक, संवैधानिक एवं नागरिक घटक (R1 Civic Allowlist Expansion)
-        'राज्य', 'सभा', 'विधान', 'नगर', 'निगम', 'ग्राम', 'पंचायत', 'संसद', 'सदन', 'पालिका', 'अदालत', 'प्राधिकरण'
+        'राज्य', 'सभा', 'विधान', 'नगर', 'निगम', 'ग्राम', 'पंचायत', 'संसद', 'सदन', 'पालिका', 'अदालत', 'प्राधिकरण',
+        // कार्यकारी, न्यायिक, वैज्ञानिक एवं संस्थागत घटक (Compound Entities)
+        'राष्ट्रपति', 'उपराष्ट्रपति', 'प्रधानमंत्री', 'प्रधानमन्त्री', 'मुख्यमंत्री', 'मुख्यमन्त्री', 'राज्यपाल', 'उपराज्यपाल', 'न्यायाधीश',
+        'महान्यायवादी', 'महाधिवक्ता', 'महासचिव', 'अध्यक्ष', 'उपाध्यक्ष', 'आयुक्त', 'महानिदेशक', 'राजमार्ग', 'मार्ग', 'सेतु', 'पुल',
+        'बंदरगाह', 'हवाई अड्डा', 'स्टेशन', 'परियोजना', 'केन्द्र', 'केंद्र', 'मंत्रिमंडल', 'मन्त्रिमण्डल', 'मंत्रिपरिषद', 'सचिवालय',
+        'निदेशालय', 'मुख्यालय', 'कार्यालय', 'न्यायाधिकरण', 'ट्रिब्यूनल', 'अधिनियम', 'विधेयक', 'समीक्षा', 'रिपोर्ट', 'अभिलेख',
+        'सेना', 'सुरक्षा', 'रक्षा', 'पुलिस', 'बल', 'कमांड', 'कमान', 'प्रकोष्ठ', 'शाखा', 'कोष', 'निधि', 'बीमा', 'कंपनी', 'उद्योग',
+        'व्यापार', 'लिमिटेड', 'ऊर्जा', 'पवन', 'जल', 'विद्युत', 'खनिज', 'खनन', 'पेट्रोलियम', 'रॉकेट', 'मिसाइल', 'वेधशाला', 'प्रयोगशाला',
+        'पर्यावरण', 'वन', 'जलवायु', 'भूगोल', 'भूविज्ञान', 'पारिस्थितिकी'
     ]);
 
     function extractCandidates(cleanText, lang) {
@@ -2647,17 +2672,35 @@
         if (parts.length > 1) {
             if (OFFLINE_VERIFIED_WIKI_TITLES.has(phrase)) return true;
 
+            const firstWord = parts[0];
             const lastWord = parts[parts.length - 1];
 
-            // बहु-शब्द पद में कोई भी शब्द परसर्ग, क्रिया, सर्वनाम, तिथि, मात्रक या सामान्य विशेषण नहीं होना चाहिए
-            if (parts.some(p =>
-                stopwordSet.has(p) ||
+            // 1. पहला या अंतिम शब्द कभी भी स्टॉपवर्ड, क्रिया-सीमा, तिर्यक या सम्मानसूचक नहीं हो सकता
+            if (
+                stopwordSet.has(firstWord) ||
+                stopwordSet.has(lastWord) ||
+                HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(firstWord) ||
+                HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(lastWord) ||
+                STRICT_PHRASE_BREAKER_WORDS.has(firstWord) ||
+                STRICT_PHRASE_BREAKER_WORDS.has(lastWord) ||
+                HONORIFIC_PREFIXES.has(lastWord) ||
+                (state.customBlacklist && (state.customBlacklist.has(firstWord) || state.customBlacklist.has(lastWord))) ||
+                (state.approvedGlobalBlacklist && (state.approvedGlobalBlacklist.has(firstWord) || state.approvedGlobalBlacklist.has(lastWord)))
+            ) {
+                return false;
+            }
+
+            // 2. आंतरिक शब्द (parts.slice(1, -1)) केवल मान्य संबंध/योजक परसर्ग हो सकते हैं (जैसे 'का', 'के', 'की', 'तथा', 'एवं', 'ऑफ', 'से', 'पर', 'में')
+            const ALLOWED_INTERNAL_CONNECTORS = new Set(['का', 'के', 'की', 'तथा', 'एवं', 'ऑफ', 'से', 'पर', 'में', 'द', 'और']);
+            const internalParts = parts.slice(1, -1);
+            if (internalParts.some(p =>
                 HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p) ||
                 STRICT_PHRASE_BREAKER_WORDS.has(p) ||
                 DATE_WORDS.has(p) ||
                 UNITS_OF_MEASURE.has(p) ||
                 (state.customBlacklist && state.customBlacklist.has(p)) ||
-                (state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(p))
+                (state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(p)) ||
+                (stopwordSet.has(p) && !ALLOWED_INTERNAL_CONNECTORS.has(p))
             )) {
                 return false;
             }
@@ -6797,6 +6840,22 @@
             });
         }
 
+        // एडमिन एनालिटिक्स ग्राफ़ दृश्य स्विच चिप्स
+        const btnGraphStatus = $('btn-admin-graph-status');
+        if (btnGraphStatus) {
+            btnGraphStatus.addEventListener('click', () => {
+                state.adminGraphMode = 'status';
+                renderAdminAnalyticsGraph();
+            });
+        }
+        const btnGraphPolicy = $('btn-admin-graph-policy');
+        if (btnGraphPolicy) {
+            btnGraphPolicy.addEventListener('click', () => {
+                state.adminGraphMode = 'policy';
+                renderAdminAnalyticsGraph();
+            });
+        }
+
         // एडमिन पैनल अनुरोध स्थिति फ़िल्टर चिप्स
         document.querySelectorAll('.admin-req-filter-chip[data-admin-req-status]').forEach(chip => {
             chip.addEventListener('click', () => {
@@ -7468,12 +7527,13 @@
     function evaluateWordLogicalPolicyForAdmin(rawWord, lang = 'hi') {
         const w = String(rawWord || '').trim();
         const lower = w.toLowerCase();
-        const isStop = isStopword(w, lang) || STRICT_PHRASE_BREAKER_WORDS.has(lower);
-        const isCommon = isNonLinkableWord(w, lang);
-        const isDateOrNum = isDateOrYear(w) || /^\d+$/.test(w);
-        const isUnit = isUnitOrMeasure(w);
-        const isInflected = isInflectedHindiPluralOrOblique(w) || HONORIFIC_PREFIXES.has(lower);
-        const isAlreadyApproved = state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(lower);
+        const stopSet = STOPWORDS[lang] || STOPWORDS.hi || new Set();
+        const isStop = Boolean(stopSet && stopSet.has(lower)) || (typeof STRICT_PHRASE_BREAKER_WORDS !== 'undefined' && STRICT_PHRASE_BREAKER_WORDS.has(lower));
+        const isCommon = typeof isNonLinkableWord === 'function' ? isNonLinkableWord(w, lang) : false;
+        const isDateOrNum = (typeof DATE_WORDS !== 'undefined' && DATE_WORDS.has(lower)) || /^\d+$/.test(w) || /^[०-९]+$/.test(w);
+        const isUnit = typeof UNITS_OF_MEASURE !== 'undefined' && UNITS_OF_MEASURE.has(lower);
+        const isInflected = (typeof isInflectedHindiPluralOrOblique === 'function' && isInflectedHindiPluralOrOblique(w)) || (typeof HONORIFIC_PREFIXES !== 'undefined' && HONORIFIC_PREFIXES.has(lower));
+        const isAlreadyApproved = Boolean(state.approvedGlobalBlacklist && state.approvedGlobalBlacklist.has(lower));
         const lenOk = w.length >= 3;
 
         const rules = [
@@ -7620,6 +7680,145 @@
         }
     }
 
+    function renderAdminAnalyticsGraph() {
+        const container = $('admin-analytics-graph-container');
+        if (!container) return;
+
+        const requests = state.blacklistRequestsList || [];
+        const mode = state.adminGraphMode || 'status';
+
+        const pendingCount = requests.filter(r => r.status === 'pending').length;
+        const approvedCount = requests.filter(r => r.status === 'approved').length;
+        const rejectedCount = requests.filter(r => r.status === 'rejected').length;
+        const total = requests.length;
+
+        const btnStatus = $('btn-admin-graph-status');
+        const btnPolicy = $('btn-admin-graph-policy');
+        if (btnStatus) btnStatus.classList.toggle('active-chip', mode === 'status');
+        if (btnPolicy) btnPolicy.classList.toggle('active-chip', mode === 'policy');
+
+        if (mode === 'status') {
+            const pendingPct = total > 0 ? Math.round((pendingCount / total) * 100) : 0;
+            const approvedPct = total > 0 ? Math.round((approvedCount / total) * 100) : 0;
+            const rejectedPct = total > 0 ? Math.round((rejectedCount / total) * 100) : 0;
+
+            const maxBar = Math.max(1, pendingCount, approvedCount, rejectedCount);
+            const pBarH = total > 0 ? Math.max(12, Math.round((pendingCount / maxBar) * 110)) : 16;
+            const aBarH = total > 0 ? Math.max(12, Math.round((approvedCount / maxBar) * 110)) : 16;
+            const rBarH = total > 0 ? Math.max(12, Math.round((rejectedCount / maxBar) * 110)) : 16;
+
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary);">
+                            कुल दर्ज अनुरोध: <strong>${total}</strong> (लंबित: <span style="color: #d97706;">${pendingCount}</span> · स्वीकृत: <span style="color: #2563eb;">${approvedCount}</span> · अस्वीकृत: <span style="color: #dc2626;">${rejectedCount}</span>)
+                        </span>
+                    </div>
+
+                    <!-- SVG Bar Chart -->
+                    <div style="width: 100%; overflow-x: auto;">
+                        <svg viewBox="0 0 520 180" style="width: 100%; max-width: 560px; height: 180px; display: block; margin: 0 auto;" aria-label="अनुरोध स्थिति ग्राफ़">
+                            <line x1="40" y1="140" x2="480" y2="140" stroke="var(--border-color)" stroke-width="1.5" />
+                            <line x1="40" y1="40" x2="480" y2="40" stroke="var(--border-color)" stroke-dasharray="3,3" stroke-width="1" opacity="0.6" />
+                            <line x1="40" y1="90" x2="480" y2="90" stroke="var(--border-color)" stroke-dasharray="3,3" stroke-width="1" opacity="0.6" />
+
+                            <!-- Bar 1: Pending (Amber) -->
+                            <rect x="80" y="${140 - pBarH}" width="80" height="${pBarH}" rx="6" fill="#f59e0b" opacity="0.9" />
+                            <text x="120" y="${132 - pBarH}" text-anchor="middle" font-size="12" font-weight="800" fill="var(--text-primary)">${pendingCount} (${pendingPct}%)</text>
+                            <text x="120" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)">लंबित</text>
+
+                            <!-- Bar 2: Approved (Blue) -->
+                            <rect x="220" y="${140 - aBarH}" width="80" height="${aBarH}" rx="6" fill="#2563eb" opacity="0.9" />
+                            <text x="260" y="${132 - aBarH}" text-anchor="middle" font-size="12" font-weight="800" fill="var(--text-primary)">${approvedCount} (${approvedPct}%)</text>
+                            <text x="260" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)">स्वीकृत</text>
+
+                            <!-- Bar 3: Rejected (Red) -->
+                            <rect x="360" y="${140 - rBarH}" width="80" height="${rBarH}" rx="6" fill="#ef4444" opacity="0.9" />
+                            <text x="400" y="${132 - rBarH}" text-anchor="middle" font-size="12" font-weight="800" fill="var(--text-primary)">${rejectedCount} (${rejectedPct}%)</text>
+                            <text x="400" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)">अस्वीकृत</text>
+                        </svg>
+                    </div>
+
+                    <!-- Legend & Interpretation -->
+                    <div style="display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-size: 0.78rem;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 10px; height: 10px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
+                            लंबित (Pending): ${pendingCount}
+                        </span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 10px; height: 10px; border-radius: 2px; background: #2563eb; display: inline-block;"></span>
+                            स्वीकृत (Approved): ${approvedCount}
+                        </span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 10px; height: 10px; border-radius: 2px; background: #ef4444; display: inline-block;"></span>
+                            अस्वीकृत (Rejected): ${rejectedCount}
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Mode: Policy Distribution
+            const policyTallies = {
+                'WP:NOTLINKED': 0,
+                'WP:STOPWORDS': 0,
+                'WP:DATELINK': 0,
+                'तिर्यक/उपसर्ग': 0,
+                'कड़ी योग्य पद': 0
+            };
+
+            requests.forEach(r => {
+                const w = String(r.word || r.term || '');
+                const diag = evaluateWordLogicalPolicyForAdmin(w, r.lang || 'hi');
+                const badge = diag.shortBadge || '';
+                if (badge.includes('NOTLINKED')) policyTallies['WP:NOTLINKED']++;
+                else if (badge.includes('व्याकरणिक')) policyTallies['WP:STOPWORDS']++;
+                else if (badge.includes('तिथि') || badge.includes('माप')) policyTallies['WP:DATELINK']++;
+                else if (badge.includes('तिर्यक')) policyTallies['तिर्यक/उपसर्ग']++;
+                else policyTallies['कड़ी योग्य पद']++;
+            });
+
+            const pItems = Object.entries(policyTallies);
+            const pMax = Math.max(1, ...Object.values(policyTallies));
+
+            const colors = {
+                'WP:NOTLINKED': '#d97706',
+                'WP:STOPWORDS': '#0284c7',
+                'WP:DATELINK': '#8b5cf6',
+                'तिर्यक/उपसर्ग': '#ec4899',
+                'कड़ी योग्य पद': '#10b981'
+            };
+
+            const barsHtml = pItems.map(([cat, val]) => {
+                const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                const barWidthPct = Math.max(4, Math.round((val / pMax) * 100));
+                const col = colors[cat] || '#64748b';
+                return `
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.8rem;">
+                        <span style="width: 130px; font-weight: 700; color: var(--text-secondary); text-align: right; flex-shrink: 0;">${escapeHtml(cat)}</span>
+                        <div style="flex: 1; height: 18px; background: var(--bg-main); border-radius: 9px; overflow: hidden; border: 1px solid var(--border-color);">
+                            <div style="width: ${barWidthPct}%; height: 100%; background: ${col}; border-radius: 9px; transition: width 0.3s ease;"></div>
+                        </div>
+                        <span style="width: 70px; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--text-primary); flex-shrink: 0;">${val} (${pct}%)</span>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary);">
+                        विकिपीडिया 7-नियम नीति अनुसार अनुरोध वर्गीकरण (कुल: <strong>${total}</strong> अनुरोध)
+                    </span>
+                    <div style="display: flex; flex-direction: column;">
+                        ${barsHtml}
+                    </div>
+                    <small style="color: var(--text-muted); font-size: 0.74rem;">
+                        स्वचालित निदान विकिपीडिया दिशा-निर्देशों (WP:NOTLINKED, WP:STOPWORDS, WP:OVERLINKING) पर आधारित है।
+                    </small>
+                </div>
+            `;
+        }
+    }
+
     function renderAdminPanelUI() {
         const adminHeaderBtn = $('admin-header-btn');
         const vnavAdminBtn = $('vnav-btn-admin');
@@ -7669,6 +7868,8 @@
         safeSetText('admin-stat-rejected', String(rejectedReqs.length));
         const builtInCount = (NEVER_LINK_WORDS.hi ? NEVER_LINK_WORDS.hi.size : 7479) + approvedList.length;
         safeSetText('admin-stat-global-total', `${builtInCount.toLocaleString('hi-IN')}+`);
+
+        renderAdminAnalyticsGraph();
 
         const btnApproveAll = $('btn-admin-approve-all-pending');
         const btnRejectAll = $('btn-admin-reject-all-pending');

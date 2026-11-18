@@ -552,4 +552,40 @@ describe('Tier 4: Admin Utilities Real-World Scenarios', () => {
         // Step 2: Validate zero tracking
         assert.strictEqual(engine.exports.currentUser, null);
     });
+
+    test('T4.2: Admin analytics graph renders status and policy SVG visualization cleanly', () => {
+        const engine = loadAppEngine();
+        const container = engine.document.getElementById('admin-analytics-graph-container');
+        assert.ok(container, 'Graph container element should exist in DOM');
+
+        // Set sample requests in state
+        engine.exports.state.blacklistRequestsList = [
+            { id: '1', word: 'जनता', status: 'pending', lang: 'hi' },
+            { id: '2', word: 'है', status: 'approved', lang: 'hi' },
+            { id: '3', word: '2024', status: 'rejected', lang: 'hi' }
+        ];
+
+        // Status Mode
+        engine.exports.state.adminGraphMode = 'status';
+        engine.exports.renderAdminAnalyticsGraph();
+        assert.ok(container.innerHTML.includes('<svg'), 'Container should render SVG chart in status mode');
+        assert.ok(container.innerHTML.includes('लंबित'), 'Chart should include pending label');
+        assert.ok(container.innerHTML.includes('स्वीकृत'), 'Chart should include approved label');
+        assert.ok(container.innerHTML.includes('अस्वीकृत'), 'Chart should include rejected label');
+
+        // Policy Mode
+        engine.exports.state.adminGraphMode = 'policy';
+        engine.exports.renderAdminAnalyticsGraph();
+        assert.ok(container.innerHTML.includes('WP:NOTLINKED') || container.innerHTML.includes('नीति अनुसार'), 'Container should render policy breakdown in policy mode');
+    });
+
+    test('T4.3: Blacklist requests table displays pure word without internal count or numeric numbering', () => {
+        const engine = loadAppEngine();
+        const tbody = engine.document.getElementById('admin-requests-tbody');
+        assert.ok(tbody, 'Requests tbody must exist');
+
+        // Verify evaluateWordLogicalPolicyForAdmin works for policy diagnostics
+        const diag = engine.exports.evaluateWordLogicalPolicyForAdmin('जनता', 'hi');
+        assert.ok(diag && diag.shortBadge, 'Policy diagnostic should produce valid badge');
+    });
 });

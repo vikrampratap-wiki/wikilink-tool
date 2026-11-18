@@ -477,4 +477,51 @@ describe('Tier 4: Compound Terms Real-World Scenarios', () => {
         assert.ok(res.includes('[[भारत का संविधान]]'));
         assert.ok(res.includes('[[संविधान सभा]]'));
     });
+
+    test('T4.2: Compound noun with internal connector "भारत के राष्ट्रपति" and "भारतीय रिजर्व बैंक" preserved without fragmentation', () => {
+        const engine = loadAppEngine();
+        const text = 'भारत के राष्ट्रपति ने भारतीय रिजर्व बैंक और राष्ट्रीय राजमार्ग प्राधिकरण की समीक्षा की।';
+        const suggestions = [
+            { term: 'भारत के राष्ट्रपति', checked: true },
+            { term: 'भारतीय रिजर्व बैंक', checked: true },
+            { term: 'राष्ट्रीय राजमार्ग', checked: true },
+            { term: 'भारत', checked: true },
+            { term: 'राष्ट्रपति', checked: true },
+            { term: 'बैंक', checked: true }
+        ];
+        const res = applySuggestions(engine, text, suggestions, true);
+        assert.ok(res.includes('[[भारत के राष्ट्रपति]]'), 'Compound phrase with connector must be linked as whole');
+        assert.ok(res.includes('[[भारतीय रिजर्व बैंक]]'), 'Compound banking institution must be linked as whole');
+        assert.ok(res.includes('[[राष्ट्रीय राजमार्ग]]'), 'Compound infrastructure term must be linked as whole');
+        assert.strictEqual(res.includes('[[भारत]] के [[राष्ट्रपति]]'), false, 'Constituent words must not be fragmented into separate links');
+        assert.strictEqual(res.includes('[[भारतीय]] [[रिजर्व]]'), false, 'Sub-words must not be double-linked');
+    });
+
+    test('T4.3: Multi-word compound candidates validated by isValidCandidate', () => {
+        const engine = loadAppEngine();
+        const isValid = engine.exports.isValidCandidate;
+        const stop = engine.exports.STOPWORDS.hi;
+
+        assert.strictEqual(isValid('भारत का संविधान', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('भारत के राष्ट्रपति', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('भारतीय रिजर्व बैंक', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('राष्ट्रीय राजमार्ग', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('परमाणु ऊर्जा आयोग', 3, true, true, true, stop, 'hi', true, true), true);
+
+        // Invalid phrases starting or ending with stopwords or verbs
+        assert.strictEqual(isValid('और भारत का', 3, true, true, true, stop, 'hi', true, true), false);
+        assert.strictEqual(isValid('भारत जो है', 3, true, true, true, stop, 'hi', true, true), false);
+    });
+
+    test('T4.4: Repeated compound with internal connector shielded on repeat occurrence without leaking tokens', () => {
+        const engine = loadAppEngine();
+        const text = 'भारत के राष्ट्रपति ने भाषण दिया। भारत के राष्ट्रपति ने पदक प्रदान किए।';
+        const suggestions = [
+            { term: 'भारत के राष्ट्रपति', checked: true }
+        ];
+        const res = applySuggestions(engine, text, suggestions, true);
+        assert.ok(res.includes('[[भारत के राष्ट्रपति]] ने भाषण दिया। भारत के राष्ट्रपति'));
+        assert.strictEqual(res.includes('[[भारत के राष्ट्रपति]] ने पदक'), false, 'Second occurrence must not be linked when firstOnly=true');
+        assert.strictEqual(/[\x01\x02]/.test(res), false, 'Must not leak control bytes');
+    });
 });

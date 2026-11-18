@@ -151,6 +151,7 @@ global.__TEST_EXPORTS__ = {
   runBulkWikitextDiagnostic: typeof runBulkWikitextDiagnostic !== 'undefined' ? runBulkWikitextDiagnostic : null,
   simulateWikitextLinking: typeof simulateWikitextLinking !== 'undefined' ? simulateWikitextLinking : null,
   evaluateWordLogicalPolicyForAdmin: typeof evaluateWordLogicalPolicyForAdmin !== 'undefined' ? evaluateWordLogicalPolicyForAdmin : null,
+  renderAdminAnalyticsGraph: typeof renderAdminAnalyticsGraph !== 'undefined' ? renderAdminAnalyticsGraph : null,
   parseWikitextForHealth: typeof parseWikitextForHealth !== 'undefined' ? parseWikitextForHealth : null,
   ensureExtendedBlacklistLoaded: typeof ensureExtendedBlacklistLoaded !== 'undefined' ? ensureExtendedBlacklistLoaded : null,
   NEVER_LINK_WORDS: typeof NEVER_LINK_WORDS !== 'undefined' ? NEVER_LINK_WORDS : null,

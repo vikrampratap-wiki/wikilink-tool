@@ -545,6 +545,26 @@
                                 </div>
                             </div>
 
+                            <!-- तार्किक विश्लेषणात्मक डैशबोर्ड ग्राफ़ (Admin Visual Analytics Graph) -->
+                            <div class="admin-logical-step-box" id="admin-analytics-graph-box" style="margin-bottom: 18px;">
+                                <div class="admin-step-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span class="theme-step-badge" style="background: var(--primary-light); color: var(--primary-color);">V</span>
+                                        <div>
+                                            <h3 class="admin-sub-heading" style="margin-bottom: 2px;">बहिष्कार अनुरोध स्थिति एवं विकिपीडिया नीति वितरण ग्राफ़ (Admin Analytics)</h3>
+                                            <p class="theme-studio-desc">बहिष्कार अनुरोधों की वास्तविक स्थिति तथा 7-नियम विकिपीडिया नीतिगत वितरण का लाइव दृश्य विश्लेषण:</p>
+                                        </div>
+                                    </div>
+                                    <div class="admin-graph-toggle-chips" style="display: flex; gap: 6px;">
+                                        <button type="button" class="btn btn-chip btn-sm active-chip" id="btn-admin-graph-status" data-graph-mode="status">अनुरोध स्थिति (Status)</button>
+                                        <button type="button" class="btn btn-chip btn-sm" id="btn-admin-graph-policy" data-graph-mode="policy">नीति वितरण (Policies)</button>
+                                    </div>
+                                </div>
+                                <div id="admin-analytics-graph-container" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; min-height: 200px;">
+                                    <!-- इंटरएक्टिव SVG ग्राफ़ यहाँ रेंडर होगा -->
+                                </div>
+                            </div>
+
                             <!-- तार्किक चरण 1: नीति-आधारित सीधा शब्द बहिष्कार एवं 7-नियम परीक्षण -->
                             <div class="admin-logical-step-box">
                                 <div class="admin-step-header">
