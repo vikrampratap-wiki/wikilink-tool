@@ -42,11 +42,29 @@ function loadBlacklist() {
 }
 
 /**
+ * Loads the compound_dictionary.js dictionary.
+ * Supports both CommonJS exports and global variable fallback.
+ */
+function loadCompoundDictionary() {
+    const dictPath = path.join(PROJECT_ROOT, 'compound_dictionary.js');
+    delete require.cache[require.resolve(dictPath)];
+    const exported = require(dictPath);
+    if (Array.isArray(exported)) {
+        return exported;
+    }
+    if (exported && Array.isArray(exported.COMPOUND_20K_TERMS)) {
+        return exported.COMPOUND_20K_TERMS;
+    }
+    throw new Error('Unable to resolve COMPOUND_20K_TERMS array from compound_dictionary.js');
+}
+
+/**
  * Creates a mock DOM and Window environment and evaluates app.js.
  * Exposes core functions and internal state objects for direct, opaque-box testing.
  */
 function loadAppEngine(customOptions = {}) {
     const words = customOptions.blacklist || loadBlacklist();
+    const compounds = customOptions.compounds || loadCompoundDictionary();
 
     const storageMap = new Map();
     const mockLocalStorage = {
@@ -124,6 +142,7 @@ function loadAppEngine(customOptions = {}) {
         addEventListener: () => {},
         removeEventListener: () => {},
         COMMON_5000_WORDS: words,
+        COMPOUND_20K_TERMS: compounds,
         console: console,
         setTimeout: global.setTimeout,
         clearTimeout: global.clearTimeout,
@@ -154,6 +173,9 @@ global.__TEST_EXPORTS__ = {
   renderAdminAnalyticsGraph: typeof renderAdminAnalyticsGraph !== 'undefined' ? renderAdminAnalyticsGraph : null,
   parseWikitextForHealth: typeof parseWikitextForHealth !== 'undefined' ? parseWikitextForHealth : null,
   ensureExtendedBlacklistLoaded: typeof ensureExtendedBlacklistLoaded !== 'undefined' ? ensureExtendedBlacklistLoaded : null,
+  ensureCompoundDictionaryLoaded: typeof ensureCompoundDictionaryLoaded !== 'undefined' ? ensureCompoundDictionaryLoaded : null,
+  COMPOUND_TERMS_SET: typeof COMPOUND_TERMS_SET !== 'undefined' ? COMPOUND_TERMS_SET : null,
+  OFFLINE_VERIFIED_WIKI_TITLES: typeof OFFLINE_VERIFIED_WIKI_TITLES !== 'undefined' ? OFFLINE_VERIFIED_WIKI_TITLES : null,
   NEVER_LINK_WORDS: typeof NEVER_LINK_WORDS !== 'undefined' ? NEVER_LINK_WORDS : null,
   COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST: typeof COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST !== 'undefined' ? COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST : null,
   STOPWORDS: typeof STOPWORDS !== 'undefined' ? STOPWORDS : null,
@@ -170,6 +192,9 @@ global.__TEST_EXPORTS__ = {
     vm.runInContext(code, ctx, { filename: 'app.js' });
     if (ctx.__TEST_EXPORTS__ && ctx.__TEST_EXPORTS__.ensureExtendedBlacklistLoaded) {
         ctx.__TEST_EXPORTS__.ensureExtendedBlacklistLoaded();
+    }
+    if (ctx.__TEST_EXPORTS__ && ctx.__TEST_EXPORTS__.ensureCompoundDictionaryLoaded) {
+        ctx.__TEST_EXPORTS__.ensureCompoundDictionaryLoaded();
     }
 
     return {
@@ -238,6 +263,16 @@ const Features = {
         try {
             const words = loadBlacklist();
             return new Set(words).size >= 10000;
+        } catch {
+            return false;
+        }
+    },
+
+    isCompoundDictionary20k() {
+        if (STRICT_MODE) return true;
+        try {
+            const terms = loadCompoundDictionary();
+            return new Set(terms).size >= 20000;
         } catch {
             return false;
         }
@@ -369,6 +404,7 @@ module.exports = {
     PROJECT_ROOT,
     PICTORIAL_EMOJI_REGEX,
     loadBlacklist,
+    loadCompoundDictionary,
     loadAppEngine,
     protect,
     unprotect,

@@ -6,7 +6,7 @@
 
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { loadAppEngine, applySuggestions, Features } = require('./harness.js');
+const { loadAppEngine, applySuggestions, loadCompoundDictionary, Features } = require('./harness.js');
 
 describe('Feature 1: Compound Longest-Match Priority', () => {
 
@@ -523,5 +523,122 @@ describe('Tier 4: Compound Terms Real-World Scenarios', () => {
         assert.ok(res.includes('[[भारत के राष्ट्रपति]] ने भाषण दिया। भारत के राष्ट्रपति'));
         assert.strictEqual(res.includes('[[भारत के राष्ट्रपति]] ने पदक'), false, 'Second occurrence must not be linked when firstOnly=true');
         assert.strictEqual(/[\x01\x02]/.test(res), false, 'Must not leak control bytes');
+    });
+});
+
+describe('Tier 5: 20,000+ Compound Terms Corpus & Extended Intelligence (R2)', () => {
+
+    test('T5.1: compound_dictionary.js contains >= 20,000 unique Devanagari multi-word terms (0 single words)', () => {
+        const terms = loadCompoundDictionary();
+        assert.ok(Array.isArray(terms), 'Compound dictionary must export an array');
+        assert.ok(terms.length >= 20000, `Must contain at least 20,000 terms, got ${terms.length}`);
+
+        const set = new Set(terms);
+        assert.strictEqual(set.size, terms.length, 'All terms must be strictly unique (0 duplicates)');
+
+        // Every term must be a multi-word compound (at least one space, 2+ words)
+        const singleWords = terms.filter(t => !t.trim().includes(' ') || t.trim().split(/\s+/).length < 2);
+        assert.strictEqual(singleWords.length, 0, `Compound dictionary must contain 0 single words, found ${singleWords.length}`);
+    });
+
+    test('T5.2: UMD compatibility of compound_dictionary.js in Node.js and window global', () => {
+        const engine = loadAppEngine();
+        assert.ok(engine.exports.COMPOUND_TERMS_SET, 'COMPOUND_TERMS_SET must be defined');
+        assert.ok(engine.exports.COMPOUND_TERMS_SET.size >= 20000, 'COMPOUND_TERMS_SET must hold >= 20,000 loaded terms');
+    });
+
+    test('T5.3: Extended connectors (एवं, तथा, द्वारा, हेतु, सहित) validated in multi-word compounds without rejection', () => {
+        const engine = loadAppEngine();
+        const isValid = engine.exports.isValidCandidate;
+        const stop = engine.exports.STOPWORDS.hi;
+
+        assert.strictEqual(isValid('सड़क परिवहन एवं राजमार्ग मंत्रालय', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('वैज्ञानिक तथा औद्योगिक अनुसंधान परिषद', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('स्वास्थ्य एवं परिवार कल्याण मंत्रालय', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('पर्यावरण वन एवं जलवायु परिवर्तन मंत्रालय', 3, true, true, true, stop, 'hi', true, true), true);
+        assert.strictEqual(isValid('विधि एवं न्याय मंत्रालय', 3, true, true, true, stop, 'hi', true, true), true);
+    });
+
+    test('T5.4: Boundary case-marker / external postposition stripping (ने, को, से, द्वारा)', () => {
+        const engine = loadAppEngine();
+        const text = 'सड़क परिवहन एवं राजमार्ग मंत्रालय ने नई नीति घोषित की।';
+        const suggestions = [
+            { term: 'सड़क परिवहन एवं राजमार्ग मंत्रालय', checked: true },
+            { term: 'मंत्रालय', checked: true }
+        ];
+        const res = applySuggestions(engine, text, suggestions, true);
+        assert.ok(res.includes('[[सड़क परिवहन एवं राजमार्ग मंत्रालय]] ने'), 'Entity must link without swallowing external postposition ने');
+        assert.strictEqual(res.includes('[[सड़क परिवहन एवं राजमार्ग मंत्रालय ने]]'), false, 'External postposition must not be inside wikilink');
+        assert.strictEqual(res.includes('[[मंत्रालय]]'), false, 'Sub-word must not fragment compound');
+    });
+
+    test('T5.5: Sub-word fragmentation prevention across multi-word institutional compounds', () => {
+        const engine = loadAppEngine();
+        const text = 'वैज्ञानिक तथा औद्योगिक अनुसंधान परिषद ने भारतीय अंतरिक्ष अनुसंधान संगठन और काजीरंगा राष्ट्रीय उद्यान के साथ मिलकर शोध किया।';
+        const suggestions = [
+            { term: 'वैज्ञानिक तथा औद्योगिक अनुसंधान परिषद', checked: true },
+            { term: 'भारतीय अंतरिक्ष अनुसंधान संगठन', checked: true },
+            { term: 'काजीरंगा राष्ट्रीय उद्यान', checked: true },
+            { term: 'वैज्ञानिक', checked: true },
+            { term: 'अनुसंधान', checked: true },
+            { term: 'परिषद', checked: true },
+            { term: 'संगठन', checked: true },
+            { term: 'उद्यान', checked: true }
+        ];
+        const res = applySuggestions(engine, text, suggestions, true);
+        assert.ok(res.includes('[[वैज्ञानिक तथा औद्योगिक अनुसंधान परिषद]]'));
+        assert.ok(res.includes('[[भारतीय अंतरिक्ष अनुसंधान संगठन]]'));
+        assert.ok(res.includes('[[काजीरंगा राष्ट्रीय उद्यान]]'));
+        assert.strictEqual(res.includes('[[वैज्ञानिक]]'), false, 'Sub-word वैज्ञानिक must not be linked separately');
+        assert.strictEqual(res.includes('[[अनुसंधान]]'), false, 'Sub-word अनुसंधान must not be linked separately');
+        assert.strictEqual(res.includes('[[परिषद]]'), false, 'Sub-word परिषद must not be linked separately');
+        assert.strictEqual(res.includes('[[संगठन]]'), false, 'Sub-word संगठन must not be linked separately');
+        assert.strictEqual(res.includes('[[उद्यान]]'), false, 'Sub-word उद्यान must not be linked separately');
+    });
+
+    test('T5.6: Offline verified mapping for compound terms in OFFLINE_VERIFIED_WIKI_TITLES', () => {
+        const engine = loadAppEngine();
+        const titles = engine.exports.OFFLINE_VERIFIED_WIKI_TITLES;
+        assert.ok(titles.has('सड़क परिवहन एवं राजमार्ग मंत्रालय'), 'Compound title must be in OFFLINE_VERIFIED_WIKI_TITLES');
+        assert.ok(titles.has('भारतीय अंतरिक्ष अनुसंधान संगठन'), 'ISRO must be in OFFLINE_VERIFIED_WIKI_TITLES');
+        assert.ok(titles.has('काजीरंगा राष्ट्रीय उद्यान'), 'National park must be in OFFLINE_VERIFIED_WIKI_TITLES');
+    });
+
+    test('T5.7: Memory consumption & lookup latency benchmark (< 100ms for 10000 lookups)', () => {
+        const engine = loadAppEngine();
+        const set = engine.exports.COMPOUND_TERMS_SET;
+        const testTerms = ['भारत के राष्ट्रपति', 'भारतीय रिजर्व बैंक', 'सड़क परिवहन एवं राजमार्ग मंत्रालय', 'अविद्यमान पद जो नहीं है'];
+        const t0 = performance.now();
+        for (let i = 0; i < 10000; i++) {
+            const t = testTerms[i % testTerms.length];
+            set.has(t);
+        }
+        const elapsed = performance.now() - t0;
+        assert.ok(elapsed < 100, `10,000 lookups took ${elapsed}ms, should be < 100ms`);
+    });
+
+    test('T5.8: Real-world multidomain text excerpt preserves compound integrity', () => {
+        const engine = loadAppEngine();
+        const text = 'भारत का संविधान और सर्वोच्च न्यायालय के निर्देशानुसार संघ लोक सेवा आयोग ने नई दिल्ली में परीक्षा आयोजित की। जिम कॉर्बेट राष्ट्रीय उद्यान और सुंदरवन राष्ट्रीय उद्यान में पर्यावरण संरक्षण हेतु कार्यशाला हुई।';
+        const suggestions = [
+            { term: 'भारत का संविधान', checked: true },
+            { term: 'सर्वोच्च न्यायालय', checked: true },
+            { term: 'संघ लोक सेवा आयोग', checked: true },
+            { term: 'जिम कॉर्बेट राष्ट्रीय उद्यान', checked: true },
+            { term: 'पर्यावरण संरक्षण', checked: true },
+            { term: 'संविधान', checked: true },
+            { term: 'न्यायालय', checked: true },
+            { term: 'आयोग', checked: true },
+            { term: 'उद्यान', checked: true }
+        ];
+        const res = applySuggestions(engine, text, suggestions, true);
+        assert.ok(res.includes('[[भारत का संविधान]]'));
+        assert.ok(res.includes('[[सर्वोच्च न्यायालय]]'));
+        assert.ok(res.includes('[[संघ लोक सेवा आयोग]]'));
+        assert.ok(res.includes('[[जिम कॉर्बेट राष्ट्रीय उद्यान]]'));
+        assert.ok(res.includes('[[पर्यावरण संरक्षण]]'));
+        assert.strictEqual(res.includes('[[संविधान]]'), false);
+        assert.strictEqual(res.includes('[[न्यायालय]]'), false);
+        assert.strictEqual(res.includes('[[आयोग]]'), false);
     });
 });

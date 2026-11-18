@@ -345,14 +345,19 @@
         window.addEventListener('load', () => {
             setTimeout(() => {
                 if ('requestIdleCallback' in window) {
-                    window.requestIdleCallback(() => fetchExtendedBlacklistScriptIfNeeded(), { timeout: 6000 });
+                    window.requestIdleCallback(() => {
+                        fetchExtendedBlacklistScriptIfNeeded();
+                        fetchCompoundDictionaryScriptIfNeeded();
+                    }, { timeout: 6000 });
                 } else {
                     fetchExtendedBlacklistScriptIfNeeded();
+                    fetchCompoundDictionaryScriptIfNeeded();
                 }
             }, 4000);
         }, { once: true });
     } else {
         ensureExtendedBlacklistLoaded();
+        ensureCompoundDictionaryLoaded();
     }
 
     // सम्मानसूचक उपसर्ग (Honorific Prefixes) — इन्हें अकेले 1-शब्द की कड़ी कभी न बनाएं (ताकि '[[महर्षि]] वाल्मीकि' जैसी अधूरी कड़ी न बने)
@@ -480,6 +485,77 @@
         ['रत्नावली', 'रत्नावली']
     ]);
 
+    // 20,000+ बहु-शब्द संयुक्त एवं सामासिक पद महा-कोष (R2 Compound Terms Corpus)
+    let compoundDictionaryLoaded = false;
+    let compoundScriptPromise = null;
+    const COMPOUND_TERMS_SET = new Set();
+
+    function ingestCompoundTermsArray(list) {
+        if (!Array.isArray(list) || list.length === 0) return;
+        for (let i = 0; i < list.length; i++) {
+            const item = list[i];
+            if (typeof item === 'string' && item.length > 0) {
+                const trimmed = item.trim();
+                COMPOUND_TERMS_SET.add(trimmed);
+                if (!OFFLINE_VERIFIED_WIKI_TITLES.has(trimmed)) {
+                    OFFLINE_VERIFIED_WIKI_TITLES.set(trimmed, trimmed);
+                }
+                if (trimmed.includes(',')) {
+                    const noComma = trimmed.replace(/,/g, '').replace(/\s+/g, ' ').trim();
+                    COMPOUND_TERMS_SET.add(noComma);
+                    if (!OFFLINE_VERIFIED_WIKI_TITLES.has(noComma)) {
+                        OFFLINE_VERIFIED_WIKI_TITLES.set(noComma, trimmed);
+                    }
+                }
+            }
+        }
+        compoundDictionaryLoaded = true;
+    }
+
+    function ensureCompoundDictionaryLoaded() {
+        if (compoundDictionaryLoaded) return;
+        try {
+            let compList = null;
+            if (typeof COMPOUND_20K_TERMS !== 'undefined' && Array.isArray(COMPOUND_20K_TERMS)) {
+                compList = COMPOUND_20K_TERMS;
+            } else if (typeof window !== 'undefined' && Array.isArray(window.COMPOUND_20K_TERMS)) {
+                compList = window.COMPOUND_20K_TERMS;
+            } else if (typeof global !== 'undefined' && Array.isArray(global.COMPOUND_20K_TERMS)) {
+                compList = global.COMPOUND_20K_TERMS;
+            } else if (typeof require !== 'undefined') {
+                try {
+                    compList = require('./compound_dictionary.js');
+                } catch (e) { }
+            }
+            if (Array.isArray(compList)) {
+                ingestCompoundTermsArray(compList);
+            }
+        } catch (e) {
+            console.warn('संयुक्त पद महा-कोष लोड करने में त्रुटि:', e);
+        }
+    }
+
+    function fetchCompoundDictionaryScriptIfNeeded() {
+        if (compoundDictionaryLoaded) return Promise.resolve();
+        ensureCompoundDictionaryLoaded();
+        if (compoundDictionaryLoaded) return Promise.resolve();
+        if (typeof document === 'undefined') return Promise.resolve();
+        if (!compoundScriptPromise) {
+            compoundScriptPromise = new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = './compound_dictionary.js';
+                script.async = true;
+                script.onload = () => {
+                    ensureCompoundDictionaryLoaded();
+                    resolve();
+                };
+                script.onerror = () => resolve();
+                document.head.appendChild(script);
+            });
+        }
+        return compoundScriptPromise;
+    }
+
     function isInflectedHindiPluralOrOblique(word) {
         if (!word || word.length < 4) return false;
         // देवनागरी बहुवचन या तिर्यक रूप (जैसे: ग्रन्थों, नदियों, भाषाएँ, पिंडों, उपग्रहों, कवियों, रचनाएँ, श्रृंखला, राज्यों)
@@ -492,9 +568,10 @@
     function isNonLinkableWord(term, lang = 'hi') {
         if (!term) return false;
         const trimmed = term.trim();
-        if (OFFLINE_VERIFIED_WIKI_TITLES.has(trimmed)) return false;
+        if (OFFLINE_VERIFIED_WIKI_TITLES.has(trimmed) || COMPOUND_TERMS_SET.has(trimmed)) return false;
 
         ensureExtendedBlacklistLoaded();
+        ensureCompoundDictionaryLoaded();
         const clean = trimmed.toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
         const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
 
@@ -1809,8 +1886,12 @@
         safeSetText('analyze-status-text', 'परीक्षण प्रक्रिया शुरू हो गई है: विकिटेक्स्ट विश्लेषण एवं कड़ियों की सुरक्षा...');
 
         try {
-            await fetchExtendedBlacklistScriptIfNeeded();
+            await Promise.all([
+                fetchExtendedBlacklistScriptIfNeeded(),
+                fetchCompoundDictionaryScriptIfNeeded()
+            ]);
             ensureExtendedBlacklistLoaded();
+            ensureCompoundDictionaryLoaded();
             const typedTitle = cleanWikiTitleFromInput(safeGetValue(DOM.pageInput));
             let wikitext = safeGetValue(DOM.rawWikitextInput).trim() || state.originalWikitext.trim();
 
@@ -2608,9 +2689,9 @@
                 if (token) words.push(token);
             }
 
-            // पूरे लेख के सभी वैध 1-शब्द, 2-शब्द, 3-शब्द और 4-शब्द उम्मीदवारों का निष्कासन (बिना 220 की कृत्रिम सीमा के)
+            // पूरे लेख के सभी वैध 1 से 6-शब्द उम्मीदवारों का निष्कासन (दीर्घतम ज्ञानकोशीय संयुक्त पद मिलान हेतु)
             for (let i = 0; i < words.length; i++) {
-                for (let n = 1; n <= 4; n++) {
+                for (let n = 1; n <= 6; n++) {
                     if (i + n <= words.length) {
                         const slice = words.slice(i, i + n);
                         const phrase = slice.join(' ').trim();
@@ -2626,7 +2707,7 @@
             }
         }
 
-        // सभी 1-शब्द और 2-शब्द उम्मीदवारों तथा वैध 3/4-शब्द संयुक्त पदों को एक साथ लौटाएँ (ताकि कोई भी शब्द न छूटे)
+        // सभी 1-शब्द और 2-शब्द उम्मीदवारों तथा वैध 3/4/5/6-शब्द संयुक्त पदों को एक साथ लौटाएँ (ताकि कोई भी शब्द न छूटे)
         return [...Array.from(oneAndTwoGrams), ...Array.from(threeAndFourGrams)];
     }
 
@@ -2670,7 +2751,7 @@
         const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
 
         if (parts.length > 1) {
-            if (OFFLINE_VERIFIED_WIKI_TITLES.has(phrase)) return true;
+            if (OFFLINE_VERIFIED_WIKI_TITLES.has(phrase) || (typeof COMPOUND_TERMS_SET !== 'undefined' && COMPOUND_TERMS_SET.has(phrase))) return true;
 
             const firstWord = parts[0];
             const lastWord = parts[parts.length - 1];
@@ -2690,12 +2771,15 @@
                 return false;
             }
 
-            // 2. आंतरिक शब्द (parts.slice(1, -1)) केवल मान्य संबंध/योजक परसर्ग हो सकते हैं (जैसे 'का', 'के', 'की', 'तथा', 'एवं', 'ऑफ', 'से', 'पर', 'में')
-            const ALLOWED_INTERNAL_CONNECTORS = new Set(['का', 'के', 'की', 'तथा', 'एवं', 'ऑफ', 'से', 'पर', 'में', 'द', 'और']);
+            // 2. आंतरिक शब्द (parts.slice(1, -1)) केवल मान्य संबंध/योजक परसर्ग हो सकते हैं (जैसे 'का', 'के', 'की', 'तथा', 'एवं', 'और', 'व', 'ऑफ', 'से', 'पर', 'में', 'द्वारा', 'हेतु', 'सहित', 'युक्त', 'स्थित', 'आधारित', 'संबंधी', 'द')
+            const ALLOWED_INTERNAL_CONNECTORS = new Set([
+                'का', 'के', 'की', 'तथा', 'एवं', 'और', 'व', 'ऑफ', 'से', 'पर', 'में',
+                'द्वारा', 'हेतु', 'सहित', 'युक्त', 'स्थित', 'आधारित', 'संबंधी', 'द'
+            ]);
             const internalParts = parts.slice(1, -1);
             if (internalParts.some(p =>
-                HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p) ||
-                STRICT_PHRASE_BREAKER_WORDS.has(p) ||
+                (HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p) && !ALLOWED_INTERNAL_CONNECTORS.has(p)) ||
+                (STRICT_PHRASE_BREAKER_WORDS.has(p) && !ALLOWED_INTERNAL_CONNECTORS.has(p)) ||
                 DATE_WORDS.has(p) ||
                 UNITS_OF_MEASURE.has(p) ||
                 (state.customBlacklist && state.customBlacklist.has(p)) ||
@@ -4748,6 +4832,14 @@
                 console.warn('words_blacklist.js fetch error for offline bundle', e);
             }
 
+            let compoundText = '';
+            try {
+                const cdRes = await fetch('compound_dictionary.js');
+                compoundText = await cdRes.text();
+            } catch (e) {
+                console.warn('compound_dictionary.js fetch error for offline bundle', e);
+            }
+
             const jsRes = await fetch('app.js');
             const jsText = await jsRes.text();
 
@@ -4757,6 +4849,9 @@
             htmlText = htmlText.replace('<link rel="stylesheet" href="style.css">', `<style>\n${cssText}\n</style>`);
             if (blacklistText) {
                 htmlText = htmlText.replace('<script src="words_blacklist.js"></script>', `<script>\n${blacklistText}\n</script>`);
+            }
+            if (compoundText) {
+                htmlText = htmlText.replace('<script src="compound_dictionary.js"></script>', `<script>\n${compoundText}\n</script>`);
             }
             htmlText = htmlText.replace('<script src="app.js"></script>', `<script>\n${jsText}\n</script>`);
 
