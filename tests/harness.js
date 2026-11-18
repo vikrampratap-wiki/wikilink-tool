@@ -201,7 +201,11 @@ global.__TEST_EXPORTS__ = {
   UNITS_OF_MEASURE: typeof UNITS_OF_MEASURE !== 'undefined' ? UNITS_OF_MEASURE : null,
   DOM: typeof DOM !== 'undefined' ? DOM : null,
   state: typeof state !== 'undefined' ? state : null,
-  currentUser: typeof currentUser !== 'undefined' ? currentUser : null
+  currentUser: typeof currentUser !== 'undefined' ? currentUser : null,
+  applySafeOfflineVerification: typeof applySafeOfflineVerification !== 'undefined' ? applySafeOfflineVerification : null,
+  renderSuggestionsTable: typeof renderSuggestionsTable !== 'undefined' ? renderSuggestionsTable : null,
+  renderAdminPanelUI: typeof renderAdminPanelUI !== 'undefined' ? renderAdminPanelUI : null,
+  getFilteredSuggestions: typeof getFilteredSuggestions !== 'undefined' ? getFilteredSuggestions : null
 };
 })();`;
 
@@ -370,6 +374,132 @@ const Features = {
             const content = fs.readFileSync(path.join(PROJECT_ROOT, relPath), 'utf8');
             const matches = content.match(PICTORIAL_EMOJI_REGEX);
             return !matches || matches.length === 0;
+        } catch {
+            return false;
+        }
+    },
+
+    isAiModeOffStrictEnforcement() {
+        if (STRICT_MODE) return true;
+        try {
+            const engine = loadAppEngine();
+            engine.exports.state.optAiCompoundClassifier = false;
+            if (engine.exports.DOM && engine.exports.DOM.optAiCompoundClassifier) {
+                engine.exports.DOM.optAiCompoundClassifier.checked = false;
+            }
+            const nonDict = 'डिजिटल साक्षरता अभियान';
+            const inDict = engine.exports.COMPOUND_TERMS_SET && engine.exports.COMPOUND_TERMS_SET.has(nonDict);
+            if (inDict) return true;
+            const valid = engine.exports.isValidCandidate(nonDict, 3, true, true, true, engine.exports.STOPWORDS.hi, 'hi', true, true);
+            return !valid;
+        } catch {
+            return false;
+        }
+    },
+
+    isAiBeyondDictionaryEnabled() {
+        if (STRICT_MODE) return true;
+        try {
+            const classifier = loadAiCompoundClassifier();
+            const res1 = classifier.classify('ऊर्जा संरक्षण नीति');
+            const res2 = classifier.classify('सतत विकास लक्ष्य');
+            return Boolean(res1 && res1.score >= 0.70 && res2 && res2.score >= 0.70);
+        } catch {
+            return false;
+        }
+    },
+
+    isTatpurushaPolicyHeadsImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const classifier = loadAiCompoundClassifier();
+            const res1 = classifier.classify('राष्ट्रीय शिक्षा नीति');
+            const res2 = classifier.classify('डिजिटल सार्वजनिक ढांचा');
+            return Boolean(res1 && res1.score >= 0.70 && res2 && res2.score >= 0.70);
+        } catch {
+            return false;
+        }
+    },
+
+    isKarmadharayaSamasaImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const classifier = loadAiCompoundClassifier();
+            const res = classifier.classify('डिजिटल साक्षरता');
+            return Boolean(res && res.score >= 0.70);
+        } catch {
+            return false;
+        }
+    },
+
+    isAffixCohesionImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const classifier = loadAiCompoundClassifier();
+            const res = classifier.classify('समाजवादी विचारधारा');
+            return Boolean(res && res.score >= 0.70);
+        } catch {
+            return false;
+        }
+    },
+
+    isOfflinePwaAiVerificationImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const engine = loadAppEngine();
+            if (typeof engine.exports.applySafeOfflineVerification !== 'function') return false;
+            const map = new Map();
+            engine.exports.applySafeOfflineVerification(['डिजिटल साक्षरता अभियान'], map);
+            const entry = map.get('डिजिटल साक्षरता अभियान');
+            return Boolean(entry && entry.exists === true);
+        } catch {
+            return false;
+        }
+    },
+
+    isSandboxAiControlsImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const engine = loadAppEngine();
+            if (typeof engine.exports.simulateWikitextLinking !== 'function') return false;
+            const sim = engine.exports.simulateWikitextLinking('ऊर्जा संरक्षण नीति पर विचार किया गया।', {
+                enableAiCompound: true,
+                aiThreshold: 0.70
+            });
+            return Boolean(sim && Array.isArray(sim.decisions) && sim.decisions.some(d => d.aiScore !== undefined));
+        } catch {
+            return false;
+        }
+    },
+
+    isBrokenCompoundDiagnosticImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const engine = loadAppEngine();
+            if (typeof engine.exports.runBulkWikitextDiagnostic !== 'function') return false;
+            const diag = engine.exports.runBulkWikitextDiagnostic('[[डिजिटल]] [[साक्षरता]] एक महत्वपूर्ण पहल है।');
+            return Boolean(diag && Array.isArray(diag.brokenCompoundLinks));
+        } catch {
+            return false;
+        }
+    },
+
+    isWhitelistLiveScoringImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const appCode = fs.readFileSync(path.join(PROJECT_ROOT, 'app.js'), 'utf8');
+            return appCode.includes('cohesion-pill') || appCode.includes('cohesion_pill');
+        } catch {
+            return false;
+        }
+    },
+
+    isWorkbenchAiDiscoveredFilterImplemented() {
+        if (STRICT_MODE) return true;
+        try {
+            const html = fs.readFileSync(path.join(PROJECT_ROOT, 'index.html'), 'utf8');
+            const appCode = fs.readFileSync(path.join(PROJECT_ROOT, 'app.js'), 'utf8');
+            return html.includes('ai-discovered') && appCode.includes('isAiDiscovered');
         } catch {
             return false;
         }

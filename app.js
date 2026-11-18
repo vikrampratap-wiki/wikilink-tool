@@ -1687,8 +1687,13 @@
     }
 
     function applySafeOfflineVerification(chunk, resultsMap) {
+        if (!Array.isArray(chunk) || chunk.length === 0) return;
         chunk.forEach(t => {
+            if (typeof t !== 'string') return;
             const clean = t.trim();
+            if (!clean) return;
+
+            // 1. स्थिर ऑफ़लाइन सत्यापित शीर्षक
             const verifiedTarget = OFFLINE_VERIFIED_WIKI_TITLES.get(clean);
             if (verifiedTarget) {
                 resultsMap.set(t, {
@@ -1699,17 +1704,59 @@
                     originalTerm: t,
                     offlineVerified: true
                 });
-            } else {
-                // कभी भी असत्यापित वाक्य-खंडों को अंधाधुंध exists: true न मानें!
+                return;
+            }
+
+            // 1.5 एडमिन सुरक्षित श्वेतसूची
+            if (state && state.adminWhitelist && state.adminWhitelist.has(clean.toLowerCase())) {
                 resultsMap.set(t, {
-                    exists: false,
+                    exists: true,
                     isRedirect: false,
                     isDisambig: false,
-                    target: t,
+                    target: clean,
                     originalTerm: t,
                     offlineVerified: true
                 });
+                return;
             }
+
+            // 2. एआई संवर्धित मोड में उच्च-सम्बद्धता (>= 70%) वाले नवीन संयुक्त पद
+            if (isAiCompoundClassifierActive()) {
+                try {
+                    const classifier = ensureAiClassifierLoaded();
+                    if (classifier && typeof classifier.classify === 'function') {
+                        const aiDecision = classifier.classify(clean, '', {
+                            knownDictionarySet: COMPOUND_TERMS_SET,
+                            verifiedTitlesMap: OFFLINE_VERIFIED_WIKI_TITLES
+                        });
+                        if (aiDecision && aiDecision.decision === 'COMPOUND' && aiDecision.score >= 0.70) {
+                            resultsMap.set(t, {
+                                exists: true,
+                                isRedirect: false,
+                                isDisambig: false,
+                                target: clean,
+                                originalTerm: t,
+                                offlineVerified: true,
+                                isAiDiscovered: true,
+                                aiClassification: aiDecision
+                            });
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // सुरक्षित फॉलबैक
+                }
+            }
+
+            // 3. असत्यापित या कम-सम्बद्धता वाले पद
+            resultsMap.set(t, {
+                exists: false,
+                isRedirect: false,
+                isDisambig: false,
+                target: t,
+                originalTerm: t,
+                offlineVerified: true
+            });
         });
     }
 
@@ -2836,12 +2883,25 @@
         const langSet = NEVER_LINK_WORDS[lang] || NEVER_LINK_WORDS.hi;
 
         if (parts.length > 1) {
-            if (OFFLINE_VERIFIED_WIKI_TITLES.has(phrase) || (typeof COMPOUND_TERMS_SET !== 'undefined' && COMPOUND_TERMS_SET.has(phrase))) return true;
+            const inStaticDict = Boolean(
+                (typeof OFFLINE_VERIFIED_WIKI_TITLES !== 'undefined' && OFFLINE_VERIFIED_WIKI_TITLES && (OFFLINE_VERIFIED_WIKI_TITLES.has(phrase) || OFFLINE_VERIFIED_WIKI_TITLES.has(lower))) ||
+                (typeof COMPOUND_TERMS_SET !== 'undefined' && COMPOUND_TERMS_SET && (COMPOUND_TERMS_SET.has(phrase) || COMPOUND_TERMS_SET.has(lower)))
+            );
+
+            // 1. पारंपरिक मोड (Traditional Mode - OFF): केवल स्थिर शब्दकोश एवं एडमिन श्वेतसूची अनुमत
+            if (!isAiCompoundClassifierActive()) {
+                return inStaticDict;
+            }
+
+            // 2. एआई मोड (AI Mode - ON): स्थिर शब्दकोश पद सदैव स्वीकार्य
+            if (inStaticDict) {
+                return true;
+            }
 
             const firstWord = parts[0];
             const lastWord = parts[parts.length - 1];
 
-            // 1. पहला या अंतिम शब्द कभी भी स्टॉपवर्ड, क्रिया-सीमा, तिर्यक या सम्मानसूचक नहीं हो सकता
+            // 3. शब्दकोश से बाहर के पदों हेतु वाक्य-संरचनात्मक व व्याकरणिक सीमा परीक्षण
             if (
                 stopwordSet.has(firstWord) ||
                 stopwordSet.has(lastWord) ||
@@ -2856,15 +2916,10 @@
                 return false;
             }
 
-            // 2. आंतरिक शब्द (parts.slice(1, -1)) केवल मान्य संबंध/योजक परसर्ग हो सकते हैं (जैसे 'का', 'के', 'की', 'तथा', 'एवं', 'और', 'व', 'ऑफ', 'से', 'पर', 'में', 'द्वारा', 'हेतु', 'सहित', 'युक्त', 'स्थित', 'आधारित', 'संबंधी', 'द')
             const ALLOWED_INTERNAL_CONNECTORS = new Set([
                 'का', 'के', 'की', 'तथा', 'एवं', 'और', 'व', 'ऑफ', 'से', 'पर', 'में',
-                'द्वारा', 'हेतु', 'सहित', 'युक्त', 'स्थित', 'आधारित', 'संबंधी', 'द'
+                'द्वारा', 'हेतु', 'सहित', 'युक्त', 'स्थित', 'आधारित', 'संबंधी', 'द', 'या', 'अथवा'
             ]);
-            if (isAiCompoundClassifierActive()) {
-                ALLOWED_INTERNAL_CONNECTORS.add('या');
-                ALLOWED_INTERNAL_CONNECTORS.add('अथवा');
-            }
             const internalParts = parts.slice(1, -1);
             if (internalParts.some(p =>
                 (HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(p) && !ALLOWED_INTERNAL_CONNECTORS.has(p)) ||
@@ -2878,55 +2933,36 @@
                 return false;
             }
 
-            // 2.5 स्थानीय एआई संयुक्त पद विश्लेषक (Zero-Token Local AI Compound Classifier)
-            // जब सक्रिय हो, तो आकस्मिक योजक युक्त स्वतंत्र संज्ञा युग्मों (जैसे 'राम और श्याम', 'नदी और पहाड़')
-            // को बहु-शब्द पद बनने से रोकें ताकि घटक शब्दों को पृथक-पृथक लिंक किया जा सके।
-            if (isAiCompoundClassifierActive()) {
-                const coordinatorWords = new Set(['और', 'तथा', 'एवं', 'व', 'या', 'अथवा']);
-                const hasCoordinator = internalParts.some(p => coordinatorWords.has(p));
-                if (hasCoordinator) {
-                    try {
-                        const classifier = ensureAiClassifierLoaded();
-                        if (classifier && typeof classifier.classify === 'function') {
-                            const aiDecision = classifier.classify(phrase, '', {
-                                knownDictionarySet: COMPOUND_TERMS_SET,
-                                verifiedTitlesMap: OFFLINE_VERIFIED_WIKI_TITLES
-                            });
-                            if (aiDecision && aiDecision.decision === 'SEPARATE' && aiDecision.category !== 'FALLBACK') {
-                                return false; // आकस्मिक योजक: पृथक कड़ियों में विभाजित करने हेतु बहु-शब्द अस्वीकृत
-                            }
+            if (HONORIFIC_PREFIXES.has(lastWord)) return false;
+            if (lang === 'hi' && parts.some(p => isInflectedHindiPluralOrOblique(p))) return false;
+            if (parts.some(p => p.length < 2)) return false;
+            if (filterCommonWords && isNonLinkableWord(phrase, lang)) return false;
+
+            // 4. स्थानीय एआई संयुक्त पद विश्लेषक: सम्बद्धता स्कोरिंग एवं समास निर्णय
+            try {
+                const classifier = ensureAiClassifierLoaded();
+                if (classifier && typeof classifier.classify === 'function') {
+                    const aiDecision = classifier.classify(phrase, '', {
+                        knownDictionarySet: COMPOUND_TERMS_SET,
+                        verifiedTitlesMap: OFFLINE_VERIFIED_WIKI_TITLES
+                    });
+                    if (aiDecision) {
+                        if (aiDecision.category === 'FALLBACK') {
+                            return false;
                         }
-                    } catch (e) {
-                        // सुरक्षित फॉलबैक
+                        if (aiDecision.decision === 'COMPOUND' && aiDecision.score >= 0.70) {
+                            return true;
+                        }
+                        if (aiDecision.score < 0.60 || aiDecision.decision === 'SEPARATE') {
+                            return false;
+                        }
+                        return false;
                     }
                 }
+            } catch (e) {
+                return false;
             }
-
-            // बहु-शब्द पद का अंतिम शब्द कभी भी सम्मानसूचक उपसर्ग ('महर्षि', 'मुंशी', 'पंडित') नहीं हो सकता
-            if (HONORIFIC_PREFIXES.has(lastWord)) return false;
-
-            // बहु-शब्द पद के किसी भी घटक में यदि बहुवचन तिर्यक रूप (जैसे 'ग्रन्थों', 'नदियों', 'अभियानों') हो तो छोड़ें
-            if (lang === 'hi' && parts.some(p => isInflectedHindiPluralOrOblique(p))) return false;
-
-            // यदि कोई घटक बहुत छोटा (1 अक्षर) है तो छोड़ें
-            if (parts.some(p => p.length < 2)) return false;
-
-            if (filterCommonWords) {
-                if (isNonLinkableWord(phrase, lang)) return false;
-
-                // बहु-शब्द पद में कम-से-कम एक विशिष्ट/ज्ञानकोशीय घटक होना चाहिए (या संयुक्त संज्ञा घटक हो)
-                const hasAtLeastOneSpecificOrCompoundPart = parts.some(p =>
-                    !langSet.has(p) || COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST.has(p)
-                );
-                if (!hasAtLeastOneSpecificOrCompoundPart) return false;
-
-                // 3 या 4 शब्दों के पद तभी स्वीकार्य हैं जब उनमें कोई ज्ञानकोशीय संयुक्त सूचक हो अथवा कम-से-कम दो विशिष्ट शब्द हों
-                if (parts.length >= 3) {
-                    const hasCompoundMarker = parts.some(p => COMPOUND_HEAD_OR_MODIFIER_ALLOWLIST.has(p));
-                    const specificCount = parts.filter(p => !langSet.has(p) || HONORIFIC_PREFIXES.has(p)).length;
-                    if (!hasCompoundMarker && specificCount < 2) return false;
-                }
-            }
+            return false;
         } else {
             const singleWord = parts[0];
             if (filterStopwords && (stopwordSet.has(singleWord) || HINDI_VERB_AND_PARTICLE_BOUNDARIES.has(singleWord))) {
@@ -3105,6 +3141,25 @@
                     }
                 }
 
+                if (!aiClassification && info && info.aiClassification) {
+                    aiClassification = info.aiClassification;
+                }
+
+                const inStaticCompoundDict = Boolean(
+                    typeof COMPOUND_TERMS_SET !== 'undefined' &&
+                    COMPOUND_TERMS_SET &&
+                    (COMPOUND_TERMS_SET.has(term) || COMPOUND_TERMS_SET.has(term.toLowerCase().trim()))
+                );
+                const isAiApproved = Boolean(
+                    isAiCompoundClassifierActive() &&
+                    aiClassification &&
+                    aiClassification.decision === 'COMPOUND' &&
+                    aiClassification.score >= 0.70
+                );
+                const isAiDiscovered = Boolean(
+                    isMulti && !inStaticCompoundDict && (isAiApproved || (info && info.isAiDiscovered === true))
+                );
+
                 suggestions.push({
                     id: idCounter++,
                     term: term,
@@ -3113,6 +3168,7 @@
                     status: status,
                     isDisambig: isDisambig,
                     isMultiWord: isMulti,
+                    isAiDiscovered: isAiDiscovered,
                     context: context,
                     checked: (status === 'blue' || status === 'redirect'),
                     aiClassification: aiClassification
@@ -3172,6 +3228,7 @@
 
             if (state.filterType === 'multi' && !s.isMultiWord) return false;
             if (state.filterType === 'single' && s.isMultiWord) return false;
+            if (state.filterType === 'ai-discovered' && !s.isAiDiscovered) return false;
 
             if (state.filterLengthBucket && getWordLengthBucketKey(s.term) !== state.filterLengthBucket) {
                 return false;
@@ -3265,13 +3322,17 @@
                 aiBadgeHtml = ` <span class="${badgeClass}" title="${reasonTitle}">${escapeHtml(s.aiClassification.badgeText)}</span>`;
             }
 
+            const aiDiscoveredBadgeHtml = (aiActive && s.isAiDiscovered)
+                ? ` <span class="badge badge-purple ai-discovered-badge" title="स्थानीय एआई द्वारा खोजा गया नवीन संयुक्त पद">एआई खोज</span>`
+                : '';
+
             tr.innerHTML = `
                 <td class="td-checkbox-cell" data-label="चयन">
                     <input type="checkbox" class="suggestion-checkbox" data-id="${s.id}" ${s.checked ? 'checked' : ''} aria-label="${escapeHtml(s.term)} चुनें">
                 </td>
                 <td data-label="मूल शब्द">
                     <span class="term-tag">${escapeHtml(s.term)}</span>
-                    ${s.isMultiWord ? '<span class="multiword-pill" title="संयुक्त बहु-शब्द पद">संयुक्त पद</span>' : ''}${aiBadgeHtml}
+                    ${s.isMultiWord ? '<span class="multiword-pill" title="संयुक्त बहु-शब्द पद">संयुक्त पद</span>' : ''}${aiDiscoveredBadgeHtml}${aiBadgeHtml}
                 </td>
                 <td data-label="लक्ष्य पृष्ठ">
                     <div class="target-link">
@@ -7560,6 +7621,7 @@
         const densityCap = Number(options.densityCap) || 10;
         const reports = [];
         let totalScore = 0;
+        const allBrokenCompoundLinks = [];
 
         for (const art of articles) {
             const text = art.content;
@@ -7579,6 +7641,47 @@
                 }
             }
 
+            // विखंडित संयुक्त पदों (Broken Compound Links) की पहचान: जैसे [[डिजिटल]] [[साक्षरता]]
+            let artBrokenCount = 0;
+            const adjacentLinkRegex = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]\s+\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/g;
+            let adjMatch;
+            while ((adjMatch = adjacentLinkRegex.exec(text)) !== null) {
+                const link1 = adjMatch[1].trim();
+                const link2 = adjMatch[2].trim();
+                const phrase = `${link1} ${link2}`;
+
+                let isBroken = false;
+                let brokenScore = 0.5;
+
+                if (COMPOUND_TERMS_SET && (COMPOUND_TERMS_SET.has(phrase) || COMPOUND_TERMS_SET.has(phrase.toLowerCase()))) {
+                    isBroken = true;
+                    brokenScore = 0.95;
+                } else {
+                    try {
+                        const classifier = ensureAiClassifierLoaded();
+                        if (classifier && typeof classifier.classify === 'function') {
+                            const cRes = classifier.classify(phrase, text);
+                            if (cRes && cRes.decision === 'COMPOUND' && cRes.score >= 0.70) {
+                                isBroken = true;
+                                brokenScore = cRes.score;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                if (isBroken) {
+                    artBrokenCount++;
+                    allBrokenCompoundLinks.push({
+                        article: art.title,
+                        phrase: phrase,
+                        link1: link1,
+                        link2: link2,
+                        score: brokenScore,
+                        suggestion: `[[${phrase}]]`
+                    });
+                }
+            }
+
             const linkDensity = calculateDensity(linksCount, wordCount);
             const isOverlinked = linkDensity > densityCap;
 
@@ -7592,11 +7695,14 @@
             if (isOverlinked) {
                 score -= Math.min(30, Math.round((linkDensity - densityCap) * 3));
             }
+            if (artBrokenCount > 0) {
+                score -= Math.min(30, artBrokenCount * 10);
+            }
             if (score < 0) score = 0;
             if (score > 100) score = 100;
 
             let grade = 'A+';
-            if (score === 100 && leakedTokensCount === 0 && !isOverlinked) {
+            if (score === 100 && leakedTokensCount === 0 && !isOverlinked && artBrokenCount === 0) {
                 grade = 'A+';
             } else if (score >= 80) {
                 grade = 'A';
@@ -7615,6 +7721,7 @@
                 linkDensity,
                 leakedTokensCount,
                 isOverlinked,
+                brokenCompoundCount: artBrokenCount,
                 healthScore: score,
                 grade
             });
@@ -7634,7 +7741,8 @@
             totalArticles: reports.length,
             averageHealthScore: avgScore,
             overallGrade,
-            articles: reports
+            articles: reports,
+            brokenCompoundLinks: allBrokenCompoundLinks
         };
     }
 
@@ -7651,6 +7759,8 @@
         const maxDensityPct = Number(options.maxDensityPercent) || 10;
         const enableBlacklist = options.enableBlacklist !== undefined ? Boolean(options.enableBlacklist) : true;
         const enableWhitelist = options.enableWhitelist !== undefined ? Boolean(options.enableWhitelist) : true;
+        const enableAiCompound = options.enableAiCompound !== undefined ? Boolean(options.enableAiCompound) : true;
+        const aiThreshold = options.aiThreshold !== undefined ? Number(options.aiThreshold) : 0.70;
 
         const lang = options.lang || 'hi';
         ensureExtendedBlacklistLoaded();
@@ -7699,6 +7809,21 @@
                     if (phrase.length < 2) continue;
                     const lower = phrase.toLowerCase();
 
+                    let aiScore = null;
+                    let aiCategory = null;
+                    if (enableAiCompound) {
+                        try {
+                            const classifier = ensureAiClassifierLoaded();
+                            if (classifier && typeof classifier.classify === 'function') {
+                                const aiRes = classifier.classify(phrase, raw, { threshold: aiThreshold });
+                                if (aiRes) {
+                                    aiScore = typeof aiRes.score === 'number' ? aiRes.score : null;
+                                    aiCategory = aiRes.decision || (aiScore >= aiThreshold ? 'COMPOUND' : 'SEPARATE');
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
                     if (localWhitelist.has(lower)) {
                         decisions.push({
                             token: phrase,
@@ -7706,7 +7831,9 @@
                             matchType: n > 1 ? 'compound_longest' : 'whitelist_entry',
                             policyRule: 'PROTECTED_WHITELIST',
                             outcome: 'ACCEPTED',
-                            reason: 'सुरक्षित श्वेतसूची प्रविष्टि'
+                            reason: 'सुरक्षित श्वेतसूची प्रविष्टि',
+                            aiScore: aiScore !== null ? aiScore : 1.0,
+                            aiCategory: aiCategory || (n > 1 ? 'COMPOUND' : 'SINGLE_WORD')
                         });
                         candidateMap.set(phrase, { exists: true, isRedirect: false, isDisambig: false, target: phrase });
                         continue;
@@ -7719,9 +7846,43 @@
                             matchType: n > 1 ? 'compound_blacklist' : 'single_blacklist',
                             policyRule: 'WP:NOTLINKED',
                             outcome: 'REJECTED',
-                            reason: 'नीतिगत सामान्य शब्द'
+                            reason: 'नीतिगत सामान्य शब्द',
+                            aiScore: aiScore !== null ? aiScore : 0.1,
+                            aiCategory: aiCategory || 'SEPARATE'
                         });
                         continue;
+                    }
+
+                    if (n > 1) {
+                        if (!enableAiCompound) {
+                            if (!COMPOUND_TERMS_SET || (!COMPOUND_TERMS_SET.has(phrase) && !COMPOUND_TERMS_SET.has(lower))) {
+                                decisions.push({
+                                    token: phrase,
+                                    nGramLength: n,
+                                    matchType: 'compound_rejected_traditional_mode',
+                                    policyRule: 'TRADITIONAL_OFF_MODE',
+                                    outcome: 'REJECTED',
+                                    reason: 'गैर-शब्दकोश पद (एआई बंद)',
+                                    aiScore: 0.0,
+                                    aiCategory: 'SEPARATE'
+                                });
+                                continue;
+                            }
+                        } else {
+                            if (aiScore !== null && (aiScore < aiThreshold || aiCategory === 'SEPARATE')) {
+                                decisions.push({
+                                    token: phrase,
+                                    nGramLength: n,
+                                    matchType: 'ai_separate_rejected',
+                                    policyRule: 'AI_COMPOUND_COHESION',
+                                    outcome: 'REJECTED',
+                                    reason: `एआई द्वारा पृथक्कृत (${Math.round((aiScore || 0) * 100)}% सम्बद्धता)`,
+                                    aiScore: aiScore,
+                                    aiCategory: aiCategory
+                                });
+                                continue;
+                            }
+                        }
                     }
 
                     if (isValidCandidate(phrase, 3, true, true, true, stopwordSet, lang, enableBlacklist, true)) {
@@ -7731,7 +7892,9 @@
                             matchType: n > 1 ? 'compound_longest' : 'single_valid',
                             policyRule: 'WP:OVERLINKING',
                             outcome: 'ACCEPTED',
-                            reason: 'मान्य ज्ञानकोशीय पद'
+                            reason: 'मान्य ज्ञानकोशीय पद',
+                            aiScore: aiScore !== null ? aiScore : (n > 1 ? 0.85 : 0.50),
+                            aiCategory: aiCategory || (n > 1 ? 'COMPOUND' : 'SINGLE_WORD')
                         });
                         candidateMap.set(phrase, { exists: true, isRedirect: false, isDisambig: false, target: phrase });
                     }
@@ -8258,12 +8421,26 @@
             if (!state.adminWhitelistList || state.adminWhitelistList.length === 0) {
                 wlChipsEl.innerHTML = `<small style="color: var(--text-muted);">कोई श्वेतसूची पद नहीं जोड़ा गया है।</small>`;
             } else {
-                wlChipsEl.innerHTML = state.adminWhitelistList.map(w => `
+                wlChipsEl.innerHTML = state.adminWhitelistList.map(w => {
+                    const termStr = typeof w === 'string' ? w : (w && w.term ? w.term : '');
+                    let cohesionScore = 0.5;
+                    try {
+                        const cl = ensureAiClassifierLoaded();
+                        if (cl && typeof cl.classify === 'function') {
+                            const cRes = cl.classify(termStr);
+                            if (cRes && typeof cRes.score === 'number') cohesionScore = cRes.score;
+                        }
+                    } catch (e) {}
+                    const scorePct = Math.round(cohesionScore * 100);
+                    const pillClass = scorePct >= 70 ? 'cohesion-pill-high' : 'cohesion-pill-low';
+                    const pillHtml = `<span class="cohesion-pill ${pillClass}" style="font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.08); font-weight: 600;">${scorePct}% सम्बद्धता</span>`;
+                    return `
                     <span class="badge badge-blue" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;">
-                         ${escapeHtml(w)}
-                        <button type="button" class="btn-remove-wl-word" data-wl-word="${escapeHtml(w)}" style="border: none; background: transparent; color: inherit; cursor: pointer; font-weight: 700;" title="श्वेतसूची से हटाएँ"></button>
+                         ${escapeHtml(termStr)} ${pillHtml}
+                        <button type="button" class="btn-remove-wl-word" data-wl-word="${escapeHtml(termStr)}" style="border: none; background: transparent; color: inherit; cursor: pointer; font-weight: 700;" title="श्वेतसूची से हटाएँ"></button>
                     </span>
-                `).join('');
+                `;
+                }).join('');
                 wlChipsEl.querySelectorAll('.btn-remove-wl-word').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const targetW = btn.dataset.wlWord || '';

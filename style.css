@@ -6244,6 +6244,62 @@ body.dark .ai-badge-separate {
     border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
+.cohesion-pill {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+}
+
+.cohesion-pill-high {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.cohesion-pill-low {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+[data-theme="dark"] .cohesion-pill-high,
+body.dark .cohesion-pill-high {
+    background-color: rgba(6, 95, 70, 0.3);
+    color: #6ee7b7;
+    border: 1px solid rgba(110, 231, 183, 0.3);
+}
+
+[data-theme="dark"] .cohesion-pill-low,
+body.dark .cohesion-pill-low {
+    background-color: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.ai-discovered-badge {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background-color: #f3e8ff;
+    color: #7e22ce;
+    border: 1px solid #d8b4fe;
+}
+
+[data-theme="dark"] .ai-discovered-badge,
+body.dark .ai-discovered-badge {
+    background-color: rgba(126, 34, 206, 0.25);
+    color: #c084fc;
+    border: 1px solid rgba(192, 132, 252, 0.35);
+}
+
 .btn-warning,
 .btn-warning-soft {
     background-color: #fffbeb;
