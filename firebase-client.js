@@ -261,7 +261,7 @@ export async function initFirebaseService() {
                 : defaultName;
             const effectiveIcon = (archivedProfile && archivedProfile.profileIcon)
                 ? archivedProfile.profileIcon
-                : (localStorage.getItem('wikilink_profile_icon') || '📚');
+                : (localStorage.getItem('wikilink_profile_icon') || 'WP');
             const effectiveRole = isDesignatedAdminUser(user)
                 ? 'मुख्य प्रशासक (Admin)'
                 : 'Firebase क्लाउड संपादक';

@@ -98,29 +98,29 @@
                 </a>
                 <!-- केवल मोबाइल के लिए हैमबर्गर टॉगल मेन्यू बटन -->
                 <button type="button" id="mobile-menu-toggle-btn" class="mobile-menu-toggle-btn" aria-expanded="false" aria-controls="header-nav-actions" title="मोबाइल नेविगेशन मेन्यू खोलें/बंद करें">
-                    <span class="hamburger-icon" id="mobile-menu-icon">☰</span>
+                    <span class="hamburger-icon" id="mobile-menu-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></span>
                     <span class="hamburger-label">मेन्यू</span>
                 </button>
             </div>
             <nav class="header-actions" id="header-nav-actions" aria-label="मुख्य पृष्ठ नेविगेशन">
                 <a href="index.html" class="btn btn-outline btn-sm nav-page-btn" title="मुख्य उपकरण पटल">
-                    🛠️ कार्यपटल
+                    <svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>कार्यपटल
                 </a>
                 <a href="about.html" class="btn btn-primary btn-sm nav-page-btn active" title="टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक">
-                    ℹ️ परिचय व मानक
+                    <svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>परिचय व मानक
                 </a>
                 <button type="button" id="theme-toggle-btn" class="btn btn-outline btn-sm header-theme-toggle-btn" title="डार्क या लाइट मोड बदलें">
-                    <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">डार्क मोड</span>
+                    <span id="theme-toggle-icon"><svg class="theme-icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span> <span id="theme-toggle-label">डार्क मोड</span>
                 </button>
                 <a href="login.html" id="auth-trigger-btn" class="btn btn-anime-auth btn-sm nav-page-btn" title="लॉगिन या साइन अप पेज खोलें" onclick="var lbl=document.getElementById('auth-btn-label');if(lbl&&lbl.textContent&&lbl.textContent.includes('लॉगिन')){window.location.href='login.html';return true;}try{var u=JSON.parse(localStorage.getItem('wikilink_current_user')||'null');if(u&&u.vaultVerified===true&&(u.name||u.email)){event.preventDefault();window.location.href='logs.html';return false;}}catch(e){}window.location.href='login.html';return true;">
                     <span class="auth-status-dot" id="auth-status-dot"></span>
                     <span id="auth-btn-label">लॉगिन / साइन अप</span>
                 </a>
                 <button type="button" id="header-logout-btn" class="btn btn-danger-soft btn-sm" style="display: none;" title="वर्तमान खाते से लॉगआउट करें">
-                    लॉगआउट ⏻
+                    <svg class="nav-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>लॉगआउट
                 </button>
                 <script>
-                (function(){try{var raw=localStorage.getItem('wikilink_current_user');if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent='👤 '+nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
+                (function(){try{var raw=localStorage.getItem('wikilink_current_user');if(raw){var u=JSON.parse(raw);if(u&&u.vaultVerified===true&&(u.name||u.email)){var btn=document.getElementById('auth-trigger-btn');var lbl=document.getElementById('auth-btn-label');var dot=document.getElementById('auth-status-dot');var lo=document.getElementById('header-logout-btn');var nm=u.name||String(u.email).split('@')[0];if(btn){btn.setAttribute('href','logs.html');btn.href='logs.html';btn.title=nm+' — अपना विशेष एनीमे प्रोफ़ाइल पेज खोलें';}if(lbl)lbl.textContent=nm;if(dot)dot.classList.add('logged-in');if(lo)lo.style.display='inline-flex';}}}catch(e){}})();
                 </script>
             </nav>
         </div>
@@ -139,7 +139,7 @@
                 <h2 class="top-auth-banner-title">टूल परिचय एवं विकिपीडिया संपादन व कड़ियों के मानक</h2>
             </div>
             <div class="top-auth-bar-actions">
-                <a href="logs.html#profile-theme-studio" class="btn btn-outline btn-sm" data-auth-only="true" style="display: none;">🎨 प्रोफ़ाइल में थीम/रंग बदलें</a>
+                <a href="logs.html#profile-theme-studio" class="btn btn-outline btn-sm" data-auth-only="true" style="display: none;"><svg class="btn-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>प्रोफ़ाइल में थीम/रंग बदलें</a>
                 <a href="index.html" class="btn btn-primary btn-sm">← मुख्य कार्यपटल (Workbench) खोलें</a>
             </div>
         </div>
@@ -155,7 +155,7 @@
                 </p>
                 <div class="guide-grid">
                     <div class="guide-box">
-                        <h4>📦 मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</h4>
+                        <h4><svg class="section-heading-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>मुख्य कार्यपटल: मूल लेख एवं तार्किक छन्नी</h4>
                         <ul>
                             <li>किसी भी भाषा (हिन्दी, अंग्रेज़ी, संस्कृत, मराठी, तमिल, बंगाली आदि) के विकिपीडिया से सीधा लेख लोड करें या कच्चा विकिटेक्स्ट पेस्ट करें।</li>
                             <li><strong>7-नियम तार्किक छन्नी</strong> द्वारा सामान्य दैनिक शब्दों, संख्याओं, मात्रकों और तिथियों को स्वतः बाहर रखें।</li>
@@ -163,7 +163,7 @@
                         </ul>
                     </div>
                     <div class="guide-box">
-                        <h4>🔍 समीक्षा एवं मीडियाविकी डिफ़</h4>
+                        <h4><svg class="section-heading-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>समीक्षा एवं मीडियाविकी डिफ़</h4>
                         <ul>
                             <li>सुझाई गई प्रत्येक आंतरिक कड़ी का संदर्भ, लक्ष्य पृष्ठ और स्थिति (नीली कड़ी, पुनर्निर्देशन, बहुविकल्पी) देखें।</li>
                             <li>सहायक टूल्स से <strong>डुप्लिकेट कड़ियों (Overlinks)</strong> और <strong>कस्टम बहिष्कार सूची</strong> का प्रबंधन करें।</li>
@@ -171,7 +171,7 @@
                         </ul>
                     </div>
                     <div class="guide-box">
-                        <h4>☁️ विशेष एनीमे प्रोफ़ाइल एवं क्लाउड लॉग</h4>
+                        <h4><svg class="section-heading-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>विशेष एनीमे प्रोफ़ाइल एवं क्लाउड लॉग</h4>
                         <ul>
                             <li>बिना किसी लॉगिन के 100% फीचर्स (विश्लेषण, डिफ़, 1-क्लिक विकिटेक्स्ट कॉपी) का उपयोग करें।</li>
                             <li>खाते में लॉगिन करने पर आप सीधे अपने नाम पर क्लिक करके अपने विशेष एनीमे प्रोफ़ाइल पेज में थीम स्टूडियो, गतिविधि लॉग और (अधिकृत होने पर) एडमिन पैनल का उपयोग कर सकते हैं।</li>
@@ -189,7 +189,7 @@
             <div class="workbench-card-body">
                 <div class="guide-grid">
                     <div class="guide-box">
-                        <h4>✅ क्या करें (तार्किक कड़ी नियम — WP:LINK):</h4>
+                        <h4><svg class="section-heading-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" style="color: var(--accent-green);"><polyline points="20 6 9 17 4 12"/></svg>क्या करें (तार्किक कड़ी नियम — WP:LINK):</h4>
                         <ul>
                             <li>महत्वपूर्ण ऐतिहासिक घटनाओं, व्यक्तियों, भौगोलिक स्थानों, वैज्ञानिक अवधारणाओं और तकनीकी शब्दों पर आंतरिक कड़ियाँ जोड़ें।</li>
                             <li>केवल <strong>प्रथम उल्लेख (First Appearance)</strong> पर ही आंतरिक कड़ी जोड़ें ताकि लेख साफ़ और पठनीय रहे।</li>
@@ -198,7 +198,7 @@
                         </ul>
                     </div>
                     <div class="guide-box">
-                        <h4>❌ क्या न करें (अति-कड़ीकरण से बचें — WP:OVERLINK):</h4>
+                        <h4><svg class="section-heading-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" style="color: var(--accent-red);"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>क्या न करें (अति-कड़ीकरण से बचें — WP:OVERLINK):</h4>
                         <ul>
                             <li>बहुविकल्पी पृष्ठों (Disambiguation pages) की सीधी कड़ी न जोड़ें (WP:DISAMBIG)।</li>
                             <li>आम रोज़मर्रा के सामान्य शब्द (उदा: पानी, दिन, घर, साल, लोग, देश, भाषा) पर अनावश्यक कड़ियाँ न बनाएँ (WP:NOTLINKED)।</li>
@@ -207,7 +207,7 @@
                         </ul>
                     </div>
                     <div class="guide-box">
-                        <h4>🚀 उपयोग की सरल विधि (3 चरण):</h4>
+                        <h4><svg class="section-heading-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>उपयोग की सरल विधि (3 चरण):</h4>
                         <ol>
                             <li><strong>चरण 1:</strong> <a href="index.html">मुख्य कार्यपटल</a> में विकिपीडिया लेख का शीर्षक लिखकर लोड करें और <strong>"तार्किक आंतरिक कड़ियाँ खोजें एवं विश्लेषण करें"</strong> दबाएँ।</li>
                             <li><strong>चरण 2:</strong> सुझाव तालिका और <strong>विकिपीडिया लाइव डिफ़</strong> में जोड़ी गई कड़ियों की समीक्षा करें।</li>
@@ -242,7 +242,7 @@
                             <tr>
                                 <td><code>WP:NOTLINKED</code></td>
                                 <td><strong>सामान्य दैनिक शब्द वर्जन</strong></td>
-                                <td>5,000+ आम बोलचाल की संज्ञाओं, सर्वनामों, क्रियाओं व सामान्य विशेषणों (पानी, दिन, घर, लोग आदि) को स्वतः कड़ी बनने से रोका जाता है।</td>
+                                <td>10,000+ आम बोलचाल की संज्ञाओं, सर्वनामों, क्रियाओं व सामान्य विशेषणों (पानी, दिन, घर, लोग आदि) को स्वतः कड़ी बनने से रोका जाता है।</td>
                             </tr>
                             <tr>
                                 <td><code>WP:CIRCULAR</code></td>
@@ -283,7 +283,7 @@
     <footer class="app-footer">
         <div class="container">
             <div class="footer-zero-login-strip">
-                <span class="zero-login-badge">🔓 शून्य-लॉगिन स्वतंत्रता</span>
+                <span class="zero-login-badge"><svg class="badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> शून्य-लॉगिन स्वतंत्रता</span>
                 <p>
                     <strong>स्वतंत्र उपकरण:</strong> बिना लॉगिन सीधे कार्यपटल में लेख विश्लेषण व विकिटेक्स्ट कॉपी करें। वैकल्पिक लॉगिन करने पर आपके लॉग व प्रोफ़ाइल थीम क्लाउड में सिंक रहते हैं।
                 </p>
@@ -291,19 +291,19 @@
 
             <div class="footer-sitemap-grid">
                 <a href="index.html" class="footer-page-card">
-                    <strong>🛠️ 1. मुख्य कार्यपटल (Workbench)</strong>
+                    <strong><svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>1. मुख्य कार्यपटल (Workbench)</strong>
                     <span>मूल लेख लोड, तार्किक छन्नी एवं लाइव मीडियाविकी डिफ़</span>
                 </a>
                 <a href="logs.html" class="footer-page-card" data-auth-only="true" style="display: none;">
-                    <strong>👤 2. मेरा विशेष प्रोफ़ाइल (Profile & Logs)</strong>
+                    <strong><svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>2. मेरा विशेष प्रोफ़ाइल (Profile & Logs)</strong>
                     <span>यूज़रनेम व आइकन चयन, थीम स्टूडियो, गतिविधि लॉग एवं एडमिन पैनल</span>
                 </a>
                 <a href="about.html" class="footer-page-card active">
-                    <strong>ℹ️ 3. परिचय व मानक (About & Standards)</strong>
+                    <strong><svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>3. परिचय व मानक (About & Standards)</strong>
                     <span>टूल उपयोग विधि एवं विकिपीडिया कड़ीकरण नीतियाँ (WP:LINK)</span>
                 </a>
                 <a href="login.html" class="footer-page-card">
-                    <strong>🔑 4. लॉगिन एवं साइन अप (Login / Sign Up)</strong>
+                    <strong><svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 2l-2 2m-1.5 1.5L14 9l-3 3-2-2-4 4 3 3 2-2 3-3 3.5-3.5"/></svg>4. लॉगिन एवं साइन अप (Login / Sign Up)</strong>
                     <span>इंटरैक्टिव एनिमेटेड खाता प्रवेश एवं क्लाउड सिंक</span>
                 </a>
             </div>
@@ -316,7 +316,7 @@
                     आधिकारिक डोमेन: <a href="https://vikrampratap-wiki.github.io/wikilink-tool/" target="_blank">vikrampratap-wiki.github.io/wikilink-tool</a> |
                     लाइसेंस: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.hi" target="_blank">CC BY-SA 4.0</a> / <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a> |
                     निर्माता: <a href="https://hi.wikipedia.org/wiki/सदस्य:विक्रम_प्रताप" target="_blank">सदस्य:विक्रम प्रताप</a> |
-                    <span>🔒 निजी रिपॉज़िटरी (Private GitHub)</span>
+                    <span><svg class="nav-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>निजी रिपॉज़िटरी (Private GitHub)</span>
                 </p>
             </div>
         </div>

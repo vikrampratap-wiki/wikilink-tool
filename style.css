@@ -527,18 +527,47 @@ a:hover {
     color: var(--primary-color);
     font-size: 0.88rem;
     font-weight: 500;
-    animation: fadeIn 0.25s ease-in-out;
+    min-height: 44px;
+    box-sizing: border-box;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+[data-theme="dark"] .analyze-status-banner {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
 }
 
 .analyze-spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(37, 99, 235, 0.25);
+    border: 2.5px solid rgba(37, 99, 235, 0.25);
     border-top-color: var(--primary-color);
     border-radius: 50%;
     animation: spin 0.75s linear infinite;
     display: inline-block;
     flex-shrink: 0;
+}
+
+[data-theme="dark"] .analyze-spinner {
+    border-color: rgba(147, 197, 253, 0.25);
+    border-top-color: #93c5fd;
+}
+
+.btn .analyze-spinner,
+.btn-primary .analyze-spinner,
+.logical-analyze-cta .analyze-spinner {
+    border-color: rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+#analyze-btn:disabled,
+#btn-analyze:disabled,
+.logical-analyze-cta:disabled {
+    cursor: wait;
+    opacity: 0.88;
 }
 
 @keyframes spin {
@@ -1003,12 +1032,6 @@ a:hover {
 
 .custom-lang-input {
     width: 130px;
-}
-
-.preset-buttons {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
 }
 
 .raw-tools {
@@ -4948,7 +4971,7 @@ body[data-card-style="glass"] .workbench-flow-strip {
     }
 
     .app-header .header-actions::before {
-        content: "📱 पृष्ठ नेविगेशन मेन्यू (Site Navigation)";
+        content: "पृष्ठ नेविगेशन मेन्यू (Site Navigation)";
         grid-column: 1 / -1;
         font-size: 0.74rem;
         font-weight: 700;
@@ -5274,26 +5297,53 @@ body[data-card-style="glass"] .workbench-flow-strip {
     color: #ffffff;
 }
 
-.logical-presets-inline {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    font-size: 0.82rem;
-    min-width: 0;
-    max-width: 100%;
+/* स्वच्छ एसवीजी वेक्टर आइकन प्रणाली (Clean SVG Vector Icon System) */
+.nav-icon,
+.btn-icon,
+.badge-icon,
+.section-heading-icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
-.preset-label-text {
-    color: var(--text-secondary);
-    font-weight: 600;
-    margin-right: 2px;
+.nav-icon {
+    margin-right: 5px;
 }
 
-.logical-presets-inline .preset-btn {
-    padding: 2px 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
+.btn-icon {
+    margin-right: 5px;
+}
+
+.badge-icon {
+    margin-right: 4px;
+    vertical-align: -1px;
+}
+
+.section-heading-icon {
+    margin-right: 6px;
+    vertical-align: -2px;
+}
+
+.chip-check-icon {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    flex-shrink: 0;
+    transition: opacity 0.15s ease, width 0.15s ease, margin 0.15s ease;
+}
+
+.filter-chip-toggle:not(.active) .chip-check-icon {
+    opacity: 0;
+    width: 0;
+    margin-right: 0;
+    overflow: hidden;
+}
+
+.theme-icon-svg,
+.eye-icon-svg {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .logical-tab-panels {
